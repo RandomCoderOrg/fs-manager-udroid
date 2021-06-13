@@ -9,7 +9,7 @@ if ! [ -d "${CONFIG_DIR}" ]; then
     mkdir -p "${CONFIG_DIR}"
 fi
 
-cd $CONFIG_DIR/ubuntu-on-android || exit 1
+cd $CONFIG_DIR || exit 1
 
 if ! [ -d fs-manager-hippo ]; then
     git clone https://github.com/RandomCoderOrg/fs-manager-hippo
