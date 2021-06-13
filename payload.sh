@@ -14,7 +14,14 @@ else
     cd fs-manager-hippo || exit
     git remote add upgrade https://github.com/RandomCoderOrg/fs-manager-hippo
     git pull upstream modified
-    cd "${cur}" || exit 1
 fi
 
-install -d -m 700 "${TERMUX_PREFIX_i}"/bin/ fs-manager/fs-manager
+cp fs-manager/fs-manager ${TERMUX_PREFIX_i}/bin/fs-manager
+chmod 755 ${TERMUX_PREFIX_i}/bin/fs-manager
+
+if command -v fs-manager >> /dev/null; then
+    fs-manager --install
+    exit 0
+else
+    exit 1
+fi

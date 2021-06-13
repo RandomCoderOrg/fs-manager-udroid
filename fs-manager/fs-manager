@@ -109,6 +109,8 @@ function quick_install()
         msg "This has to done on termux environment......"
         exit 3
     else
+        apt update; apt upgrade -y
+        __check_for --force git
         cur_dir="$(pwd)"
         if ! [ -d $CONFIG_DIR ]; then
             mkdir -pv $CONFIG_DIR >> /dev/null
