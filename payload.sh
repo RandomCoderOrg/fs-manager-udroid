@@ -13,6 +13,8 @@ cd $CONFIG_DIR || exit 1
 
 if ! [ -d fs-manager-hippo ]; then
     git clone https://github.com/RandomCoderOrg/fs-manager-hippo
+    cur=$(pwd)
+    cd fs-manager-hippo || exit 1
 else
     cur=$(pwd)
     cd fs-manager-hippo || exit
