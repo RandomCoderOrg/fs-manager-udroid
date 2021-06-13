@@ -1,0 +1,191 @@
+#!/usr/bin/env bash
+
+TERMUX_ETC="/data/data/com.termux/files/usr/etc"
+CONFIG_DIR="${TERMUX_ETC}/ubuntu-on-android"
+: "${TERMUX_PREFIX_i:=/data/data/com.termux/files/usr}"
+
+VERSION="0.1"
+
+# clours (ncurses)
+if [ -n "$(command -v tput)" ] && [ "$(tput colors)" -ge 8 ]; then
+	RST="$(tput sgr0)"
+	RED="${RST}$(tput setaf 1)"
+	BRED="${RST}$(tput bold)$(tput setaf 1)"
+	GREEN="${RST}$(tput setaf 2)"
+	YELLOW="${RST}$(tput setaf 3)"
+	BYELLOW="${RST}$(tput bold)$(tput setaf 3)"
+	BLUE="${RST}$(tput setaf 4)"
+	CYAN="${RST}$(tput setaf 6)"
+	BCYAN="${RST}$(tput bold)$(tput setaf 6)"
+	ICYAN="${RST}$(tput sitm)$(tput setaf 6)"
+else
+	RED=""
+	BRED=""
+	GREEN=""
+	YELLOW=""
+	BYELLOW=""
+	BLUE=""
+	CYAN=""
+	BCYAN=""
+	ICYAN=""
+	RST=""
+fi
+
+function require_root()
+{
+    if [ "$(id -u)" != 0 ]; then
+        msg "[${RED} FAILED ${RST}] This has done as root user.."
+        exit 1
+    fi
+}
+
+function msg()
+{
+    echo -e "$@" >&2
+}
+
+function __check_for_termux()
+{
+    if [[ "$(pwd)" == /data/data/com.termux/* ]]; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+########################
+
+# function cmd_backup()
+# {
+#     :
+# }
+# function cmd_purge()
+# {
+#     :
+# }
+# function cmd_install()
+# {
+#     :
+# }
+
+######################
+
+function set_dbus()
+{
+    if [ $# -ge 1 ]; then
+        case "$1" in
+        --enable)
+            mkdir -pv ${CONFIG_DIR} >> /dev/null
+            touch ${CONFIG_DIR}/dbus-enable.lock
+            ;;
+        --disable)
+            if [ -f ${TERMUX_ETC}/ubuntu-on-android/dbus-enable.lock ]; then
+                rm -f ${TERMUX_ETC}/ubuntu-on-android.dbus-enable.lock
+            fi
+            ;;
+        esac
+    fi
+    msg "Done"
+}
+
+function upgrade()
+{
+    if ! [ -d fs-manager-hippo ]; then
+    git clone https://github.com/RandomCoderOrg/fs-manager-hippo
+    else
+        cur=$(pwd)
+        cd fs-manager-hippo || exit
+        git remote add upgrade https://github.com/RandomCoderOrg/fs-manager-hippo
+        git pull upstream modified
+        cd "${cur}" || exit 1
+    fi
+    install -d -m 700 "${TERMUX_PREFIX_i}"/bin/ fs-manager/fs-manager
+
+}
+
+function quick_install()
+{
+    if ! __check_for_termux; then
+        msg "This has to done on termux environment......"
+        exit 3
+    else
+        cur_dir="$(pwd)"
+        if ! [ -d $CONFIG_DIR ]; then
+            mkdir -pv $CONFIG_DIR >> /dev/null
+        fi
+            cd $CONFIG_DIR || exit 1
+            upgrade
+            cd $CONFIG_DIR/ubuntu-on-android || exit 1
+            bash install.sh --fs-mgr
+        cd "$cur_dir" || exit 1
+    fi
+}
+
+
+##################
+
+function __check_for_hippo()
+{
+    :
+}
+
+function __check_for()
+{
+    in_cache=( "$@" )
+    if [ $# -ge 1 ]; then
+        for i in "$@"; do
+            if  command -v "${in_cache[@]}" >> /dev/null ; then
+                if [[ "${in_cache[1]}" != --force ]]; then
+                    msg "[${RED} FAILED ${RST}] Unable to find $i try using \"apt install ${i} \""
+                    ((x=x+1))
+                else
+                    msg "[${GREEN} Executing ${RST}] sudo apt install -y $i"
+                    sudo apt install -y "$i"
+                fi
+            fi
+        done
+        
+        if ((x >= 1)); then
+            return 1
+        else
+            return 0
+        fi
+        
+    fi
+}
+
+function make_wait()
+{
+    msg "Coming soon..."
+}
+
+function cmd_help()
+{
+    if [ -n "${VERSION}" ]; then
+        msg "fs-manager v${VERSION}"
+    fi
+    msg "Usage: ${0} [options]"
+    msg
+    msg "   Options:"
+    msg "       --install          To Quick install hippo(ubuntu-on-android)"
+    msg "       --backup           To backup hippo carefully (comming soon)"
+    msg "       --help             To Display this message"
+    msg "       --enable-dbus      To enable dbus in hippo"
+    msg "       --disable-dbus     To disable dbus in hippo"
+    msg "       --upgrade-sources  to upgrade local ubuntu-on-android sources and cd to it"
+}
+
+trap 'echo -e "\\r[${GREEN} Done ${RST}] Exiting immediately as requested."; exit 1;' HUP INT TERM
+
+if [ $# -ge 1 ]; then
+    case $1 in
+    --install)         shift 1; quick_install;;
+    --backup|backup)   shift 1; make_wait;;
+    --help|-h)         shift 1; cmd_help;;
+    --enable-dbus)     shift 1; set_dbus --enable;;
+    --disable-dbus)    shift 1; set_dbus --disable;;
+    --upgrade-sources) shift 1; upgrade;;
+    esac
+fi
+
+exit 0
