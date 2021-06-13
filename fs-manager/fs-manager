@@ -145,7 +145,7 @@ function __check_for()
         for i in "$@"; do
             if  command -v "${in_cache[@]}" >> /dev/null ; then
                     msg "[${GREEN} Executing ${RST}] sudo apt install -y $i"
-                    sudo apt install -y "$i" || {
+                    apt install -y "$i" || {
                         ((x=x+1))
                     }
             fi
