@@ -5,6 +5,10 @@
 TERMUX_ETC="/data/data/com.termux/files/usr/etc"
 CONFIG_DIR="${TERMUX_ETC}/ubuntu-on-android"
 
+if [ -d CONFIG_DIR="${TERMUX_ETC}/ubuntu-on-android" ]; then
+    mkdir -p CONFIG_DIR="${TERMUX_ETC}/ubuntu-on-android"
+fi
+
 cd $CONFIG_DIR/ubuntu-on-android || exit 1
 
 if ! [ -d fs-manager-hippo ]; then
