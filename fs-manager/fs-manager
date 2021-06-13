@@ -3,6 +3,7 @@
 TERMUX_ETC="/data/data/com.termux/files/usr/etc"
 CONFIG_DIR="${TERMUX_ETC}/ubuntu-on-android"
 : "${TERMUX_PREFIX_i:=/data/data/com.termux/files/usr}"
+branch="Script-v01-patch"
 
 VERSION="0.1"
 
@@ -99,7 +100,6 @@ function upgrade()
         git pull upstream modified
         cd "${cur}" || exit 1
     fi
-    install -d -m 700 "${TERMUX_PREFIX_i}"/bin/ fs-manager/fs-manager
 
 }
 
@@ -115,11 +115,18 @@ function quick_install()
         if ! [ -d $CONFIG_DIR ]; then
             mkdir -pv $CONFIG_DIR >> /dev/null
         fi
-            cd $CONFIG_DIR || exit 1
-            upgrade
+        cd $CONFIG_DIR || exit 1
+
+        if ! [ -d ubuntu-on-android ]; then
+            git clone -b "${branch}"  https://github.com/RandomCoderOrg/ubuntu-on-android
+        else
+            cur=$(pwd)
+            cd $CONFIG_DIR/ubuntu-on-android || exit
+            git fetch origin https://github.com/RandomCoderOrg/ubuntu-on-android
+        fi
             cd $CONFIG_DIR/ubuntu-on-android || exit 1
             bash install.sh --fs-mgr
-        cd "$cur_dir" || exit 1
+        cd "$cur" || exit 1
     fi
 }
 
