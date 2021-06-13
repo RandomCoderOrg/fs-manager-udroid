@@ -120,10 +120,10 @@ function quick_install()
             git clone -b "${branch}"  https://github.com/RandomCoderOrg/ubuntu-on-android
         else
             cur=$(pwd)
-            cd $CONFIG_DIR/ubuntu-on-android || exit
-            git fetch origin https://github.com/RandomCoderOrg/ubuntu-on-android
+            cd "${CONFIG_DIR}"/ubuntu-on-android || exit
+            git fetch origin
         fi
-            cd $CONFIG_DIR/ubuntu-on-android || exit 1
+            cd "${CONFIG_DIR}"/ubuntu-on-android || exit 1
             msg "Reached Final stage"
             bash install.sh --fs-mgr
         cd "$cur" || exit 1
