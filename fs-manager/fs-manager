@@ -124,6 +124,7 @@ function quick_install()
             git fetch origin https://github.com/RandomCoderOrg/ubuntu-on-android
         fi
             cd $CONFIG_DIR/ubuntu-on-android || exit 1
+            msg "Reached Final stage"
             bash install.sh --fs-mgr
         cd "$cur" || exit 1
     fi
@@ -192,5 +193,3 @@ if [ $# -ge 1 ]; then
     --upgrade-sources) shift 1; upgrade;;
     esac
 fi
-
-exit 0
