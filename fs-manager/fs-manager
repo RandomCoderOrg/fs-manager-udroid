@@ -110,7 +110,7 @@ function quick_install()
         exit 3
     else
         apt update; apt upgrade -y
-        __check_for --force git
+        __check_for git
         cur_dir="$(pwd)"
         if ! [ -d $CONFIG_DIR ]; then
             mkdir -pv $CONFIG_DIR >> /dev/null
@@ -144,13 +144,10 @@ function __check_for()
     if [ $# -ge 1 ]; then
         for i in "$@"; do
             if  command -v "${in_cache[@]}" >> /dev/null ; then
-                if [[ "${in_cache[1]}" != --force ]]; then
-                    msg "[${RED} FAILED ${RST}] Unable to find $i try using \"apt install ${i} \""
-                    ((x=x+1))
-                else
                     msg "[${GREEN} Executing ${RST}] sudo apt install -y $i"
-                    sudo apt install -y "$i"
-                fi
+                    sudo apt install -y "$i" || {
+                        ((x=x+1))
+                    }
             fi
         done
         
