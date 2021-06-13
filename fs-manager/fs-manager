@@ -96,8 +96,7 @@ function upgrade()
     else
         cur=$(pwd)
         cd fs-manager-hippo || exit
-        git remote add upgrade https://github.com/RandomCoderOrg/fs-manager-hippo
-        git pull upstream modified
+        git fetch origin
         cd "${cur}" || exit 1
     fi
 

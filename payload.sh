@@ -18,8 +18,7 @@ if ! [ -d fs-manager-hippo ]; then
 else
     cur=$(pwd)
     cd fs-manager-hippo || exit
-    git remote add upgrade https://github.com/RandomCoderOrg/fs-manager-hippo
-    git pull upstream modified
+    git fetch origin
 fi
 
 cp fs-manager/fs-manager ${TERMUX_PREFIX_i}/bin/fs-manager
