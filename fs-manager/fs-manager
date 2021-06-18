@@ -1,195 +1,195 @@
-#!/usr/bin/env bash
+# #!/usr/bin/env bash
 
-TERMUX_ETC="/data/data/com.termux/files/usr/etc"
-CONFIG_DIR="${TERMUX_ETC}/ubuntu-on-android"
-: "${TERMUX_PREFIX_i:=/data/data/com.termux/files/usr}"
-branch="Script-v01-patch"
+# TERMUX_ETC="/data/data/com.termux/files/usr/etc"
+# CONFIG_DIR="${TERMUX_ETC}/ubuntu-on-android"
+# : "${TERMUX_PREFIX_i:=/data/data/com.termux/files/usr}"
+# branch="Script-v01-patch"
 
-VERSION="0.1"
+# VERSION="0.1"
 
-# clours (ncurses)
-if [ -n "$(command -v tput)" ] && [ "$(tput colors)" -ge 8 ]; then
-	RST="$(tput sgr0)"
-	RED="${RST}$(tput setaf 1)"
-	BRED="${RST}$(tput bold)$(tput setaf 1)"
-	GREEN="${RST}$(tput setaf 2)"
-	YELLOW="${RST}$(tput setaf 3)"
-	BYELLOW="${RST}$(tput bold)$(tput setaf 3)"
-	BLUE="${RST}$(tput setaf 4)"
-	CYAN="${RST}$(tput setaf 6)"
-	BCYAN="${RST}$(tput bold)$(tput setaf 6)"
-	ICYAN="${RST}$(tput sitm)$(tput setaf 6)"
-else
-	RED=""
-	BRED=""
-	GREEN=""
-	YELLOW=""
-	BYELLOW=""
-	BLUE=""
-	CYAN=""
-	BCYAN=""
-	ICYAN=""
-	RST=""
-fi
+# # clours (ncurses)
+# if [ -n "$(command -v tput)" ] && [ "$(tput colors)" -ge 8 ]; then
+# 	RST="$(tput sgr0)"
+# 	RED="${RST}$(tput setaf 1)"
+# 	BRED="${RST}$(tput bold)$(tput setaf 1)"
+# 	GREEN="${RST}$(tput setaf 2)"
+# 	YELLOW="${RST}$(tput setaf 3)"
+# 	BYELLOW="${RST}$(tput bold)$(tput setaf 3)"
+# 	BLUE="${RST}$(tput setaf 4)"
+# 	CYAN="${RST}$(tput setaf 6)"
+# 	BCYAN="${RST}$(tput bold)$(tput setaf 6)"
+# 	ICYAN="${RST}$(tput sitm)$(tput setaf 6)"
+# else
+# 	RED=""
+# 	BRED=""
+# 	GREEN=""
+# 	YELLOW=""
+# 	BYELLOW=""
+# 	BLUE=""
+# 	CYAN=""
+# 	BCYAN=""
+# 	ICYAN=""
+# 	RST=""
+# fi
 
-function require_root()
-{
-    if [ "$(id -u)" != 0 ]; then
-        msg "[${RED} FAILED ${RST}] This has done as root user.."
-        exit 1
-    fi
-}
+# function require_root()
+# {
+#     if [ "$(id -u)" != 0 ]; then
+#         msg "[${RED} FAILED ${RST}] This has done as root user.."
+#         exit 1
+#     fi
+# }
 
-function msg()
-{
-    echo -e "$@" >&2
-}
+# function msg()
+# {
+#     echo -e "$@" >&2
+# }
 
-function __check_for_termux()
-{
-    if [[ "$(pwd)" == /data/data/com.termux/* ]]; then
-        return 0
-    else
-        return 1
-    fi
-}
+# function __check_for_termux()
+# {
+#     if [[ "$(pwd)" == /data/data/com.termux/* ]]; then
+#         return 0
+#     else
+#         return 1
+#     fi
+# }
 
-########################
+# ########################
 
-# function cmd_backup()
+# # function cmd_backup()
+# # {
+# #     :
+# # }
+# # function cmd_purge()
+# # {
+# #     :
+# # }
+# # function cmd_install()
+# # {
+# #     :
+# # }
+
+# ######################
+
+# function set_dbus()
+# {
+#     if [ $# -ge 1 ]; then
+#         case "$1" in
+#         --enable)
+#             mkdir -pv ${CONFIG_DIR} >> /dev/null
+#             touch ${CONFIG_DIR}/dbus-enable.lock
+#             ;;
+#         --disable)
+#             if [ -f ${TERMUX_ETC}/ubuntu-on-android/dbus-enable.lock ]; then
+#                 rm -f ${TERMUX_ETC}/ubuntu-on-android.dbus-enable.lock
+#             fi
+#             ;;
+#         esac
+#     fi
+#     msg "Done"
+# }
+
+# function upgrade()
+# {
+#     if ! [ -d fs-manager-hippo ]; then
+#     git clone https://github.com/RandomCoderOrg/fs-manager-hippo
+#     else
+#         cur=$(pwd)
+#         cd fs-manager-hippo || exit
+#         git fetch origin
+#         cd "${cur}" || exit 1
+#     fi
+
+# }
+
+# function quick_install()
+# {
+#     if ! __check_for_termux; then
+#         msg "This has to done on termux environment......"
+#         exit 3
+#     else
+#         apt update; apt upgrade -y
+#         __check_for git
+#         cur_dir="$(pwd)"
+#         if ! [ -d $CONFIG_DIR ]; then
+#             mkdir -pv $CONFIG_DIR >> /dev/null
+#         fi
+#         cd $CONFIG_DIR || exit 1
+
+#         if ! [ -d ubuntu-on-android ]; then
+#             git clone -b "${branch}"  https://github.com/RandomCoderOrg/ubuntu-on-android
+#         else
+#             cur=$(pwd)
+#             cd "${CONFIG_DIR}"/ubuntu-on-android || exit
+#             git fetch origin
+#         fi
+#             cd "${CONFIG_DIR}"/ubuntu-on-android || exit 1
+#             msg "Reached Final stage"
+#             bash install.sh --fs-mgr
+#         cd "$cur" || exit 1
+#     fi
+# }
+
+
+# ##################
+
+# function __check_for_hippo()
 # {
 #     :
 # }
-# function cmd_purge()
+
+# function __check_for()
 # {
-#     :
-# }
-# function cmd_install()
-# {
-#     :
-# }
-
-######################
-
-function set_dbus()
-{
-    if [ $# -ge 1 ]; then
-        case "$1" in
-        --enable)
-            mkdir -pv ${CONFIG_DIR} >> /dev/null
-            touch ${CONFIG_DIR}/dbus-enable.lock
-            ;;
-        --disable)
-            if [ -f ${TERMUX_ETC}/ubuntu-on-android/dbus-enable.lock ]; then
-                rm -f ${TERMUX_ETC}/ubuntu-on-android.dbus-enable.lock
-            fi
-            ;;
-        esac
-    fi
-    msg "Done"
-}
-
-function upgrade()
-{
-    if ! [ -d fs-manager-hippo ]; then
-    git clone https://github.com/RandomCoderOrg/fs-manager-hippo
-    else
-        cur=$(pwd)
-        cd fs-manager-hippo || exit
-        git fetch origin
-        cd "${cur}" || exit 1
-    fi
-
-}
-
-function quick_install()
-{
-    if ! __check_for_termux; then
-        msg "This has to done on termux environment......"
-        exit 3
-    else
-        apt update; apt upgrade -y
-        __check_for git
-        cur_dir="$(pwd)"
-        if ! [ -d $CONFIG_DIR ]; then
-            mkdir -pv $CONFIG_DIR >> /dev/null
-        fi
-        cd $CONFIG_DIR || exit 1
-
-        if ! [ -d ubuntu-on-android ]; then
-            git clone -b "${branch}"  https://github.com/RandomCoderOrg/ubuntu-on-android
-        else
-            cur=$(pwd)
-            cd "${CONFIG_DIR}"/ubuntu-on-android || exit
-            git fetch origin
-        fi
-            cd "${CONFIG_DIR}"/ubuntu-on-android || exit 1
-            msg "Reached Final stage"
-            bash install.sh --fs-mgr
-        cd "$cur" || exit 1
-    fi
-}
-
-
-##################
-
-function __check_for_hippo()
-{
-    :
-}
-
-function __check_for()
-{
-    in_cache=( "$@" )
-    if [ $# -ge 1 ]; then
-        for i in "$@"; do
-            if ! command -v "${in_cache[@]}" >> /dev/null ; then
-                    msg "[${GREEN} Executing ${RST}] sudo apt install -y $i"
-                    apt install -y "$i" || {
-                        ((x=x+1))
-                    }
-            fi
-        done
+#     in_cache=( "$@" )
+#     if [ $# -ge 1 ]; then
+#         for i in "$@"; do
+#             if ! command -v "${in_cache[@]}" >> /dev/null ; then
+#                     msg "[${GREEN} Executing ${RST}] sudo apt install -y $i"
+#                     apt install -y "$i" || {
+#                         ((x=x+1))
+#                     }
+#             fi
+#         done
         
-        if ((x >= 1)); then
-            return 1
-        else
-            return 0
-        fi
+#         if ((x >= 1)); then
+#             return 1
+#         else
+#             return 0
+#         fi
         
-    fi
-}
+#     fi
+# }
 
-function make_wait()
-{
-    msg "Coming soon..."
-}
+# function make_wait()
+# {
+#     msg "Coming soon..."
+# }
 
-function cmd_help()
-{
-    if [ -n "${VERSION}" ]; then
-        msg "fs-manager v${VERSION}"
-    fi
-    msg "Usage: ${0} [options]"
-    msg
-    msg "   Options:"
-    msg "       --install          To Quick install hippo(ubuntu-on-android)"
-    msg "       --backup           To backup hippo carefully (comming soon)"
-    msg "       --help             To Display this message"
-    msg "       --enable-dbus      To enable dbus in hippo"
-    msg "       --disable-dbus     To disable dbus in hippo"
-    msg "       --upgrade-sources  to upgrade local ubuntu-on-android sources and cd to it"
-}
+# function cmd_help()
+# {
+#     if [ -n "${VERSION}" ]; then
+#         msg "fs-manager v${VERSION}"
+#     fi
+#     msg "Usage: ${0} [options]"
+#     msg
+#     msg "   Options:"
+#     msg "       --install          To Quick install hippo(ubuntu-on-android)"
+#     msg "       --backup           To backup hippo carefully (comming soon)"
+#     msg "       --help             To Display this message"
+#     msg "       --enable-dbus      To enable dbus in hippo"
+#     msg "       --disable-dbus     To disable dbus in hippo"
+#     msg "       --upgrade-sources  to upgrade local ubuntu-on-android sources and cd to it"
+# }
 
-trap 'echo -e "\\r[${GREEN} Done ${RST}] Exiting immediately as requested."; exit 1;' HUP INT TERM
+# trap 'echo -e "\\r[${GREEN} Done ${RST}] Exiting immediately as requested."; exit 1;' HUP INT TERM
 
-if [ $# -ge 1 ]; then
-    case $1 in
-    --install)         shift 1; quick_install;;
-    --backup|backup)   shift 1; make_wait;;
-    --help|-h)         shift 1; cmd_help;;
-    --enable-dbus)     shift 1; set_dbus --enable;;
-    --disable-dbus)    shift 1; set_dbus --disable;;
-    --upgrade-sources) shift 1; upgrade;;
-    esac
-fi
+# if [ $# -ge 1 ]; then
+#     case $1 in
+#     --install)         shift 1; quick_install;;
+#     --backup|backup)   shift 1; make_wait;;
+#     --help|-h)         shift 1; cmd_help;;
+#     --enable-dbus)     shift 1; set_dbus --enable;;
+#     --disable-dbus)    shift 1; set_dbus --disable;;
+#     --upgrade-sources) shift 1; upgrade;;
+#     esac
+# fi
