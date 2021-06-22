@@ -114,7 +114,6 @@ if [ $# -eq 0 ]; then
     case "$1" in
         upgrade) __upgrade;;
         *) _lauch_or_install;;
-
         # startvnc)
         # if __check_for_hippo; then
         #     proot-distro launch hippo -- startvnc
