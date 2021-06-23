@@ -5,7 +5,7 @@ version=0
 TPREFIX="/data/data/com.termux/files"
 
 SCRIPT_DIR="${TPREFIX}/usr/etc/proot-distro/"
-INSTALL_FOLDER="${TPREFIX}/usr/varlib/proot-distro/installed-rootfs"
+INSTALL_FOLDER="${TPREFIX}/usr/var/lib/proot-distro/installed-rootfs"
 
 HIPPO_DIR="${INSTALL_FOLDER}/hippo"
 HIPPO_SCRIPT_FILE="${SCRIPT_DIR}/hippo.sh"
