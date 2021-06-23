@@ -18,11 +18,11 @@ else
 fi
 
 if [ -f /tmp/.X11-unix/X${port} ]; then
-    vnc=true
+    vnc=1
 elif [ -f /tmp/.X${port}-lock ]; then
-    vnc=true
+    vnc=1
 else
-    vnc=false
+    vnc=0
 fi
 
 
@@ -30,5 +30,5 @@ if ! $vnc; then
     vncserver -xstartup "${DEFAULT_XSTARTUP}" -desktop "Hippo Default VNC" :${port}
 else
     echo "A vncserver lock is found for port ${port}"
-    echo "Use \e[1;32mhippo stoptvnc\e[0m or \e[1;32mstopvnc\e[0m to stop it and try again..."
+    echo -e "Use \e[1;32mhippo stoptvnc\e[0m or \e[1;32mstopvnc\e[0m to stop it and try again..."
 fi

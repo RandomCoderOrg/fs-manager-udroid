@@ -20,8 +20,10 @@ vncserver --kill :${port} >> /dev/null
 
 if [ -f /tmp/.X11-unix/X${port} ]; then
     echo "cleaning lock files..."
+    rm -rf /tmp/.X11-unix/X${port}
 elif [ -f /tmp/.X${port}-lock ]; then
     echo "cleaning lock files..."
+    /tmp/.X${port}-lock
 fi
 
 echo "Cleaning pid,log files at ~/.vnc ..."

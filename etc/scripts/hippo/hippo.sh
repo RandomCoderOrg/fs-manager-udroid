@@ -90,7 +90,7 @@ function _lauch_or_install()
     if ! __check_for_plugin; then
         echo -e "Plugin at ${HIPPO_SCRIPT_FILE} is missing ......"
         echo -e "May be this not a correct installation...."
-        echo -e "Try to notice us a \e[34m${SOCIAL_PLATFORM}\e[0m"
+        echo -e "Try to notice us at \e[34m${SOCIAL_PLATFORM}\e[0m"
         exit 1
     else
         if ! __check_for_filesystem; then
@@ -102,10 +102,10 @@ function _lauch_or_install()
                 clear
                 echo -e "Now You can launch your ubuntu 21.04 with command \e[1;32mhippo\e[0m"
                 # echo -e "use hippo --help for more option and comming up features"
-            else
-                echo -e "Launching".....
-                proot-distro login hippo
             fi
+        else
+            echo -e "Launching".....
+            proot-distro login hippo
         fi
     fi
 }
@@ -113,24 +113,24 @@ function _lauch_or_install()
 if [ $# -eq 0 ]; then
     case "$1" in
         upgrade) __upgrade;;
+        startvnc)
+        if __check_for_hippo; then
+            proot-distro launch hippo -- startvnc
+        else
+            echo -e "This command is supposed to run after installing hippo"
+            # echo -e "Use \e[1;32mhippo --install\e[0m install"
+            echo -e "\e[32mError:\e[0m Hippo not found"
+        fi
+        ;;
+        stoptvnc)
+        if __check_for_hippo; then
+            proot-distro launch hippo -- stoptvnc
+        else
+            echo -e "This command is supposed to run after installing hippo"
+            # echo -e "Use \e[1;32mhippo --install\e[0m install"
+            echo -e "\e[32mError:\e[0m Hippo not found"
+        fi
+        ;;
         *) _lauch_or_install;;
-        # startvnc)
-        # if __check_for_hippo; then
-        #     proot-distro launch hippo -- startvnc
-        # else
-        #     echo -e "This command is supposed to run after installing hippo"
-        #     # echo -e "Use \e[1;32mhippo --install\e[0m install"
-        #     echo -e "\e[32mError:\e[0m Hippo not found"
-        # fi
-        # ;;
-        # stoptvnc)
-        # if __check_for_hippo; then
-        #     proot-distro launch hippo -- stoptvnc
-        # else
-        #     echo -e "This command is supposed to run after installing hippo"
-        #     # echo -e "Use \e[1;32mhippo --install\e[0m install"
-        #     echo -e "\e[32mError:\e[0m Hippo not found"
-        # fi
-        # ;;
     esac
 fi
