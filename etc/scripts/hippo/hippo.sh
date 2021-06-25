@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
-version=0
+version=1
 
 CACHE_ROOT="${HOME}/.uoa-cache-root"
 TPREFIX="/data/data/com.termux/files"
 
-SCRIPT_DIR="${TPREFIX}/usr/etc/proot-distro/"
+SCRIPT_DIR="${TPREFIX}/usr/etc/proot-distro"
 INSTALL_FOLDER="${TPREFIX}/usr/var/lib/proot-distro/installed-rootfs"
 
 HIPPO_DIR="${INSTALL_FOLDER}/hippo"
@@ -46,10 +46,11 @@ function __check_for_filesystem() {
 function __upgrade() {
     # setup downloader
     if ! command -v axel >> /dev/null; then
-        apt install axel
+        apt install axel -y
     fi
+
     mkdir -p "${CACHE_ROOT}"
-    axel -o "${CACHE_ROOT}"/version https://raw.githubusercontent.com/RandomCoderOrg/fs-manager-hippo/main/version || {
+    axel -o "${CACHE_ROOT}"/version https://raw.githubusercontent.com/RandomCoderOrg/fs-manager-hippo/main/version >> /dev/null || {
         echo "Error"; exit 1
     }
 
@@ -58,11 +59,13 @@ function __upgrade() {
     rm -rf "${CACHE_ROOT}"
 
     if [ "$origin_version" -gt "$version" ]; then
-        echo "upgrdae avalibe to \e[1;32${origin_version}\e[0m"
+        echo -e "upgrdae avalibe to \e[1;32mV${origin_version}\e[0m"
     elif [ "$origin_version" -eq "$version" ]; then
-        echo "You are on latest version \e[1;32${origin_version}\e[0m]]"
+        echo -e "You are on latest version \e[1;32mV${origin_version}\e[0m"
+        exit 0
     else
         echo "Upgrader hit unexpected condition..."
+        exit 1
     fi
 
     if start_upgrade; then
@@ -77,7 +80,7 @@ function __upgrade() {
 
 function start_upgrade() {
     mkdir -p "${CACHE_ROOT}"
-    axel -o "${CACHE_ROOT}"/upgrade.sh https://raw.githubusercontent.com/RandomCoderOrg/fs-manager-hippo/main/etc/scripts/upgrade_patch/upgrade.sh || {
+    axel -o "${CACHE_ROOT}"/upgrade.sh https://raw.githubusercontent.com/RandomCoderOrg/fs-manager-hippo/main/etc/scripts/upgrade_patch/upgrade.sh >> /dev/null || {
         echo "Error"; exit 1
     }
     bash -x upgrade.sh || {
@@ -138,7 +141,7 @@ function __help()
     echo -e "Join the community and leave at DISCORD -> $SOCIAL_PLATFORM"
 }
 
-if [ $# -eq 0 ]; then
+if [ $# -ge 1 ]; then
     case "$1" in
         upgrade) __upgrade;;
         --enable-dbus) shift 1; _lauch_or_install --bind /dev/null:/proc/sys/kernel/cap_last_cap ;;
