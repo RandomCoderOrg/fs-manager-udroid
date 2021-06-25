@@ -152,7 +152,7 @@ if [ $# -ge 1 ]; then
         --help) __help;;
         startvnc)
         if __check_for_hippo; then
-            proot-distro launch hippo -- startvnc
+            proot-distro login hippo -- startvnc
         else
             echo -e "This command is supposed to run after installing hippo"
             # echo -e "Use \e[1;32mhippo --install\e[0m install"
@@ -161,7 +161,7 @@ if [ $# -ge 1 ]; then
         ;;
         stoptvnc)
         if __check_for_hippo; then
-            proot-distro launch hippo -- stoptvnc
+            proot-distro login hippo -- stoptvnc
         else
             echo -e "This command is supposed to run after installing hippo"
             # echo -e "Use \e[1;32mhippo --install\e[0m install"
@@ -170,4 +170,6 @@ if [ $# -ge 1 ]; then
         ;;
         *) _lauch_or_install;;
     esac
+else
+    _lauch_or_install
 fi
