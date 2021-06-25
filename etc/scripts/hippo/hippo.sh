@@ -164,8 +164,8 @@ if [ $# -ge 1 ]; then
         upgrade) __upgrade;;
         --force-upgrade) __force_uprade_hippo;;
         --enable-dbus) shift 1; _lauch_or_install --bind /dev/null:/proc/sys/kernel/cap_last_cap ;;
-        "--enable-dbus startvnc") shift 1; _lauch_or_install --bind /dev/null:/proc/sys/kernel/cap_last_cap -- startvnc ;;
-        "--enable-dbus stopvnc") shift 1; _lauch_or_install --bind /dev/null:/proc/sys/kernel/cap_last_cap -- stopvnc ;;
+        "--enable-dbus-startvnc") shift 1; _lauch_or_install --bind /dev/null:/proc/sys/kernel/cap_last_cap -- startvnc ;;
+        "--enable-dbus-stopvnc") shift 1; _lauch_or_install --bind /dev/null:/proc/sys/kernel/cap_last_cap -- stopvnc ;;
         --install) _lauch_or_install;;
         --help) __help;;
         startvnc)
