@@ -2,6 +2,7 @@
 
 version=1
 
+
 CACHE_ROOT="${HOME}/.uoa-cache-root"
 TPREFIX="/data/data/com.termux/files"
 
@@ -108,6 +109,9 @@ function _lauch_or_install()
                 # echo -e "use hippo --help for more option and comming up features"
             fi
         else
+            #@GxmerSam Sam Alarie
+            pulseaudio --start --load="module-native-protocol-tcp auth-ip-acl=127.0.0.1 auth-anonymous=1" --exit-idle-time=-1 >> /dev/null
+
             if [ -f "{CACHE_ROOT}"/ubuntu-on-android/etc/scripts/vncserver/startvnc.sh ] && [ ! -f ${HIPPO_DIR}/bin/startvnc ]; then
                 DIR="{CACHE_ROOT}/ubuntu-on-android/etc/scripts/vncserver/startvnc.sh"
                 cp ${DIR} ${HIPPO_DIR}/bin/startvnc
