@@ -101,9 +101,9 @@ function _lauch_or_install()
     if ! __check_for_filesystem; then
         echo -e "Installing hippo..........."
         if proot-distro install hippo; then
-            echo -e "Installation Done......\a"
+            echo -e "Installation Done......\a\a"
             echo "Waiting..."
-            sleep 2
+            sleep 4
             clear
             echo -e "Now You can launch your ubuntu 21.04 with command \e[1;32mhippo\e[0m"
             # echo -e "use hippo --help for more option and comming up features"
@@ -126,6 +126,21 @@ function _lauch_or_install()
     fi
 }
 
+function __force_uprade_hippo()
+{
+    if [ ! -d "$CACHE_ROOT" ]; then
+        mkdir "$CACHE_ROOT"
+    fi
+
+    FSM_URL="https://github.com/RandomCoderOrg/fs-manager-hippo"
+    git clone ${FSM_URL} "${CACHE_ROOT}/fs-manager-hippo" || die "failed to clone repo"
+
+    if [ -f "${CACHE_ROOT}"/fs-manager-hippo/install.sh ]; then
+        cd "${CACHE_ROOT}"/fs-manager-hippo || die "failed to cd ..."
+        bash install.sh || die "failed to install manager..."
+    fi
+}
+
 function __help()
 {
     echo -e "hippo - termux Version ${version}"
@@ -134,17 +149,20 @@ function __help()
     echo -e "Usage ${0} [options]"
     echo -e 
     echo -e "Options:"
+    echo -e "\e[1;34m"
     echo -e "--install      To try installing hippo"
     echo -e "--help         to display this message"
     echo -e "--enable-dbus  To start terminal session with dbus enabled"
     echo -e "startvnc       To start hippo vncserver"
     echo -e "stopvnc        To stop hippo vncserver"
     echo -e "Join the community and leave at DISCORD -> $SOCIAL_PLATFORM"
+    echo -e "\e[0m"
 }
 
 if [ $# -ge 1 ]; then
     case "$1" in
         upgrade) __upgrade;;
+        --force-upgrade) __force_uprade_hippo;;
         --enable-dbus) shift 1; _lauch_or_install --bind /dev/null:/proc/sys/kernel/cap_last_cap ;;
         "--enable-dbus startvnc") shift 1; _lauch_or_install --bind /dev/null:/proc/sys/kernel/cap_last_cap -- startvnc ;;
         "--enable-dbus stopvnc") shift 1; _lauch_or_install --bind /dev/null:/proc/sys/kernel/cap_last_cap -- stopvnc ;;
