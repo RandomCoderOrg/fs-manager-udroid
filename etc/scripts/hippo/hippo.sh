@@ -97,35 +97,32 @@ function _lauch_or_install()
         echo -e "May be this not a correct installation...."
         echo -e "Try to notice us at \e[34m${SOCIAL_PLATFORM}\e[0m"
         exit 1
-    else
-        if ! __check_for_filesystem; then
-            echo -e "Installing hippo..........."
-            if proot-distro install hippo; then
-                echo -e "Installation Done......\a"
-                echo "Waiting..."
-                sleep 2
-                clear
-                echo -e "Now You can launch your ubuntu 21.04 with command \e[1;32mhippo\e[0m"
-                # echo -e "use hippo --help for more option and comming up features"
-            fi
-        else
-            #@GxmerSam Sam Alarie
-            pulseaudio --start --load="module-native-protocol-tcp auth-ip-acl=127.0.0.1 auth-anonymous=1" --exit-idle-time=-1 >> /dev/null
-
-            if [ -f "{CACHE_ROOT}"/ubuntu-on-android/etc/scripts/vncserver/startvnc.sh ] && [ ! -f ${HIPPO_DIR}/bin/startvnc ]; then
-                DIR="{CACHE_ROOT}/ubuntu-on-android/etc/scripts/vncserver/startvnc.sh"
-                cp ${DIR} ${HIPPO_DIR}/bin/startvnc
-                proot-distro login hippo -- chmod 775 /bin/startvnc
-            fi
-
-            if [ -f "{CACHE_ROOT}"/ubuntu-on-android/etc/scripts/vncserver/stopvnc.sh ] && [ ! -f ${HIPPO_DIR}/bin/stopvnc ]; then
-                DIR="${CACHE_ROOT}/ubuntu-on-android/etc/scripts/vncserver/stopvnc.sh"
-                cp "${DIR}" ${HIPPO_DIR}/bin/stopvnc
-                proot-distro login hippo -- chmod 775 /bin/stopvnc
-            fi
-            
-            proot-distro login hippo "$@"
+    fi
+    if ! __check_for_filesystem; then
+        echo -e "Installing hippo..........."
+        if proot-distro install hippo; then
+            echo -e "Installation Done......\a"
+            echo "Waiting..."
+            sleep 2
+            clear
+            echo -e "Now You can launch your ubuntu 21.04 with command \e[1;32mhippo\e[0m"
+            # echo -e "use hippo --help for more option and comming up features"
         fi
+    else
+        #@GxmerSam Sam Alarie
+        pulseaudio --start --load="module-native-protocol-tcp auth-ip-acl=127.0.0.1 auth-anonymous=1" --exit-idle-time=-1 >> /dev/null
+        if [ -f "{CACHE_ROOT}"/ubuntu-on-android/etc/scripts/vncserver/startvnc.sh ] && [ ! -f ${HIPPO_DIR}/bin/startvnc ]; then
+            DIR="{CACHE_ROOT}/ubuntu-on-android/etc/scripts/vncserver/startvnc.sh"
+            cp ${DIR} ${HIPPO_DIR}/bin/startvnc
+            proot-distro login hippo -- chmod 775 /bin/startvnc
+        fi
+        if [ -f "{CACHE_ROOT}"/ubuntu-on-android/etc/scripts/vncserver/stopvnc.sh ] && [ ! -f ${HIPPO_DIR}/bin/stopvnc ]; then
+            DIR="${CACHE_ROOT}/ubuntu-on-android/etc/scripts/vncserver/stopvnc.sh"
+            cp "${DIR}" ${HIPPO_DIR}/bin/stopvnc
+            proot-distro login hippo -- chmod 775 /bin/stopvnc
+        fi
+        
+        proot-distro login hippo "$@"
     fi
 }
 
