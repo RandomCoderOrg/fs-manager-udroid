@@ -2,6 +2,7 @@
 
 version=0
 
+CACHE_ROOT="${HOME}/.uoa-cache-root"
 TPREFIX="/data/data/com.termux/files"
 
 SCRIPT_DIR="${TPREFIX}/usr/etc/proot-distro/"
@@ -47,14 +48,14 @@ function __upgrade() {
     if ! command -v axel >> /dev/null; then
         apt install axel
     fi
-    mkdir -p .1x1tmp
-    axel -o .1x1tmp/version https://raw.githubusercontent.com/RandomCoderOrg/fs-manager-hippo/main/version || {
+    mkdir -p "${CACHE_ROOT}"
+    axel -o "${CACHE_ROOT}"/version https://raw.githubusercontent.com/RandomCoderOrg/fs-manager-hippo/main/version || {
         echo "Error"; exit 1
     }
 
-    origin_version=$(cat .1x1tmp/version)
+    origin_version=$(cat "${CACHE_ROOT}"/version)
 
-    rm -rf .1x1tmp
+    rm -rf "${CACHE_ROOT}"
 
     if [ "$origin_version" -gt "$version" ]; then
         echo "upgrdae avalibe to \e[1;32${origin_version}\e[0m"
@@ -65,8 +66,8 @@ function __upgrade() {
     fi
 
     if start_upgrade; then
-        bash -x .1x1tmp/upgrade --summary
-        rm -rf .1x1tmp
+        bash -x "${CACHE_ROOT}"/upgrade --summary
+        rm -rf "${CACHE_ROOT}"
     else
         echo "Error"
     fi
@@ -75,8 +76,8 @@ function __upgrade() {
 }
 
 function start_upgrade() {
-    mkdir -p .1x1tmp
-    axel -o .1x1tmp/upgrade.sh https://raw.githubusercontent.com/RandomCoderOrg/fs-manager-hippo/main/etc/scripts/upgrade_patch/upgrade.sh || {
+    mkdir -p "${CACHE_ROOT}"
+    axel -o "${CACHE_ROOT}"/upgrade.sh https://raw.githubusercontent.com/RandomCoderOrg/fs-manager-hippo/main/etc/scripts/upgrade_patch/upgrade.sh || {
         echo "Error"; exit 1
     }
     bash -x upgrade.sh || {
@@ -104,15 +105,47 @@ function _lauch_or_install()
                 # echo -e "use hippo --help for more option and comming up features"
             fi
         else
-            echo -e "Launching".....
-            proot-distro login hippo
+            if [ -f "{CACHE_ROOT}"/ubuntu-on-android/etc/scripts/vncserver/startvnc.sh ] && [ ! -f ${HIPPO_DIR}/bin/startvnc ]; then
+                DIR="{CACHE_ROOT}/ubuntu-on-android/etc/scripts/vncserver/startvnc.sh"
+                cp ${DIR} ${HIPPO_DIR}/bin/startvnc
+                proot-distro login hippo -- chmod 775 /bin/startvnc
+            fi
+
+            if [ -f "{CACHE_ROOT}"/ubuntu-on-android/etc/scripts/vncserver/stopvnc.sh ] && [ ! -f ${HIPPO_DIR}/bin/stopvnc ]; then
+                DIR="${CACHE_ROOT}/ubuntu-on-android/etc/scripts/vncserver/stopvnc.sh"
+                cp "${DIR}" ${HIPPO_DIR}/bin/stopvnc
+                proot-distro login hippo -- chmod 775 /bin/stopvnc
+            fi
+            
+            proot-distro login hippo "$@"
         fi
     fi
+}
+
+function __help()
+{
+    echo -e "hippo - termux Version ${version}"
+    echo -e "A bash script to make basic action(login, vncserver) easier for ubuntu-on-android project"
+    echo -e 
+    echo -e "Usage ${0} [options]"
+    echo -e 
+    echo -e "Options:"
+    echo -e "--install      To try installing hippo"
+    echo -e "--help         to display this message"
+    echo -e "--enable-dbus  To start terminal session with dbus enabled"
+    echo -e "startvnc       To start hippo vncserver"
+    echo -e "stopvnc        To stop hippo vncserver"
+    echo -e "Join the community and leave at DISCORD -> $SOCIAL_PLATFORM"
 }
 
 if [ $# -eq 0 ]; then
     case "$1" in
         upgrade) __upgrade;;
+        --enable-dbus) shift 1; _lauch_or_install --bind /dev/null:/proc/sys/kernel/cap_last_cap ;;
+        "--enable-dbus startvnc") shift 1; _lauch_or_install --bind /dev/null:/proc/sys/kernel/cap_last_cap -- startvnc ;;
+        "--enable-dbus stopvnc") shift 1; _lauch_or_install --bind /dev/null:/proc/sys/kernel/cap_last_cap -- stopvnc ;;
+        --install) _lauch_or_install;;
+        --help) __help;;
         startvnc)
         if __check_for_hippo; then
             proot-distro launch hippo -- startvnc
