@@ -1,5 +1,5 @@
 #!/bin/bash
 unset SESSION_MANAGER
-unset DBUS_SESSION_BUS_ADRESS
+unset DBUS_SESSION_BUS_ADDRESS
 export PULSE_SERVER=127.0.0.1
 exec startxfce4

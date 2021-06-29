@@ -90,42 +90,7 @@ function start_upgrade() {
     return 0
 }
 
-function _lauch_or_install()
-{
-    if ! __check_for_plugin; then
-        echo -e "Plugin at ${HIPPO_SCRIPT_FILE} is missing ......"
-        echo -e "May be this not a correct installation...."
-        echo -e "Try to notice us at \e[34m${SOCIAL_PLATFORM}\e[0m"
-        exit 1
-    fi
-    if ! __check_for_filesystem; then
-        echo -e "Installing hippo..........."
-        if proot-distro install hippo; then
-            echo -e "Installation Done......\a\a"
-            echo "Waiting..."
-            sleep 4
-            clear
-            echo -e "Now You can launch your ubuntu 21.04 with command \e[1;32mhippo\e[0m"
-            # echo -e "use hippo --help for more option and comming up features"
-        fi
-    else
-        #######################################################################################################
-        # Thanks to @GxmerSam Sam Alarie, @mizzunet, @Andre-cmd-rgb for the issues randome ideas and suggestion
-        pulseaudio --start --load="module-native-protocol-tcp auth-ip-acl=127.0.0.1 auth-anonymous=1" --exit-idle-time=-1 >> /dev/null
-        if [ -f "{CACHE_ROOT}"/ubuntu-on-android/etc/scripts/vncserver/startvnc.sh ] && [ ! -f ${HIPPO_DIR}/bin/startvnc ]; then
-            DIR="{CACHE_ROOT}/ubuntu-on-android/etc/scripts/vncserver/startvnc.sh"
-            cp ${DIR} ${HIPPO_DIR}/bin/startvnc
-            proot-distro login hippo -- chmod 775 /bin/startvnc
-        fi
-        if [ -f "{CACHE_ROOT}"/ubuntu-on-android/etc/scripts/vncserver/stopvnc.sh ] && [ ! -f ${HIPPO_DIR}/bin/stopvnc ]; then
-            DIR="${CACHE_ROOT}/ubuntu-on-android/etc/scripts/vncserver/stopvnc.sh"
-            cp "${DIR}" ${HIPPO_DIR}/bin/stopvnc
-            proot-distro login hippo -- chmod 775 /bin/stopvnc
-        fi
-        
-        proot-distro login hippo "$@"
-    fi
-}
+
 
 function __force_uprade_hippo()
 {
@@ -156,19 +121,63 @@ function __help()
     echo -e "--enable-dbus  To start terminal session with dbus enabled"
     echo -e "startvnc       To start hippo vncserver"
     echo -e "stopvnc        To stop hippo vncserver"
+    echo -e "------------------"
+    # SOCIAL_MEDIA link goes here
     echo -e "Join the community and leave at DISCORD -> $SOCIAL_PLATFORM"
+    echo -e "------------------"
     echo -e "\e[0m"
+}
+
+function _lauch_or_install()
+{
+    if ! __check_for_plugin; then
+        echo -e "Plugin at ${HIPPO_SCRIPT_FILE} is missing ......"
+        echo -e "May be this not a correct installation...."
+        echo -e "Try to notice us at \e[34m${SOCIAL_PLATFORM}\e[0m"
+        exit 1
+    fi
+    if ! __check_for_filesystem; then
+        echo -e "Installing hippo..........."
+        if proot-distro install hippo; then
+            echo -e "Installation Done......\a\a"
+            echo "Waiting..."
+            sleep 4
+            clear
+            echo -e "Now You can launch your ubuntu 21.04 with command \e[1;32mhippo\e[0m"
+            # echo -e "use hippo --help for more option and comming up features"
+        fi
+    else
+        #######################################################################################################
+        # Thanks to @GxmerSam Sam Alarie, @mizzunet, @Andre-cmd-rgb for the issues randome ideas and suggestion
+
+
+        pulseaudio --start --load="module-native-protocol-tcp auth-ip-acl=127.0.0.1 auth-anonymous=1" --exit-idle-time=-1 >> /dev/null
+        if [ -f "{CACHE_ROOT}"/ubuntu-on-android/etc/scripts/vncserver/startvnc.sh ] && [ ! -f ${HIPPO_DIR}/bin/startvnc ]; then
+            DIR="{CACHE_ROOT}/ubuntu-on-android/etc/scripts/vncserver/startvnc.sh"
+            cp ${DIR} ${HIPPO_DIR}/bin/startvnc
+            proot-distro login hippo -- chmod 775 /bin/startvnc
+        fi
+        if [ -f "{CACHE_ROOT}"/ubuntu-on-android/etc/scripts/vncserver/stopvnc.sh ] && [ ! -f ${HIPPO_DIR}/bin/stopvnc ]; then
+            DIR="${CACHE_ROOT}/ubuntu-on-android/etc/scripts/vncserver/stopvnc.sh"
+            cp "${DIR}" ${HIPPO_DIR}/bin/stopvnc
+            proot-distro login hippo -- chmod 775 /bin/stopvnc
+        fi
+        
+        proot-distro login hippo "$@"
+    fi
 }
 
 if [ $# -ge 1 ]; then
     case "$1" in
         upgrade) __upgrade;;
+        
         --force-upgrade) __force_uprade_hippo;;
         --enable-dbus) shift 1; _lauch_or_install --bind /dev/null:/proc/sys/kernel/cap_last_cap ;;
         "--enable-dbus-startvnc") shift 1; _lauch_or_install --bind /dev/null:/proc/sys/kernel/cap_last_cap -- startvnc ;;
         "--enable-dbus-stopvnc") shift 1; _lauch_or_install --bind /dev/null:/proc/sys/kernel/cap_last_cap -- stopvnc ;;
         --install) _lauch_or_install;;
         --help) __help;;
+
         startvnc)
         if __check_for_hippo; then
             proot-distro login hippo -- startvnc
@@ -178,6 +187,7 @@ if [ $# -ge 1 ]; then
             echo -e "\e[32mError:\e[0m Hippo not found"
         fi
         ;;
+        
         stoptvnc)
         if __check_for_hippo; then
             proot-distro login hippo -- stoptvnc
