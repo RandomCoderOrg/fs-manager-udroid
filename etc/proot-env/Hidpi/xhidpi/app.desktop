@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=Hippo XHiDPI Mode
+Exec=hippo-xhidpi-mode
+Terminal=false
+Type=Application
+Icon=/usr/share/hippo/xhidpi-logo.png
+OnlyShowIn=XFCE
+Keyboards=display;screen;hidpi;hippo;

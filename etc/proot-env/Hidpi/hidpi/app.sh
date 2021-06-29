@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-## Inspired from Kali
-
 SETTINGS_DIR=~/.config/hippo-HiDPI/
 DESKTOP="$XDG_CURRENT_DESKTOP"
 
@@ -30,7 +28,7 @@ EOF
 
     case "$DESKTOP" in
         XFCE)
-            xfconf-query -c xfwm4 -p /general/theme -s WhiteSur-light-xhdpi
+            xfconf-query -c xfwm4 -p /general/theme -s WhiteSur-light-hdpi
             xfconf-query -c xsettings -p /Gdk/WindowScalingFactor -n -t 'int' -s 2
         ;;
     esac
