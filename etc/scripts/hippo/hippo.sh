@@ -12,7 +12,7 @@ INSTALL_FOLDER="${TPREFIX}/usr/var/lib/proot-distro/installed-rootfs"
 HIPPO_DIR="${INSTALL_FOLDER}/hippo"
 HIPPO_SCRIPT_FILE="${SCRIPT_DIR}/hippo.sh"
 
-SOCIAL_PLATFORM="https://discord.gg/TAqaG5sEfW"
+SOCIAL_PLATFORM="\e[1;34mhttps://discord.gg/TAqaG5sEfW\e[0m"
 
 # HIPPO_DIR = "${INSTALL_FOLDER}/${HIPPO_DEFAULT}"
 # HIPPO_SCRIPT_FILE="${SCRIPT_DIR}/hippo.sh"
@@ -109,7 +109,8 @@ function _lauch_or_install()
             # echo -e "use hippo --help for more option and comming up features"
         fi
     else
-        #@GxmerSam Sam Alarie
+        #######################################################################################################
+        # Thanks to @GxmerSam Sam Alarie, @mizzunet, @Andre-cmd-rgb for the issues randome ideas and suggestion
         pulseaudio --start --load="module-native-protocol-tcp auth-ip-acl=127.0.0.1 auth-anonymous=1" --exit-idle-time=-1 >> /dev/null
         if [ -f "{CACHE_ROOT}"/ubuntu-on-android/etc/scripts/vncserver/startvnc.sh ] && [ ! -f ${HIPPO_DIR}/bin/startvnc ]; then
             DIR="{CACHE_ROOT}/ubuntu-on-android/etc/scripts/vncserver/startvnc.sh"
@@ -186,8 +187,8 @@ if [ $# -ge 1 ]; then
             echo -e "\e[32mError:\e[0m Hippo not found"
         fi
         ;;
-        *) _lauch_or_install;;
+        *) _lauch_or_install "$@";;
     esac
 else
-    _lauch_or_install
+    _lauch_or_install "$@"
 fi
