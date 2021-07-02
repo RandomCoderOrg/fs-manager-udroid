@@ -2,6 +2,9 @@
 
 version=1
 
+if [ -n "$HIPPO_BRANCH" ]; then
+    BRANCH="$HIPPO_BRANCH"
+fi
 
 CACHE_ROOT="${HOME}/.uoa-cache-root"
 TPREFIX="/data/data/com.termux/files"
@@ -16,6 +19,11 @@ SOCIAL_PLATFORM="\e[1;34mhttps://discord.gg/TAqaG5sEfW\e[0m"
 
 # HIPPO_DIR = "${INSTALL_FOLDER}/${HIPPO_DEFAULT}"
 # HIPPO_SCRIPT_FILE="${SCRIPT_DIR}/hippo.sh"
+
+
+die   () { echo -e "${RED}Error ${*}${RST}";exit 1 ;:;}
+warn  () { echo -e "${RED}Error ${*}${RST}";:;}
+shout () { echo -e "${DS}////////";echo -e "${*}";echo -e "////////${RST}";:; }
 
 function __check_for_hippo() {
     if [ -d ${HIPPO_DIR} ] && [ -f ${HIPPO_SCRIPT_FILE} ]; then
@@ -101,7 +109,12 @@ function __force_uprade_hippo()
     fi
 
     FSM_URL="https://github.com/RandomCoderOrg/fs-manager-hippo"
-    git clone ${FSM_URL} "${CACHE_ROOT}/fs-manager-hippo" || die "failed to clone repo"
+
+    if [ -z "${BRANCH}" ]; then
+        git clone ${FSM_URL} "${CACHE_ROOT}/fs-manager-hippo" || die "failed to clone repo"
+    else
+        git clone -b "${BRANCH}" "${CACHE_ROOT}/fs-manager-hippo" || die "failed to clone repo"
+    fi
 
     if [ -f "${CACHE_ROOT}"/fs-manager-hippo/install.sh ]; then
         cd "${CACHE_ROOT}"/fs-manager-hippo || die "failed to cd ..."
@@ -164,8 +177,7 @@ function _lauch_or_install()
             cp "${DIR}" ${HIPPO_DIR}/bin/stopvnc
             proot-distro login hippo -- chmod 775 /bin/stopvnc
         fi
-        
-        proot-distro login hippo "$@"
+        proot-distro login hippo "$@" || warn "program exited unexpectedly..."
     fi
 }
 
