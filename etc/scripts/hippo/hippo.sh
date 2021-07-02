@@ -21,9 +21,11 @@ SOCIAL_PLATFORM="\e[1;34mhttps://discord.gg/TAqaG5sEfW\e[0m"
 # HIPPO_SCRIPT_FILE="${SCRIPT_DIR}/hippo.sh"
 
 
-die   () { echo -e "${RED}Error ${*}${RST}";exit 1 ;:;}
-warn  () { echo -e "${RED}Error ${*}${RST}";:;}
-shout () { echo -e "${DS}////////";echo -e "${*}";echo -e "////////${RST}";:; }
+die    () { echo -e "${RED}Error ${*}${RST}";exit 1 ;:;}
+warn   () { echo -e "${RED}Error ${*}${RST}";:;}
+shout  () { echo -e "${DS}////////";echo -e "${*}";echo -e "////////${RST}";:; }
+lshout () { echo -e "${DC}";echo -e "${*}";echo -e "${RST}";:; }
+
 
 function __check_for_hippo() {
     if [ -d ${HIPPO_DIR} ] && [ -f ${HIPPO_SCRIPT_FILE} ]; then
