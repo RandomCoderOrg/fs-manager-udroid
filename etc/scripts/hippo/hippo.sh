@@ -96,6 +96,8 @@ function __force_uprade_hippo()
 {
     if [ ! -d "$CACHE_ROOT" ]; then
         mkdir "$CACHE_ROOT"
+    else
+        rm -rf "${CACHE_ROOT:?}/"*
     fi
 
     FSM_URL="https://github.com/RandomCoderOrg/fs-manager-hippo"
