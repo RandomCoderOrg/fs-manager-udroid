@@ -6,8 +6,11 @@ BIN_DIR="${TPREFIX}/usr/bin"
 echo "setting hippo..."
 
 if [ -f etc/scripts/hippo/hippo.sh ]; then
-    DIR="etc/scripts/hippo/hippo.sh"
-    cp ${DIR} ${BIN_DIR}/hippo
+    FILE="etc/scripts/hippo/hippo.sh"
+    if [ -f ${BIN_DIR}/hippo.sh ]; then
+        rm -rf "${BIN_DIR}/hippo.sh"
+    fi
+    cp ${FILE} ${BIN_DIR}/hippo
     chmod 775 ${BIN_DIR}/hippo
 else
     echo "Installation Failed..."
