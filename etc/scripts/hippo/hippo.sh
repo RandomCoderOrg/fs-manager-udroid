@@ -169,12 +169,12 @@ function _lauch_or_install()
 
 
         pulseaudio --start --load="module-native-protocol-tcp auth-ip-acl=127.0.0.1 auth-anonymous=1" --exit-idle-time=-1 >> /dev/null
-        if [ -f "{CACHE_ROOT}"/ubuntu-on-android/etc/scripts/vncserver/startvnc.sh ] && [ ! -f ${HIPPO_DIR}/bin/startvnc ]; then
-            DIR="{CACHE_ROOT}/ubuntu-on-android/etc/scripts/vncserver/startvnc.sh"
-            cp ${DIR} ${HIPPO_DIR}/bin/startvnc
+        if [[ -f "${CACHE_ROOT}"/ubuntu-on-android/etc/scripts/vncserver/startvnc.sh ]] && [[ ! -f ${HIPPO_DIR}/bin/startvnc ]]; then
+            DIR="${CACHE_ROOT}/ubuntu-on-android/etc/scripts/vncserver/startvnc.sh"
+            cp "${DIR}" ${HIPPO_DIR}/bin/startvnc
             proot-distro login hippo -- chmod 775 /bin/startvnc
         fi
-        if [ -f "{CACHE_ROOT}"/ubuntu-on-android/etc/scripts/vncserver/stopvnc.sh ] && [ ! -f ${HIPPO_DIR}/bin/stopvnc ]; then
+        if [ -f "${CACHE_ROOT}"/ubuntu-on-android/etc/scripts/vncserver/stopvnc.sh ] && [ ! -f ${HIPPO_DIR}/bin/stopvnc ]; then
             DIR="${CACHE_ROOT}/ubuntu-on-android/etc/scripts/vncserver/stopvnc.sh"
             cp "${DIR}" ${HIPPO_DIR}/bin/stopvnc
             proot-distro login hippo -- chmod 775 /bin/stopvnc
