@@ -1,6 +1,7 @@
 # fs-manager-hippo
 A tool manage common things with ubuntu-on-android
 
+[![CodeFactor](https://www.codefactor.io/repository/github/randomcoderorg/fs-manager-hippo/badge)](https://www.codefactor.io/repository/github/randomcoderorg/fs-manager-hippo)
 
 ## Target to V01
 - [X] upgrade system
