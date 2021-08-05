@@ -5,7 +5,7 @@
 # Copyright (c) 2021 1x1-RC Org
 # Copyright (c) zman-1x1
 # package installer used:
-# * "apt" at lines (25,32)
+# * "apt" at lines (28,35)
 # 
 
 # * Usefull functions
