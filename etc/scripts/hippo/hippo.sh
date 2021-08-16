@@ -187,16 +187,16 @@ function _lauch_or_install()
 
 
         pulseaudio --start --load="module-native-protocol-tcp auth-ip-acl=127.0.0.1 auth-anonymous=1" --exit-idle-time=-1 >> /dev/null
-        # if [[ -f "${CACHE_ROOT}"/fs-manager-hippo/etc/scripts/vncserver/startvnc.sh ]] && [[ ! -f ${HIPPO_DIR}/bin/startvnc ]]; then
-        #     DIR="${CACHE_ROOT}/fs-manager-hippo/etc/scripts/vncserver/startvnc.sh"
-        #     cp "${DIR}" ${HIPPO_DIR}/bin/startvnc
-        #     proot-distro login hippo -- chmod 775 /bin/startvnc
-        # fi
-        # if [ -f "${CACHE_ROOT}"/fs-manager-hippo/etc/scripts/vncserver/stopvnc.sh ] && [ ! -f ${HIPPO_DIR}/bin/stopvnc ]; then
-        #     DIR="${CACHE_ROOT}/fs-manager-hippo/etc/scripts/vncserver/stopvnc.sh"
-        #     cp "${DIR}" ${HIPPO_DIR}/bin/stopvnc
-        #     proot-distro login hippo -- chmod 775 /bin/stopvnc
-        # fi
+        if [[ -f "${CACHE_ROOT}"/fs-manager-hippo/etc/scripts/vncserver/startvnc.sh ]] && [[ ! -f ${HIPPO_DIR}/bin/startvnc ]]; then
+            DIR="${CACHE_ROOT}/fs-manager-hippo/etc/scripts/vncserver/startvnc.sh"
+            cp "${DIR}" ${HIPPO_DIR}/bin/startvnc
+            proot-distro login hippo -- chmod 775 /bin/startvnc
+        fi
+        if [ -f "${CACHE_ROOT}"/fs-manager-hippo/etc/scripts/vncserver/stopvnc.sh ] && [ ! -f ${HIPPO_DIR}/bin/stopvnc ]; then
+            DIR="${CACHE_ROOT}/fs-manager-hippo/etc/scripts/vncserver/stopvnc.sh"
+            cp "${DIR}" ${HIPPO_DIR}/bin/stopvnc
+            proot-distro login hippo -- chmod 775 /bin/stopvnc
+        fi
         proot-distro login hippo "$@" || warn "program exited unexpectedly..."
     fi
 }
@@ -212,25 +212,25 @@ if [ $# -ge 1 ]; then
         --install) _lauch_or_install;;
         --help) __help;;
 
-        # startvnc)
-        # if __check_for_hippo; then
-        #     proot-distro login hippo -- startvnc
-        # else
-        #     echo -e "This command is supposed to run after installing hippo"
-        #     # echo -e "Use \e[1;32mhippo --install\e[0m install"
-        #     echo -e "\e[32mError:\e[0m Hippo not found"
-        # fi
-        # ;;
+        startvnc)
+        if __check_for_hippo; then
+            proot-distro login hippo --no-kill-on-exit -- startvnc
+        else
+            echo -e "This command is supposed to run after installing hippo"
+            # echo -e "Use \e[1;32mhippo --install\e[0m install"
+            echo -e "\e[32mError:\e[0m Hippo not found"
+        fi
+        ;;
         
-        # stoptvnc)
-        # if __check_for_hippo; then
-        #     proot-distro login hippo -- stoptvnc
-        # else
-        #     echo -e "This command is supposed to run after installing hippo"
-        #     # echo -e "Use \e[1;32mhippo --install\e[0m install"
-        #     echo -e "\e[32mError:\e[0m Hippo not found"
-        # fi
-        # ;;
+        stoptvnc)
+        if __check_for_hippo; then
+            proot-distro login hippo --no-kill-on-exit -- stoptvnc
+        else
+            echo -e "This command is supposed to run after installing hippo"
+            # echo -e "Use \e[1;32mhippo --install\e[0m install"
+            echo -e "\e[32mError:\e[0m Hippo not found"
+        fi
+        ;;
         *) _lauch_or_install "$@";;
     esac
 else

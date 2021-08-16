@@ -18,11 +18,11 @@ else
 fi
 
 if [ -f /tmp/.X11-unix/X${port} ]; then
-    vnc=1
+    vnc=false
 elif [ -f /tmp/.X${port}-lock ]; then
-    vnc=1
+    vnc=false
 else
-    vnc=0
+    vnc=true
 fi
 
 
