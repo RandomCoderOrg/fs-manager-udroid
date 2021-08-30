@@ -15,7 +15,7 @@ INSTALL_FOLDER="${TPREFIX}/usr/var/lib/proot-distro/installed-rootfs"
 HIPPO_DIR="${INSTALL_FOLDER}/hippo"
 HIPPO_SCRIPT_FILE="${SCRIPT_DIR}/hippo.sh"
 
-SOCIAL_PLATFORM="\e[1;34mhttps://discord.gg/TAqaG5sEfW\e[0m"
+SOCIAL_PLATFORM="\e[1;34mhttps://discord.gg/TAqaG5sEfW"
 
 # HIPPO_DIR = "${INSTALL_FOLDER}/${HIPPO_DEFAULT}"
 # HIPPO_SCRIPT_FILE="${SCRIPT_DIR}/hippo.sh"
@@ -31,7 +31,7 @@ die    () { echo -e "${RED}Error ${*}${RST}";exit 1 ;:;}
 warn   () { echo -e "${RED}Error ${*}${RST}";:;}
 shout  () { echo -e "${DS}////////";echo -e "${*}";echo -e "////////${RST}";:; }
 lshout () { echo -e "${DC}";echo -e "${*}";echo -e "${RST}";:; }
-msg    () { echo -e "${@}" >&2 ;:; }
+msg    () { echo -e "\e[38;5;228m ${*} \e[0m" >&2 ;:; }
 
 
 function __check_for_hippo() {
@@ -151,7 +151,6 @@ function __help()
     msg "Usage ${0} [options]"
     msg 
     msg "Options:"
-    msg "\e[1;34m"
     msg "--install       To try installing hippo"
     msg "--help          To display this message"
     msg "--enable-dbus   To start terminal session with dbus enabled"
@@ -160,11 +159,10 @@ function __help()
     msg "stopvnc         To stop hippo vncserver"
     msg "--enable-dbus-startvnc To start vnc with dbus"
     msg "------------------"#links goes here
-    msg "for additional documentation see: https://github.com/RandomCoderOrg/ubuntu-on-android#basic-usage"
-    msg "report issues and feature requests at: https://github.com/RandomCoderOrg/ubuntu-on-android/issues"  
+    msg "for additional documentation see: \e[1;34mhttps://github.com/RandomCoderOrg/ubuntu-on-android#basic-usage"
+    msg "report issues and feature requests at: \e[1;34mhttps://github.com/RandomCoderOrg/ubuntu-on-android/issues"  
     msg "Join the community at DISCORD -> $SOCIAL_PLATFORM"
     msg "------------------"
-    msg "\e[0m"
 }
 
 function _lauch_or_install()
