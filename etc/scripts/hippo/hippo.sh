@@ -15,7 +15,7 @@ INSTALL_FOLDER="${TPREFIX}/usr/var/lib/proot-distro/installed-rootfs"
 HIPPO_DIR="${INSTALL_FOLDER}/hippo"
 HIPPO_SCRIPT_FILE="${SCRIPT_DIR}/hippo.sh"
 
-SOCIAL_PLATFORM="\e[1;34mhttps://discord.gg/TAqaG5sEfW"
+SOCIAL_PLATFORM="\e[34mhttps://discord.gg/TAqaG5sEfW"
 
 # HIPPO_DIR = "${INSTALL_FOLDER}/${HIPPO_DEFAULT}"
 # HIPPO_SCRIPT_FILE="${SCRIPT_DIR}/hippo.sh"
@@ -146,6 +146,7 @@ function __force_uprade_hippo()
 function __help()
 {
     msg "hippo - termux Version ${version} by saicharankandukuri"
+    msg 
     msg "A bash script to make basic action(login, vncserver) easier for ubuntu-on-android project"
     msg 
     msg "Usage ${0} [options]"
