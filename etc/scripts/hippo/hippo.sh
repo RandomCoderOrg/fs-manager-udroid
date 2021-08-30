@@ -145,20 +145,24 @@ function __force_uprade_hippo()
 
 function __help()
 {
-    msg "hippo - termux Version ${version}"
+    msg "hippo - termux Version ${version} by saicharankandukuri"
     msg "A bash script to make basic action(login, vncserver) easier for ubuntu-on-android project"
     msg 
     msg "Usage ${0} [options]"
     msg 
     msg "Options:"
     msg "\e[1;34m"
-    msg "--install      To try installing hippo"
-    msg "--help         to display this message"
-    msg "--enable-dbus  To start terminal session with dbus enabled"
-    # msg "startvnc       To start hippo vncserver"
-    # msg "stopvnc        To stop hippo vncserver"
-    msg "------------------"  #SOCIAL_MEDIA link goes here
-    msg "Join the community and leave at DISCORD -> $SOCIAL_PLATFORM"
+    msg "--install       To try installing hippo"
+    msg "--help          To display this message"
+    msg "--enable-dbus   To start terminal session with dbus enabled"
+    msg "--force-upgrade To reinstall this script of origin"
+    msg "startvnc        To start hippo vncserver"
+    msg "stopvnc         To stop hippo vncserver"
+    msg "--enable-dbus-startvnc To start vnc with dbus"
+    msg "------------------"#links goes here
+    msg "for additional documentation see: https://github.com/RandomCoderOrg/ubuntu-on-android#basic-usage"
+    msg "report issues and feature requests at: https://github.com/RandomCoderOrg/ubuntu-on-android/issues"  
+    msg "Join the community at DISCORD -> $SOCIAL_PLATFORM"
     msg "------------------"
     msg "\e[0m"
 }
@@ -179,7 +183,7 @@ function _lauch_or_install()
             sleep 4
             clear
             echo -e "Now You can launch your ubuntu 21.04 with command \e[1;32mhippo\e[0m"
-            # echo -e "use hippo --help for more option and comming up features"
+            echo -e "use hippo --help for more option and comming up features"
         fi
     else
         #######################################################################################################
@@ -206,9 +210,9 @@ if [ $# -ge 1 ]; then
         upgrade) __upgrade;;
         
         --force-upgrade) __force_uprade_hippo;;
-        --enable-dbus) shift 1; _lauch_or_install --bind /dev/null:/proc/sys/kernel/cap_last_cap ;;
-        "--enable-dbus-startvnc") shift 1; _lauch_or_install --bind /dev/null:/proc/sys/kernel/cap_last_cap -- startvnc ;;
-        "--enable-dbus-stopvnc") shift 1; _lauch_or_install --bind /dev/null:/proc/sys/kernel/cap_last_cap -- stopvnc ;;
+        --enable-dbus) shift 1; _lauch_or_install --bind /dev/null:/proc/sys/kernel/cap_last_cap "$@" ;;
+        "--enable-dbus-startvnc") shift 1; _lauch_or_install --bind /dev/null:/proc/sys/kernel/cap_last_cap -- startvnc "$@" ;;
+        "--enable-dbus-stopvnc") shift 1; _lauch_or_install --bind /dev/null:/proc/sys/kernel/cap_last_cap -- stopvnc "$@" ;; # no use
         --install) _lauch_or_install;;
         --help) __help;;
 
@@ -217,7 +221,7 @@ if [ $# -ge 1 ]; then
             proot-distro login hippo --no-kill-on-exit -- startvnc
         else
             echo -e "This command is supposed to run after installing hippo"
-            # echo -e "Use \e[1;32mhippo --install\e[0m install"
+            echo -e "Use \e[1;32mhippo --install\e[0m install"
             echo -e "\e[32mError:\e[0m Hippo not found"
         fi
         ;;
@@ -227,7 +231,7 @@ if [ $# -ge 1 ]; then
             proot-distro login hippo --no-kill-on-exit -- stoptvnc
         else
             echo -e "This command is supposed to run after installing hippo"
-            # echo -e "Use \e[1;32mhippo --install\e[0m install"
+            echo -e "Use \e[1;32mhippo --install\e[0m install"
             echo -e "\e[32mError:\e[0m Hippo not found"
         fi
         ;;
