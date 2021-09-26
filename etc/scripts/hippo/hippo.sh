@@ -66,9 +66,10 @@ function __verify_bin_path()
     BINPATH="${SHELL}"
 
     if [ -z "$BINPATH" ]; then
-        if [ "$BINPATH" == "/data/data/com.termux/files/*" ]; then
+        if [ "$BINPATH" != "/data/data/com.termux/files/*" ]; then
             msg "This has to be done inside termux environment"
             die "\$SHELL != $BINPATH"
+            exit 1
         fi
     fi
 }
