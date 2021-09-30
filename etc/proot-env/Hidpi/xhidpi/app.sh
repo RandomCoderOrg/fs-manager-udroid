@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-SETTINGS_DIR=~/.config/hippo-HiDPI/
+SETTINGS_DIR=~/.config/udroid-HiDPI/
 DESKTOP="$XDG_CURRENT_DESKTOP"
 
 case "$DESKTOP" in
@@ -72,5 +72,5 @@ toggle_hidpi() {
 }
 
 toggle_hidpi
-zenity --question --title='hippo HiDPI mode(experimental)' --text 'Do you want to keep this window-scaling mode?\n(prefer no if things look bad)' --timeout=15 --width=200 || \
+zenity --question --title='udroid HiDPI mode(experimental)' --text 'Do you want to keep this window-scaling mode?\n(prefer no if things look bad)' --timeout=15 --width=200 || \
         toggle_hidpi

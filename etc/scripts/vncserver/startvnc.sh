@@ -30,5 +30,5 @@ if ! $vnc; then
     vncserver -xstartup "${DEFAULT_XSTARTUP}" -desktop "Hippo Default VNC" :${port}
 else
     echo "A vncserver lock is found for port ${port}"
-    echo -e "Use \e[1;32mhippo stoptvnc\e[0m or \e[1;32mstopvnc\e[0m to stop it and try again..."
+    echo -e "Use \e[1;32mudroid stoptvnc\e[0m or \e[1;32mstopvnc\e[0m to stop it and try again..."
 fi

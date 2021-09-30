@@ -15,7 +15,7 @@ INSTALL_FOLDER="${TPREFIX}/usr/var/lib/proot-distro/installed-rootfs"
 HIPPO_DIR="${INSTALL_FOLDER}/udroid"
 HIPPO_SCRIPT_FILE="${SCRIPT_DIR}/udroid.sh"
 
-SOCIAL_PLATFORM="\e[34mhttps://discord.gg/TAqaG5sEfW"
+# SOCIAL_PLATFORM="\e[34mhttps://discord.gg/TAqaG5sEfW"
 
 # HIPPO_DIR = "${INSTALL_FOLDER}/${HIPPO_DEFAULT}"
 # HIPPO_SCRIPT_FILE="${SCRIPT_DIR}/hippo.sh"
@@ -163,7 +163,7 @@ function __help()
     msg "------------------"#links goes here
     msg "for additional documentation see: \e[1;34mhttps://github.com/RandomCoderOrg/ubuntu-on-android#basic-usage"
     msg "report issues and feature requests at: \e[1;34mhttps://github.com/RandomCoderOrg/ubuntu-on-android/issues"  
-    msg "Join the community at DISCORD -> $SOCIAL_PLATFORM"
+    # msg "Join the community at DISCORD -> $SOCIAL_PLATFORM"
     msg "------------------"
 }
 
