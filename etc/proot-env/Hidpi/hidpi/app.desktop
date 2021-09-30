@@ -1,8 +1,8 @@
 [Desktop Entry]
-Name=Hippo HiDPI Mode
-Exec=hippo-hidpi-mode
+Name=udroid HiDPI Mode
+Exec=udroid-hidpi-mode
 Terminal=false
 Type=Application
-Icon=/usr/share/hippo/hidpi-logo.png
+Icon=/usr/share/udroid/hidpi-logo.png
 OnlyShowIn=XFCE
-Keyboards=display;screen;hidpi;hippo;
+Keyboards=display;screen;hidpi;udroid;
