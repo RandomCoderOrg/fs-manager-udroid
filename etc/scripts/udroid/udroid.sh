@@ -18,7 +18,7 @@ HIPPO_SCRIPT_FILE="${SCRIPT_DIR}/udroid.sh"
 # SOCIAL_PLATFORM="\e[34mhttps://discord.gg/TAqaG5sEfW"
 
 # HIPPO_DIR = "${INSTALL_FOLDER}/${HIPPO_DEFAULT}"
-# HIPPO_SCRIPT_FILE="${SCRIPT_DIR}/hippo.sh"
+# HIPPO_SCRIPT_FILE="${SCRIPT_DIR}/udroid.sh"
 
 # * Usefull functions
 # die()     exit with code 1 with printing given string
@@ -81,7 +81,7 @@ function __upgrade() {
     fi
 
     mkdir -p "${CACHE_ROOT}"
-    axel -o "${CACHE_ROOT}"/version https://raw.githubusercontent.com/RandomCoderOrg/fs-manager-hippo/main/version >> /dev/null || {
+    axel -o "${CACHE_ROOT}"/version https://raw.githubusercontent.com/RandomCoderOrg/fs-manager-udroid/main/version >> /dev/null || {
         die "error"
     }
 
@@ -111,7 +111,7 @@ function __upgrade() {
 
 function start_upgrade() {
     mkdir -p "${CACHE_ROOT}"
-    axel -o "${CACHE_ROOT}"/upgrade.sh https://raw.githubusercontent.com/RandomCoderOrg/fs-manager-hippo/main/etc/scripts/upgrade_patch/upgrade.sh >> /dev/null || {
+    axel -o "${CACHE_ROOT}"/upgrade.sh https://raw.githubusercontent.com/RandomCoderOrg/fs-manager-udroid/main/etc/scripts/upgrade_patch/upgrade.sh >> /dev/null || {
         die "Error"; exit 1
     }
     bash -x upgrade.sh || {
@@ -127,38 +127,38 @@ function __force_uprade_hippo()
     if [ ! -d "$CACHE_ROOT" ]; then
         mkdir "$CACHE_ROOT"
     else
-        rm -rf "${CACHE_ROOT}/fs-manager-hippo"
+        rm -rf "${CACHE_ROOT}/fs-manager-udroid"
     fi
 
-    FSM_URL="https://github.com/RandomCoderOrg/fs-manager-hippo"
+    FSM_URL="https://github.com/RandomCoderOrg/fs-manager-udroid"
 
     if [ -z "${BRANCH}" ]; then
-        git clone ${FSM_URL} "${CACHE_ROOT}/fs-manager-hippo" || die "failed to clone repo"
+        git clone ${FSM_URL} "${CACHE_ROOT}/fs-manager-udroid" || die "failed to clone repo"
     else
-        git clone -b "${BRANCH}" "${CACHE_ROOT}/fs-manager-hippo" || die "failed to clone repo"
+        git clone -b "${BRANCH}" "${CACHE_ROOT}/fs-manager-udroid" || die "failed to clone repo"
     fi
 
-    if [ -f "${CACHE_ROOT}"/fs-manager-hippo/install.sh ]; then
-        cd "${CACHE_ROOT}"/fs-manager-hippo || die "failed to cd ..."
+    if [ -f "${CACHE_ROOT}"/fs-manager-udroid/install.sh ]; then
+        cd "${CACHE_ROOT}"/fs-manager-udroid || die "failed to cd ..."
         bash install.sh || die "failed to install manager..."
     fi
 }
 
 function __help()
 {
-    msg "hippo - termux Version ${version} by saicharankandukuri"
+    msg "udroid - termux Version ${version} by saicharankandukuri"
     msg 
     msg "A bash script to make basic action(login, vncserver) easier for ubuntu-on-android project"
     msg 
     msg "Usage ${0} [options]"
     msg 
     msg "Options:"
-    msg "--install       To try installing hippo"
+    msg "--install       To try installing udroid"
     msg "--help          To display this message"
     msg "--enable-dbus   To start terminal session with dbus enabled"
     msg "--force-upgrade To reinstall this script of origin"
-    msg "startvnc        To start hippo vncserver"
-    msg "stopvnc         To stop hippo vncserver"
+    msg "startvnc        To start udroid vncserver"
+    msg "stopvnc         To stop udroid vncserver"
     msg "--enable-dbus-startvnc To start vnc with dbus"
     msg "------------------"#links goes here
     msg "for additional documentation see: \e[1;34mhttps://github.com/RandomCoderOrg/ubuntu-on-android#basic-usage"
@@ -176,14 +176,14 @@ function _lauch_or_install()
         exit 1
     fi
     if ! __check_for_filesystem; then
-        echo -e "Installing hippo..........."
-        if proot-distro install hippo; then
+        echo -e "Installing udroid..........."
+        if proot-distro install udroid; then
             echo -e "Installation Done......\a\a" # \a triggers vibration in termux
             echo "Waiting..."
             sleep 4
             clear
             echo -e "Now You can launch your ubuntu 21.04 with command \e[1;32mhippo\e[0m"
-            echo -e "use hippo --help for more option and comming up features"
+            echo -e "use udroid --help for more option and comming up features"
         fi
     else
         #######################################################################################################
@@ -191,17 +191,17 @@ function _lauch_or_install()
 
 
         pulseaudio --start --load="module-native-protocol-tcp auth-ip-acl=127.0.0.1 auth-anonymous=1" --exit-idle-time=-1 >> /dev/null
-        if [[ -f "${CACHE_ROOT}"/fs-manager-hippo/etc/scripts/vncserver/startvnc.sh ]] && [[ ! -f ${HIPPO_DIR}/bin/startvnc ]]; then
-            DIR="${CACHE_ROOT}/fs-manager-hippo/etc/scripts/vncserver/startvnc.sh"
+        if [[ -f "${CACHE_ROOT}"/fs-manager-udroid/etc/scripts/vncserver/startvnc.sh ]] && [[ ! -f ${HIPPO_DIR}/bin/startvnc ]]; then
+            DIR="${CACHE_ROOT}/fs-manager-udroid/etc/scripts/vncserver/startvnc.sh"
             cp "${DIR}" ${HIPPO_DIR}/bin/startvnc
-            proot-distro login hippo -- chmod 775 /bin/startvnc
+            proot-distro login udroid -- chmod 775 /bin/startvnc
         fi
-        if [ -f "${CACHE_ROOT}"/fs-manager-hippo/etc/scripts/vncserver/stopvnc.sh ] && [ ! -f ${HIPPO_DIR}/bin/stopvnc ]; then
-            DIR="${CACHE_ROOT}/fs-manager-hippo/etc/scripts/vncserver/stopvnc.sh"
+        if [ -f "${CACHE_ROOT}"/fs-manager-udroid/etc/scripts/vncserver/stopvnc.sh ] && [ ! -f ${HIPPO_DIR}/bin/stopvnc ]; then
+            DIR="${CACHE_ROOT}/fs-manager-udroid/etc/scripts/vncserver/stopvnc.sh"
             cp "${DIR}" ${HIPPO_DIR}/bin/stopvnc
-            proot-distro login hippo -- chmod 775 /bin/stopvnc
+            proot-distro login udroid -- chmod 775 /bin/stopvnc
         fi
-        proot-distro login hippo "$@" || warn "program exited unexpectedly..."
+        proot-distro login udroid "$@" || warn "program exited unexpectedly..."
     fi
 }
 __verify_bin_path
@@ -218,21 +218,21 @@ if [ $# -ge 1 ]; then
 
         startvnc)
         if __check_for_hippo; then
-            proot-distro login hippo --no-kill-on-exit -- startvnc
+            proot-distro login udroid --no-kill-on-exit -- startvnc
         else
-            echo -e "This command is supposed to run after installing hippo"
+            echo -e "This command is supposed to run after installing udroid"
             echo -e "Use \e[1;32mhippo --install\e[0m install"
-            echo -e "\e[32mError:\e[0m Hippo not found"
+            echo -e "\e[32mError:\e[0m udroid not found"
         fi
         ;;
         
         stoptvnc)
         if __check_for_hippo; then
-            proot-distro login hippo --no-kill-on-exit -- stoptvnc
+            proot-distro login udroid --no-kill-on-exit -- stoptvnc
         else
-            echo -e "This command is supposed to run after installing hippo"
+            echo -e "This command is supposed to run after installing udroid"
             echo -e "Use \e[1;32mhippo --install\e[0m install"
-            echo -e "\e[32mError:\e[0m Hippo not found"
+            echo -e "\e[32mError:\e[0m udroid not found"
         fi
         ;;
         *) _lauch_or_install "$@";;

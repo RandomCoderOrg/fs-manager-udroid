@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 
-ICONDIR="/usr/share/hippo"
+ICONDIR="/usr/share/udroid"
 
 if [ -f app.sh ]; then
-    cp app.sh /bin/hippo-xhidpi-mode
-    chmod 775 /bin/hippo-xhidpi-mode
+    cp app.sh /bin/udroid-xhidpi-mode
+    chmod 775 /bin/udroid-xhidpi-mode
 fi
 
 if [ -f logo.png ]; then
@@ -19,7 +19,7 @@ fi
 
 if [ -f app.desktop ]; then
     if [ -d /usr/share/applications ]; then
-        cp app.desktop /usr/share/applications/hippo-xhidpi-mode.desktop
+        cp app.desktop /usr/share/applications/udroid-xhidpi-mode.desktop
     fi 
 fi
 
