@@ -182,7 +182,7 @@ function _lauch_or_install()
             echo "Waiting..."
             sleep 4
             clear
-            echo -e "Now You can launch your ubuntu 21.04 with command \e[1;32mhippo\e[0m"
+            echo -e "Now You can launch your ubuntu 21.04 with command \e[1;32mudroid\e[0m"
             echo -e "use udroid --help for more option and comming up features"
         fi
     else
