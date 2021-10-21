@@ -11,6 +11,7 @@ TPREFIX="/data/data/com.termux/files"
 
 SCRIPT_DIR="${TPREFIX}/usr/etc/proot-distro"
 INSTALL_FOLDER="${TPREFIX}/usr/var/lib/proot-distro/installed-rootfs"
+DLCACHE="${PREFIX}/usr/var/lib/proot-distro/dlcache"
 
 HIPPO_DIR="${INSTALL_FOLDER}/udroid"
 HIPPO_SCRIPT_FILE="${SCRIPT_DIR}/udroid.sh"
@@ -43,7 +44,7 @@ function __check_for_hippo() {
 }
 
 function __check_for_plugin() {
-    
+
     if [ -f ${HIPPO_SCRIPT_FILE} ]; then
         return 0
     else
@@ -143,15 +144,41 @@ function __force_uprade_hippo()
         bash install.sh || die "failed to install manager..."
     fi
 }
-
+progressfilt ()
+{
+    local flag=false c count cr=$'\r' nl=$'\n'
+    while IFS='' read -d '' -rn 1 c
+    do
+        if $flag
+        then
+            printf '%s' "$c"
+        else
+            if [[ $c != $cr && $c != $nl ]]
+            then
+                count=0
+            else
+                ((count++))
+                if ((count > 1))
+                then
+                    flag=true
+                fi
+            fi
+        fi
+    done
+}
+_download ()
+{
+  link=$1
+  wget --progress=bar:force $link || die "download failed"
+}
 function __help()
 {
     msg "udroid - termux Version ${version} by saicharankandukuri"
-    msg 
+    msg
     msg "A bash script to make basic action(login, vncserver) easier for ubuntu-on-android project"
-    msg 
+    msg
     msg "Usage ${0} [options]"
-    msg 
+    msg
     msg "Options:"
     msg "--install       To try installing udroid"
     msg "--help          To display this message"
@@ -162,13 +189,57 @@ function __help()
     msg "--enable-dbus-startvnc To start vnc with dbus"
     msg "------------------"#links goes here
     msg "for additional documentation see: \e[1;34mhttps://github.com/RandomCoderOrg/ubuntu-on-android#basic-usage"
-    msg "report issues and feature requests at: \e[1;34mhttps://github.com/RandomCoderOrg/ubuntu-on-android/issues"  
+    msg "report issues and feature requests at: \e[1;34mhttps://github.com/RandomCoderOrg/ubuntu-on-android/issues"
     # msg "Join the community at DISCORD -> $SOCIAL_PLATFORM"
     msg "------------------"
 }
 
+function __split_tarball_handler()
+{
+  target_plugin=$1
+  if [ -n "$target_plugin" ] && [ -f "$target_plugin" ]; then
+    source $target_plugin
+  else
+    die "Could not find script in tmp directory: This attribute is not for manuall entry"
+  fi
+
+  if $SPLIT_TARBALL_FS; then
+    :
+  else
+    cp "$target_plugin" "$SCRIPT_DIR/udroid.sh"
+    shift; _lauch_or_install "$@"
+  fi
+  shout "starting download.. this may take some time"
+
+  if [ ! -d ${CACHE_ROOT} ]; then
+    mkdir -v ${CACHE_ROOT}
+  fi
+
+  mkdir -p "${CACHE_ROOT}/fs-cache"
+
+  # count no.of parts
+  x=0
+  for part in $PARTS; do
+    ((x=x+1))
+  done
+  cd ${CACHE_ROOT}/fs-cache || die "failed.. cd"
+  # start download
+  y=0
+  for links in $PARTS; do
+    ((y=y+1))
+    shout "downloading [$(basename $links)] part($y/$x).. "
+    _download $links
+  done
+  cd $HOME || die "failed.. cd"
+  shout "combining parts to one.. （￣︶￣）↗"
+  cat "${CACHE_ROOT}/fs-cache/*" > "${DLCACHE}/${FINAL_NAME}"
+  shout "triggering installation.."
+  shift ; _lauch_or_install "$@"
+}
+
 function _lauch_or_install()
 {
+
     if ! __check_for_plugin; then
         echo -e "Plugin at ${HIPPO_SCRIPT_FILE} is missing ......"
         echo -e "May be this not a correct installation...."
@@ -208,7 +279,7 @@ __verify_bin_path
 if [ $# -ge 1 ]; then
     case "$1" in
         upgrade) __upgrade;;
-        
+        --init-setup-tarball) shift 1; __split_tarball_handler "$@";;
         --force-upgrade) __force_uprade_hippo;;
         --enable-dbus) shift 1; _lauch_or_install --bind /dev/null:/proc/sys/kernel/cap_last_cap "$@" ;;
         "--enable-dbus-startvnc") shift 1; _lauch_or_install --bind /dev/null:/proc/sys/kernel/cap_last_cap -- startvnc "$@" ;;
@@ -225,7 +296,7 @@ if [ $# -ge 1 ]; then
             echo -e "\e[32mError:\e[0m udroid not found"
         fi
         ;;
-        
+
         stoptvnc)
         if __check_for_hippo; then
             proot-distro login udroid --no-kill-on-exit -- stoptvnc
