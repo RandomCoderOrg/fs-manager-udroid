@@ -14,10 +14,10 @@
 # shout()   pring messege in a good way with some lines
 # lshout()  print messege in a standard way
 
-die    () { echo -e "${RED}Error ${*}${RST}";exit 1 ;:;}
-warn   () { echo -e "${RED}Error ${*}${RST}";:;}
-shout  () { echo -e "${DC}-----";echo -e "${*}";echo -e "-----${RST}";:; }
-lshout () { echo -e "${DC}";echo -e "${*}";echo -e "${RST}";:; }
+die    () { echo -e "${RED}!! ${*}${RST}";exit 1 ;:;}
+warn   () { echo -e "${RED}?? ${*}${RST}";:;}
+shout  () { echo -e "${DS}=> ${*}${RST}";:; }
+lshout () { echo -e "${DC}-> ${*}${RST}";:; }
 
 ###################################################################
 # 1. Update apt indexs

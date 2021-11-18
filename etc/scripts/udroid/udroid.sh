@@ -28,10 +28,10 @@ HIPPO_SCRIPT_FILE="${SCRIPT_DIR}/udroid.sh"
 # lshout()  print messege in a standard way
 # msg()     print's normal echo
 
-die    () { echo -e "${RED}Error ${*}${RST}";exit 1 ;:;}
-warn   () { echo -e "${RED}Error ${*}${RST}";:;}
-shout  () { echo -e "${DS}////////";echo -e "${*}";echo -e "////////${RST}";:; }
-lshout () { echo -e "${DC}";echo -e "${*}";echo -e "${RST}";:; }
+die    () { echo -e "${RED}!! ${*}${RST}";exit 1 ;:;}
+warn   () { echo -e "${RED}?? ${*}${RST}";:;}
+shout  () { echo -e "${DS}=> ${*}${RST}";:; }
+lshout () { echo -e "${DC}-> ${*}${RST}";:; }
 msg    () { echo -e "\e[38;5;228m ${*} \e[0m" >&2 ;:; }
 
 
@@ -66,12 +66,14 @@ function __verify_bin_path()
 {
     BINPATH="${SHELL}"
 
-    if [ -z "$BINPATH" ]; then
+    if [ -n "$BINPATH" ]; then
         if [ "$BINPATH" != "/data/data/com.termux/files/*" ]; then
             msg "This has to be done inside termux environment"
             die "\$SHELL != $BINPATH"
             exit 1
         fi
+    else
+        warn "SHELL value is empty.."
     fi
 }
 
@@ -203,9 +205,7 @@ function __split_tarball_handler()
     die "Could not find script in tmp directory: This attribute is not for manuall entry"
   fi
 
-  if $SPLIT_TARBALL_FS; then
-    :
-  else
+  if ! $SPLIT_TARBALL_FS; then
     cp "$target_plugin" "$SCRIPT_DIR/udroid.sh"
     shift; _lauch_or_install "$@"
   fi
