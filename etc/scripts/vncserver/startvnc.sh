@@ -19,15 +19,18 @@ fi
 
 if [ -f /tmp/.X11-unix/X${port} ]; then
     vnc=true
-elif [ -f /tmp/.X${port}-lock ]; then
+else
+    vnc=false
+fi
+
+if [ -f /tmp/.X${port}-lock ]; then
     vnc=true
 else
     vnc=false
 fi
 
-
 if ! $vnc; then
-    vncserver -xstartup "${DEFAULT_XSTARTUP}" -desktop "udroid Default VNC" :${port}
+    vncserver -xstartup "${DEFAULT_XSTARTUP}" -localhost no -desktop "udroid Default VNC" :${port}
 else
     echo "A vncserver lock is found for port ${port}"
     echo -e "Use \e[1;32mudroid stoptvnc\e[0m or \e[1;32mstopvnc\e[0m to stop it and try again..."
