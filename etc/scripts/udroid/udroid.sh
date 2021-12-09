@@ -67,7 +67,7 @@ function __verify_bin_path()
     BINPATH="${SHELL}"
 
     if [ -n "$BINPATH" ]; then
-        if [ "$BINPATH" != "/data/data/com.termux/files/*" ]; then
+        if [ "$BINPATH" != "/data/data/com.termux/files/usr/bin/bash" ]; then
             msg "This has to be done inside termux environment"
             die "\$SHELL != $BINPATH"
             exit 1
@@ -275,7 +275,7 @@ function _lauch_or_install()
         proot-distro login udroid "$@" || warn "program exited unexpectedly..."
     fi
 }
-__verify_bin_path
+# __verify_bin_path
 if [ $# -ge 1 ]; then
     case "$1" in
         upgrade) __upgrade;;
