@@ -5,4 +5,8 @@ export PULSE_SERVER=127.0.0.1
 export GDK_SCALE=2
 export XCURSOR_SIZE=48
 export QT_SCALE_FACTOR=2
-dbus-lauch --exit-with-session startxfce4
+dbus-lauch --exit-with-session startxfce4 &
+
+if command -v plank > /dev/null; then
+  plank &
+fi
