@@ -71,8 +71,8 @@ _install() {
     distro=$(cut -d " " -f 1 "$option")
     de=$(cut -d " " -f 2 "$option")
     case $distro in
-    "2" | "ubuntu21_04") suite='udroid-hirsute' ;;
-    "1" | "ubuntu21_10") suite='udroid-impish' ;;
+    "2" | "ubuntu21_04") suite='hirsute' ;;
+    "1" | "ubuntu21_10") suite='impish' ;;
     esac
     case $de in
     "1") de='xfce4' ;;
