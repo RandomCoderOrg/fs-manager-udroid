@@ -46,7 +46,8 @@ trim_quotes() {
 _install() {
     distro=$1
     suite="impish"
-    repo_root="https://raw.githubusercontent.com/RandomCoderOrg/ubuntu-on-android/modified"
+    # repo_root="https://raw.githubusercontent.com/RandomCoderOrg/ubuntu-on-android/modified"
+    repo_root="https://raw.githubusercontent.com/RandomCoderOrg/ubuntu-on-android/beta"
     plugin_url="$repo_root/pd-plugins/udroid-$suite-$de.sh"
 
     case $distro in
