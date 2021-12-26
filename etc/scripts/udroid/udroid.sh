@@ -72,7 +72,7 @@ _install() {
     if [ -z "${suite}" ] || [ -z "${varient}" ]; then
         die "Invalid arguments"
     fi
-
+    de="$varient"
     curl \
         -L -o $SCRIPT_DIR/udroid-"$suite"-"$de".sh \
         "$plugin_url" || die "Plugin Download failed"
