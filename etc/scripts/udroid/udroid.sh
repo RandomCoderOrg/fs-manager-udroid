@@ -48,8 +48,6 @@ _install() {
     suite="impish"
     # repo_root="https://raw.githubusercontent.com/RandomCoderOrg/ubuntu-on-android/modified"
     repo_root="https://raw.githubusercontent.com/RandomCoderOrg/ubuntu-on-android/beta"
-    plugin_url="$repo_root/pd-plugins/udroid-$suite-$de.sh"
-
     case $distro in
         xfce4)
             varient="xfce4"
@@ -73,6 +71,7 @@ _install() {
         die "Invalid arguments"
     fi
     de="$varient"
+    plugin_url="$repo_root/pd-plugins/udroid-$suite-$de.sh"
     curl \
         -L -o $SCRIPT_DIR/udroid-"$suite"-"$de".sh \
         "$plugin_url" || die "Plugin Download failed"
