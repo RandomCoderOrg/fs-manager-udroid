@@ -12,27 +12,11 @@ SCRIPT_DIR="${TPREFIX}/usr/etc/proot-distro"
 INSTALL_FOLDER="${TPREFIX}/usr/var/lib/proot-distro/installed-rootfs"
 DLCACHE="${TPREFIX}/usr/var/lib/proot-distro/dlcache"
 
-die() {
-    echo -e "${RED}[!!] ${*}${RST}"
-    exit 1
-    :
-}
-warn() {
-    echo -e "${RED}[??] ${*}${RST}"
-    :
-}
-shout() {
-    echo -e "${DS}[●] ${*}${RST}"
-    :
-}
-lshout() {
-    echo -e "${DC}-> ${*}${RST}"
-    :
-}
-msg() {
-    echo -e "\e[38;5;228m ${*} \e[0m" >&2
-    :
-}
+die()    { echo -e "${RED}[E] ${*}${RST}";exit 1;:;}
+warn()   { echo -e "${RED}[W] ${*}${RST}";:;}
+shout()  { echo -e "${DS}[-] ${*}${RST}";:;}
+lshout() { echo -e "${DC}-> ${*}${RST}";:;}
+msg()    { echo -e "${*} \e[0m" >&2;:;}
 
 ######
 trim_quotes() {
@@ -157,6 +141,14 @@ upgrade() {
     fi
 }
 
+_reset() {
+    :
+}
+
+_purge() {
+    :
+}
+
 ######
 
 if [ $# -ge 1 ]; then
@@ -170,10 +162,9 @@ if [ $# -ge 1 ]; then
         ;;
     -v|--version)
         msg "udroid fsmgr tool($version): By Team UDROID!..."
-        msg "a tool to launch or manage DE varients without heavy commands"
         ;;
-    --reset|--reinstall) reset;;
-    --purge|--uninstall) purge;;
+    --reset|--reinstall) _reset;;
+    --purge|--uninstall) _purge;;
     --restore) restore;;
     *)
         _lauch_or_install "$*"

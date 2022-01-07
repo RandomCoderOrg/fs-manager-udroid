@@ -1,26 +1,10 @@
 #!/usr/bin/env bash
 
-die() {
-    echo -e "${RED}[!!] ${*}${RST}"
-    exit 1
-    :
-}
-warn() {
-    echo -e "${RED}[??] ${*}${RST}"
-    :
-}
-shout() {
-    echo -e "${DS}[●] ${*}${RST}"
-    :
-}
-lshout() {
-    echo -e "${DC}-> ${*}${RST}"
-    :
-}
-msg() {
-    echo -e "\e[38;5;228m ${*} \e[0m" >&2
-    :
-}
+die()    { echo -e "${RED}[E] ${*}${RST}";exit 1;:;}
+warn()   { echo -e "${RED}[W] ${*}${RST}";:;}
+shout()  { echo -e "${DS}[-] ${*}${RST}";:;}
+lshout() { echo -e "${DC}-> ${*}${RST}";:;}
+msg()    { echo -e "${*} \e[0m" >&2;:;}
 
 function _backup() {
     # defaults
@@ -39,15 +23,12 @@ function _backup() {
             ;;
         esac
     fi
-    shout "Backing up to $of/udroid-backup.tar.gz ..."
+    shout "Backing up udroid to $of/udroid-backup.tar.gz ..."
     of="$of/udroid-backup.tar.gz"
 
     tar \
-        --exclude=/dev/* \
-        --exclude=/run/* \
-        --exclude=/proc/* \
-        --exclude=/sys/* \
-        --exclude=/tmp/* \
+        --exclude={/dev/*,/sys/*,/run/*,/tmp/*} \
+        --exclude={/sdcard,/vendor,/boot,/data,/linkerconfig,/media,/system} \
         --exclude=/"${0}" \
         --exclude="/$of" \
         --exclude-caches-all \
@@ -60,8 +41,18 @@ function _backup() {
 }
 
 _help() {
-    # * TODO:
-    :
+    _msg_backup() {
+        :
+    }
+    _msg_servic_exec() {
+        :
+    }
+    _msg_startvnc() {
+        :
+    }
+    _msg_stopvnc() {
+        :
+    }
 }
 
 function service_exec() {
@@ -75,23 +66,15 @@ function service_exec() {
 
 function startvnc() {
     pubip=$(hostname -I)
-    port=':1'
+    port='1'
 
     if [[ -n $PORT ]] && [[ $PORT =~ ^[0-9]+$ ]]; then
         port="$PORT"
     fi
 
-    if [ -f /tmp/.X11-unix/X"${port}" ]; then
-        vnc=true
-    else
-        vnc=false
-    fi
+    [[ -f /tmp/.X11-unix/X"${port}" ]] && vnc=true || vnc=false
+    [[ -f /tmp/.X"${port}"-lock ]] && vnc=true || vnc=false
 
-    if [ -f /tmp/.X"${port}"-lock ]; then
-        vnc=true
-    else
-        vnc=false
-    fi
 
     if ! $vnc; then
     vncserver -xstartup "${DEFAULT_XSTARTUP}" -localhost no -desktop "udroid Default VNC" :${port}
@@ -128,7 +111,7 @@ function start_display() {
 }
 
 function on_startup() {
-    service_exec
+    service_exec dbus
 }
 
 function _init() {
