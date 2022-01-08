@@ -37,22 +37,52 @@ function _backup() {
         - "/" -P |
         pv -s $(($(du -skx "/" | awk '{print $1}') * 1024)) |
         gzip --best >"$of".tar.gz
-
 }
 
 _help() {
     _msg_backup() {
-        :
+        msg "udroid backup [-o|--output <output file>]"
+        msg "backup udroid to <output file>"
+        msg
+        msg "Options:"
+        msg "  -o|--output <output file>  : output file name"
+        msg
     }
     _msg_servic_exec() {
-        :
+        msg "udroid service_exec"
+        msg
+        msg "parses /usr/share/udroid/auto_start_service and starts services at startup"
     }
     _msg_startvnc() {
-        :
+        msg "udroid startvnc | startvnc"
+        msg "starts vncserver at port 1 with name as UDROID"
+        msg 
+        msg "Options:"
+        msg "  -h | --help    to show this messege"
+        msg "  -p | --port    to set the port to use"
+        msg "  --novnc        to start novnc server!"
     }
     _msg_stopvnc() {
-        :
+        msg "udroid stopvnc | stopvnc"
+        msg "stops vncserver and clears all pid files and sockets of port 1"
     }
+
+    case "$1" in
+        backup)
+        _msg_backup
+        ;;
+        service_exec)
+        _msg_servic_exec
+        ;;
+        startvnc)
+        _msg_startvnc
+        ;;
+        stopvnc)
+        _msg_stopvnc
+        ;;
+        *)
+        die "unknown word? $1" ;;
+    esac
 }
 
 function service_exec() {
@@ -62,6 +92,10 @@ function service_exec() {
             service start "${_service}"
         done
     fi
+}
+
+function no_vnc() {
+    :
 }
 
 function startvnc() {
@@ -79,7 +113,7 @@ function startvnc() {
     if ! $vnc; then
     vncserver -xstartup "${DEFAULT_XSTARTUP}" -localhost no -desktop "udroid Default VNC" :${port}
     else
-    echo "A vncserver lock is found for port ${port}"
+    msg "A vncserver lock is found for port ${port}"
     die "try using stopvnc"
     fi 
 
