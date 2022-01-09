@@ -1,9 +1,14 @@
 #!/usr/bin/env bash
 
-die()    { echo -e "${RED}[E] ${*}${RST}";exit 1;:;}
-warn()   { echo -e "${RED}[W] ${*}${RST}";:;}
-shout()  { echo -e "${DS}[-] ${*}${RST}";:;}
-lshout() { echo -e "${DC}-> ${*}${RST}";:;}
+_c_magneta="\e[95m"
+_c_green="\e[32m"
+_c_red="\e[31m"
+_c_blue="\e[34m"
+
+die()    { echo -e "${_c_red}[E] ${*}${RST}";exit 1;:;}
+warn()   { echo -e "${_c_red}[W] ${*}${RST}";:;}
+shout()  { echo -e "${_c_blue}[-] ${*}${RST}";:;}
+lshout() { echo -e "${_c_blue}-> ${*}${RST}";:;}
 msg()    { echo -e "${*} \e[0m" >&2;:;}
 
 function _backup() {
@@ -95,7 +100,16 @@ function service_exec() {
 }
 
 function no_vnc() {
-    :
+    novnc_path="/usr/share/novnc/utils"
+    novnc="${novnc_path}/launch.sh"
+    local_port="127.0.0.1"
+    port=6080
+
+    if [ ! -f "$novnc" ]; then
+        die "novnc launch.sh not found..."
+    fi
+
+    $novnc --listen $port
 }
 
 function startvnc() {
@@ -115,8 +129,20 @@ function startvnc() {
     else
     msg "A vncserver lock is found for port ${port}"
     die "try using stopvnc"
-    fi 
+    fi
 
+    msg "VNC server started at ${pubip}:${port}"
+    msg "local VNC ip -> ${_c_magneta}127.0.0.1:1"
+    msg "remote VNC ip -> ${_c_magneta}${pubip}:${port}"
+
+    if [[ -n $NOVNC ]]; then
+        msg "Starting novnc server..."
+        msg "local VNC ip -> ${_c_magneta}127.0.0.1:6090"
+        msg "remote VNC ip -> ${_c_magneta}${pubip}:6090"
+        msg
+        msg "press ctrl+c to stop novnc server!"
+        no_vnc
+    fi
 }
 
 function stopvnc() {
