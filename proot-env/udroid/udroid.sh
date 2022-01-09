@@ -102,7 +102,6 @@ function service_exec() {
 function no_vnc() {
     novnc_path="/usr/share/novnc/utils"
     novnc="${novnc_path}/launch.sh"
-    local_port="127.0.0.1"
     port=6080
 
     if [ ! -f "$novnc" ]; then
