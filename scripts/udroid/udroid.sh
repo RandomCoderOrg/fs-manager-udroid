@@ -15,7 +15,7 @@ _login() {
 		mate) SUITE="mate" shift ;;
 		xfce|xfce4) SUITE="xfce4" shift ;;
 		kde) SUITE="kde" shift ;;
-		*) l_login;;
+		*) l_login $*;;
 	esac
 
 	if [ $# -gt 0 ]; then
@@ -40,7 +40,7 @@ _login() {
 l_login() {
 	if [ -f "${HOME}/.udroid/logindistro_cache" ]; then
 		if [ -s "${HOME}/.udroid/logindistro_cache" ]; then
-			login "$(${HOME}/.udroid/logindistro_cache)"
+			login "$(${HOME}/.udroid/logindistro_cache)" $*
 		fi
 	else
 		_msg "login"
@@ -85,6 +85,6 @@ if [ $# -ge 0 ]; then
 	case $1 in
 		-l) shift  _login $* ;;
 		-i|--install) shift _install $1 ;;
-		*) l_login;;
+		*) l_login $*;;
 	esac
 fi
