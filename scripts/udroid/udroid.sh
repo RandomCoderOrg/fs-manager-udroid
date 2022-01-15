@@ -68,6 +68,20 @@ _install() {
 	proot-distro install $final_suite
 }
 
+is_installed() {
+	target_suite=$1
+	
+	if [ ! -f "${D_SCRIPTS}/${target_suite}.sh" ]; then
+		return 1
+	fi
+
+	if [ ! -d "${D_INSTALLED_ROOTFS}/${target_suite}.sh" ]; then
+		return 1
+	fi
+
+	return 0
+}
+
 l_cache() {
 	if [ ! -d ${HOME}/.udroid ]; then
 		mkdir ${HOME}/.udroid
