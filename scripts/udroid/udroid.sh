@@ -2,7 +2,7 @@
 
 TERMUX="/data/data/com.termux/files"
 D_SCRIPTS="${TERMUX}/usr/etc/proot-distro"
-D_INSTALLED_ROOTDS="${TERMUX}/usr/var/lib/proot-distro/installed-rootfs"
+D_INSTALLED_ROOTFS="${TERMUX}/usr/var/lib/proot-distro/installed-rootfs"
 
 die()    { echo -e "${RED}[E] ${*}${RST}";exit 1;:;}
 warn()   { echo -e "${RED}[W] ${*}${RST}";:;}
