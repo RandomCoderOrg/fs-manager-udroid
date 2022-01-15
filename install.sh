@@ -2,7 +2,7 @@
 
 TPREFIX="/data/data/com.termux/files"
 BIN_DIR="${TPREFIX}/usr/bin"
-UDORID_FILE="scripts/udroid/udroid.sh"
+UDROID_FILE="scripts/udroid/udroid.sh"
 
 echo "setting udroid..."
 
