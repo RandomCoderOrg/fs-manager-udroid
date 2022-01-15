@@ -1,175 +1,84 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
-# Udroid manager to work inside proot environment
-#
+TERMUX="/data/data/com.termux/files"
+D_SCRIPTS="${TERMUX}/usr/etc/proot-distro"
+D_INSTALLED_ROOTDS="${TERMUX}/usr/var/lib/proot-distro/installed-rootfs"
 
-version=2.1
-script_name='udroid-manager'
-DEFAULT_CONF="${HOME}/.udroid/udroid-lauch.conf"
-CACHE_ROOT="${HOME}/.uoa-cache-root"
-TPREFIX="/data/data/com.termux/files"
-SCRIPT_DIR="${TPREFIX}/usr/etc/proot-distro"
-INSTALL_FOLDER="${TPREFIX}/usr/var/lib/proot-distro/installed-rootfs"
-DLCACHE="${TPREFIX}/usr/var/lib/proot-distro/dlcache"
+_login() {
+	case $1 in
+		mate) SUITE="mate" shift ;;
+		xfce|xfce4) SUITE="xfce4" shift ;;
+		kde) SUITE="kde" shift ;;
+		*) l_login;;
+	esac
 
-die()    { echo -e "${RED}[E] ${*}${RST}";exit 1;:;}
-warn()   { echo -e "${RED}[W] ${*}${RST}";:;}
-shout()  { echo -e "${DS}[-] ${*}${RST}";:;}
-lshout() { echo -e "${DC}-> ${*}${RST}";:;}
-msg()    { echo -e "${*} \e[0m" >&2;:;}
+	if [ $# -gt 0 ]; then
+		extra_args=$*
+	fi
 
-######
-trim_quotes() {
-    # Usage: trim_quotes "string"
-    : "${1//\'/}"
-    printf '%s\n' "${_//\"/}"
+	suite="udroid-impish-$SUITE"
+
+	if is_installed $suite; then
+		l_cache "$suite"
+		proot-distro login udroid \
+		--bind /dev/null:/proc/sys/kernel/cap_last_cap \
+		--shared-tmp \
+		$extra_args
+	else
+		msg "looks like $SUITE is not installed."
+		msg "use udroid -i $SUITE"
+	fi
+
 }
-######
+
+l_login() {
+	if [ -f "${HOME}/.udroid/logindistro_cache" ]; then
+		if [ -s "${HOME}/.udroid/logindistro_cache" ]; then
+			login "$(${HOME}/.udroid/logindistro_cache)"
+		fi
+	else
+		_msg "login"
+	fi
+}
 
 
 _install() {
-    distro=$1
-    suite="impish"
-    # repo_root="https://raw.githubusercontent.com/RandomCoderOrg/ubuntu-on-android/modified"
-    repo_root="https://raw.githubusercontent.com/RandomCoderOrg/ubuntu-on-android/beta"
-    case $distro in
-        xfce4)
-            varient="xfce4"
-            ;;
-        mate)
-            varient="mate"
-            ;;
-        raw)
-            varient="raw"
-            ;;
-        *)
-            msg "avalible options: "
-            msg "xfce4, mate, raw"
-            ;;
-    esac
-    shout "installing $varient"
-        shout "trying to pull plugin from github"
-    # get plugin 
+	SUITE=$1
+	plugin_loation="https://raw.githubusercontent.com/RandomCoderOrg/ubuntu-on-android/beta/pd-plugins"
 
-    if [ -z "${suite}" ] || [ -z "${varient}" ]; then
-        die "Invalid arguments"
-    fi
-    de="$varient"
-    plugin_url="$repo_root/pd-plugins/udroid-$suite-$de.sh"
-    curl \
-        -L -o $SCRIPT_DIR/udroid-"$suite"-"$de".sh \
-        "$plugin_url" || die "Plugin Download failed"
-    
-    echo udroid-"$suite"-"$de" > "$DEFAULT_CONF"
-    proot-distro install udroid-"$suite"-"$de" || lshout "installation exited with non-zero exit code"
+	final_suite="udroid-impish-$SUITE"
 
+	if is_installed $final_suite; then
+		msg "$SUITE already installed."
+		exit 1
+	fi
+
+	shout "Installing $final_suite"
+	if [ ! -f "${D_SCRIPTS}/${final_suite}.sh" ] ; then
+		download "${plugin_loaction}/${final_suite}.sh" $D_SCRIPTS
+	fi
+	shout "starting proot-distro"
+	proot-distro install $final_suite
 }
 
-_lauch_or_install()
-{
-    # condtions
+l_cache() {
+	if [ ! -d ${HOME}/.udroid ]; then
+		mkdir ${HOME}/.udroid
+	fi
 
-    # Udroid Conf-file
-    if [ ! -f "$DEFAULT_CONF" ]; then
-        export NO_CONF_FOUND=true
-    else
-        launch_suite=$( head -n1 "$DEFAULT_CONF" )
-    fi
-
-    # does DE specified in conf exist?
-    if [ ! -d $INSTALL_FOLDER/"$launch_suite" ]; then
-        export NO_SUITE_FOUND=true
-    fi
-
-    if [ $NO_CONF_FOUND ] || [ $NO_SUITE_FOUND ]; then
-        _install
-    else
-        _proot_distro_dispatch '$*'
-    fi
+	cat $1 > ${HOME}/.udroid/logindistro_cache
 }
 
-_proot_distro_dispatch() {
-    # start pulse server
-    ## ENV: PULSE SERVER LISTENER
-    if [ -n "$PULSE_LISTENER" ]; then
-        listener="$PULSE_LISTENER"
-    else
-        listener="127.0.0.1"
-    fi
-    msg "Starting pulse server at $listener"
-    pulseaudio \
-        --start \
-        --load="module-native-protocol-tcp auth-ip-acl=$listener auth-anonymous=1" \
-        --exit-idle-time=-1 >>/dev/null
-    #
-
-    cap_last_cap='--bind /dev/null:/proc/sys/kernel/cap_last_cap'
-    shared_tmp='--shared-tmp'
-
-    args="$* $cap_last_cap $shared_tmp"
-    fargs="$(trim_quotes "$args")"
-    distro="$( head -n1 "$DEFAULT_CONF" )"
-    shout "starting udroid: $distro"
-    proot-distro login "$distro" "${fargs}"
+download() {
+	url=$1
+	location=$2
+	curl -L -o $location $url
 }
 
-run_cmd() {
-    proot-distro login "${distro}" -- /bin/bash -c "$@"
-}
-######
-
-internet_avalible()
-{
-    if ping -W 4 -c 1 github.com >> /dev/null; then
-        return 0
-    else
-        return 1
-    fi   
-}
-
-upgrade() {
-    if internet_avalible; then
-        if [ -d $CACHE_ROOT/fs-manager-udroid ]; then
-            cd fs-manager-udroid || die "failed .."
-            git pull -v
-            bash install.sh
-        else
-            git clone https://github.com/RandomCoderOrg/fs-manager-udroid "$CACHE_ROOT/fs-manager-udroid"
-            cd fs-manager-udroid || die "failed .."
-            bash install.sh
-        fi
-    fi
-}
-
-_reset() {
-    :
-}
-
-_purge() {
-    :
-}
-
-######
-
-if [ $# -ge 1 ]; then
-    case "$1" in
-    --install|-i)
-        shift 1
-        _install "$@"
-        ;;
-    --upgrade)
-        upgrade
-        ;;
-    -v|--version)
-        msg "udroid fsmgr tool($version): By Team UDROID!..."
-        ;;
-    --reset|--reinstall) _reset;;
-    --purge|--uninstall) _purge;;
-    --restore) restore;;
-    *)
-        _lauch_or_install "$*"
-        ;;
-    esac
-else
-    _lauch_or_install
+if [ $# -ge 0 ]; then
+	case $1 in
+		-l) shift  _login $* ;;
+		-i|--install) shift _install $1 ;;
+		*) l_login;;
+	esac
 fi
