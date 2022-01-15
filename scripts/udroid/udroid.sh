@@ -50,9 +50,10 @@ l_login() {
 
 _install() {
 	SUITE=$1
-	plugin_loation="https://raw.githubusercontent.com/RandomCoderOrg/ubuntu-on-android/beta/pd-plugins"
+	plugin_location="https://raw.githubusercontent.com/RandomCoderOrg/ubuntu-on-android/beta/pd-plugins"
 
 	final_suite="udroid-impish-$SUITE"
+	local_target="${D_SCRIPTS}/${final_suite}.sh"
 
 	if is_installed $final_suite; then
 		msg "$SUITE already installed."
@@ -61,7 +62,7 @@ _install() {
 
 	shout "Installing $final_suite"
 	if [ ! -f "${D_SCRIPTS}/${final_suite}.sh" ] ; then
-		download "${plugin_loaction}/${final_suite}.sh" $D_SCRIPTS
+		download "${plugin_location}/${final_suite}.sh" $local_target 
 	fi
 	shout "starting proot-distro"
 	proot-distro install $final_suite
