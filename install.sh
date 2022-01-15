@@ -2,15 +2,15 @@
 
 TPREFIX="/data/data/com.termux/files"
 BIN_DIR="${TPREFIX}/usr/bin"
+UDORID_FILE="scripts/udroid/udroid.sh"
 
 echo "setting udroid..."
 
-if [ -f etc/scripts/udroid/udroid.sh ]; then
-    FILE="etc/scripts/udroid/udroid.sh"
+if [ -f $UDROID_FILE ]; then
     if [ -f ${BIN_DIR}/udroid.sh ]; then
         rm -rf "${BIN_DIR}/udroid.sh"
     fi
-    cp ${FILE} ${BIN_DIR}/udroid
+    cp ${UDROID_FILE} ${BIN_DIR}/udroid
     chmod 775 ${BIN_DIR}/udroid
 else
     echo "Installation Failed..."
