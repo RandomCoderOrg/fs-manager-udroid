@@ -4,6 +4,12 @@ TERMUX="/data/data/com.termux/files"
 D_SCRIPTS="${TERMUX}/usr/etc/proot-distro"
 D_INSTALLED_ROOTDS="${TERMUX}/usr/var/lib/proot-distro/installed-rootfs"
 
+die()    { echo -e "${RED}[E] ${*}${RST}";exit 1;:;}
+warn()   { echo -e "${RED}[W] ${*}${RST}";:;}
+shout()  { echo -e "${DS}[-] ${*}${RST}";:;}
+lshout() { echo -e "${DC}-> ${*}${RST}";:;}
+msg()    { echo -e "${*} \e[0m" >&2;:;}
+
 _login() {
 	case $1 in
 		mate) SUITE="mate" shift ;;
