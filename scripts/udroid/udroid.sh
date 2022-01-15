@@ -84,8 +84,8 @@ download() {
 
 if [ $# -ge 0 ]; then
 	case $1 in
-		-l) shift  _login $* ;;
-		-i|--install) shift _install $1 ;;
+		-l) shift; _login $* ;;
+		-i|--install) shift;_install $1 ;;
 		*) l_login $*;;
 	esac
 fi
