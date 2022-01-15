@@ -26,6 +26,12 @@ _login() {
 
 	if is_installed $suite; then
 		l_cache "$suite"
+		
+		pulseaudio \
+			--start \
+			--load="module-native-protocol-tcp auth-ip-acl=127.0.0.1 auth-anonymous=1" \
+			--exit-idle-time=-1 >> /dev/null
+
 		proot-distro login udroid \
 		--bind /dev/null:/proc/sys/kernel/cap_last_cap \
 		--shared-tmp \
@@ -67,6 +73,37 @@ _install() {
 	shout "starting proot-distro"
 	proot-distro install $final_suite
 }
+_reset() {
+	case $1 in
+                mate) SUITE="mate";;
+                xfce|xfce4) SUITE="xfce4" ;;
+                kde) SUITE="kde";;	
+	esac
+
+	suite="udroid-impish-$SUITE"
+
+	if is_installed "$suite"; then
+		proot-distro reset $suite
+	else
+		lwarn "$SUITE is not installed."
+	fi
+}
+
+_remove() {
+        case $1 in
+                mate) SUITE="mate";;
+                xfce|xfce4) SUITE="xfce4" ;;
+                kde) SUITE="kde";;
+        esac
+
+        suite="udroid-impish-$SUITE"
+
+        if is_installed "$suite"; then
+                proot-distro remove $suite
+        else
+                lwarn "$SUITE is not installed."
+        fi
+}
 
 is_installed() {
 	target_suite=$1
@@ -100,6 +137,8 @@ if [ $# -ge 0 ]; then
 	case $1 in
 		-l) shift; _login $* ;;
 		-i|--install) shift;_install $1 ;;
+		-re|--reset) shift ; _reset $1 ;;
+		-r|--remove) shift ; _remove $1 ;;
 		*) l_login $*;;
 	esac
 fi
