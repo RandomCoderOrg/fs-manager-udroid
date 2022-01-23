@@ -45,12 +45,22 @@ function _backup() {
 }
 
 _help() {
+    _msg_udroid() {
+        msg "Usage: udroid [command] [options]"
+        msg "Commands:"
+        msg "  backup [options] - backup udroid to file"
+        msg "  restore [options] - restore udroid from file"
+        msg "  help [command] - show help for command"
+        msg "Options:"
+        msg "  -h, --help - show this help"
+        msg "  -o, --output - output file"
+    }
     _msg_backup() {
         msg "udroid backup [-o|--output <output file>]"
         msg "backup udroid to <output file>"
         msg
         msg "Options:"
-        msg "  -o|--output <output file>  : output file name"
+        msg "  -o, --output <output file>  : output file name"
         msg
     }
     _msg_servic_exec() {
@@ -63,8 +73,8 @@ _help() {
         msg "starts vncserver at port 1 with name as UDROID"
         msg 
         msg "Options:"
-        msg "  -h | --help    to show this messege"
-        msg "  -p | --port    to set the port to use"
+        msg "  -h, --help    to show this messege"
+        msg "  -p, --port    to set the port to use"
         msg "  --novnc        to start novnc server!"
     }
     _msg_stopvnc() {
@@ -175,5 +185,19 @@ function on_startup() {
 
 function _init() {
     on_startup
-    
 }
+
+case $(basename "$0") in
+    udroid_service_exec)
+    service_exec; exit 0;;
+    udroid_startvnc|startvnc)
+    startvnc; exit 0 ;;
+    udroid_stopvnc|stopvnc)
+    stopvnc; exit 0;;
+esac
+
+if [ $# -gt 0 ]; then
+    case $1 in
+        *) msg "TODO" ;;
+    esac
+fi
