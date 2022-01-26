@@ -5,6 +5,11 @@ D_SCRIPTS="${TERMUX}/usr/etc/proot-distro"
 D_INSTALLED_ROOTFS="${TERMUX}/usr/var/lib/proot-distro/installed-rootfs"
 D_CACHCE="${HOME}/.udroid-cache-root"
 
+_c_magneta="\e[95m"
+_c_green="\e[32m"
+_c_red="\e[31m"
+_c_blue="\e[34m"
+
 die()    { echo -e "${RED}[E] ${*}${RST}";exit 1;:;}
 warn()   { echo -e "${RED}[W] ${*}${RST}";:;}
 shout()  { echo -e "${DS}[-] ${*}${RST}";:;}
@@ -166,7 +171,7 @@ download() {
 	url=$1
 	location=$2
 	curl -L -o $location $url || {
-		die "This action requires connection to the internet."
+		die "Download operation failed."
 	}
 }
 
@@ -178,4 +183,9 @@ if [ $# -ge 0 ]; then
 		-r|--remove) shift ; _remove $1 ;;
 		*) l_login $*;;
 	esac
+fi
+
+# make sure to create cache dir first
+if [ ! -d "$D_CACHCE" ]; then
+	mkdir -p "$D_CACHCE"
 fi
