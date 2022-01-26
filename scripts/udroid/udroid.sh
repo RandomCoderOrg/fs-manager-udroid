@@ -3,6 +3,7 @@
 TERMUX="/data/data/com.termux/files"
 D_SCRIPTS="${TERMUX}/usr/etc/proot-distro"
 D_INSTALLED_ROOTFS="${TERMUX}/usr/var/lib/proot-distro/installed-rootfs"
+D_CACHCE="${HOME}/.udroid-cache-root"
 
 die()    { echo -e "${RED}[E] ${*}${RST}";exit 1;:;}
 warn()   { echo -e "${RED}[W] ${*}${RST}";:;}
@@ -56,11 +57,45 @@ l_login() {
 
 _install() {
 	SUITE=$1
-	plugin_location="https://raw.githubusercontent.com/RandomCoderOrg/ubuntu-on-android/beta/pd-plugins"
+	
+	# relative path of plugins with respect to pd-plugins dir
+	# set this when you need to install another suite
+	if [ -n "$OVERRIDE_REMOTE_PLUGIN_DIR" ]; then
+		warn "overriding remote plugin dir with $OVERRIDE_REMOTE_PLUGIN_DIR"
+		REMOTE_PLUGIN_DIR=$OVERRIDE_REMOTE_PLUGIN_DIR
+	else
+		REMOTE_PLUGIN_DIR="default"
+	fi
 
-	final_suite="udroid-impish-$SUITE"
+	# set this to pull plugins from another branch
+	if [ -n "$OVERRIDE_BRANCH" ]; then
+		warn "[DEPARTED]: overriding branch to $OVERRIDE_BRANCH"
+		BRANCH=$OVERRIDE_BRANCH
+	else
+		BRANCH="modified"
+	fi
+
+	plugin_location="https://raw.githubusercontent.com/RandomCoderOrg/ubuntu-on-android/$BRANCH/pd-plugins/$REMOTE_PLUGIN_DIR"
+
+	# pull and parse plugin properties
+	download $plugin_location/plugins.prop "$D_CACHCE"/plugins.prop
+
+	source $D_CACHCE/plugin.prop || die "failed to parse plugin data..?"
+	
+	for v in "${avalibe_varients[@]}"; do
+		if [ "$v" == "$SUITE" ]; then
+			varient=$SUITE
+		fi
+	done
+	
+	if [ -z "$varient" ]; then
+		warn "unknown varient: $SUITE"
+		msg "varients founds: ${avalibe_varients[*]}"
+		die "installation failed."
+	fi
+
+	final_suite="udroid-$suite-$varient"
 	local_target="${D_SCRIPTS}/${final_suite}.sh"
-
 	if is_installed $final_suite; then
 		msg "$SUITE already installed."
 		exit 1
@@ -130,7 +165,9 @@ l_cache() {
 download() {
 	url=$1
 	location=$2
-	curl -L -o $location $url
+	curl -L -o $location $url || {
+		die "This action requires connection to the internet."
+	}
 }
 
 if [ $# -ge 0 ]; then
