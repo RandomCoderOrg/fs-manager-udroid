@@ -10,10 +10,10 @@ _c_green="\e[32m"
 _c_red="\e[31m"
 _c_blue="\e[34m"
 
-die()    { echo -e "${RED}[E] ${*}${RST}";exit 1;:;}
-warn()   { echo -e "${RED}[W] ${*}${RST}";:;}
-shout()  { echo -e "${DS}[-] ${*}${RST}";:;}
-lshout() { echo -e "${DC}-> ${*}${RST}";:;}
+die()    { echo -e "${_c_red}[E] ${*}${RST}";exit 1;:;}
+warn()   { echo -e "${_c_red}[W] ${*}${RST}";:;}
+shout()  { echo -e "${_c_blue}[-] ${*}${RST}";:;}
+lshout() { echo -e "${_c_blue}-> ${*}${RST}";:;}
 msg()    { echo -e "${*} \e[0m" >&2;:;}
 
 _login() {
@@ -85,7 +85,7 @@ _install() {
 	# pull and parse plugin properties
 	download $plugin_location/plugins.prop "$D_CACHCE"/plugins.prop
 
-	source $D_CACHCE/plugin.prop || die "failed to parse plugin data..?"
+	source $D_CACHCE/plugins.prop || die "failed to parse plugin data..?"
 	
 	for v in "${avalibe_varients[@]}"; do
 		if [ "$v" == "$SUITE" ]; then
@@ -175,6 +175,11 @@ download() {
 	}
 }
 
+# make sure to create cache dir first
+if [ ! -d "$D_CACHCE" ]; then
+	mkdir -p "$D_CACHCE"
+fi
+
 if [ $# -ge 0 ]; then
 	case $1 in
 		-l) shift; _login $* ;;
@@ -185,7 +190,3 @@ if [ $# -ge 0 ]; then
 	esac
 fi
 
-# make sure to create cache dir first
-if [ ! -d "$D_CACHCE" ]; then
-	mkdir -p "$D_CACHCE"
-fi
