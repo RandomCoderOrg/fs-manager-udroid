@@ -9,6 +9,7 @@ _c_magneta="\e[95m"
 _c_green="\e[32m"
 _c_red="\e[31m"
 _c_blue="\e[34m"
+RST="\e[0m"
 
 die()    { echo -e "${_c_red}[E] ${*}${RST}";exit 1;:;}
 warn()   { echo -e "${_c_red}[W] ${*}${RST}";:;}
@@ -58,7 +59,6 @@ l_login() {
 		_msg "login"
 	fi
 }
-
 
 _install() {
 	SUITE=$1
