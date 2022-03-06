@@ -74,7 +74,7 @@ _install() {
 
 	# set this to pull plugins from another branch
 	if [ -n "$OVERRIDE_BRANCH" ]; then
-		warn "[DEPARTED]: overriding branch to $OVERRIDE_BRANCH"
+		warn "overriding branch to $OVERRIDE_BRANCH"
 		BRANCH=$OVERRIDE_BRANCH
 	else
 		BRANCH="modified"
