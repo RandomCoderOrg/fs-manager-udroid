@@ -146,7 +146,7 @@ _reset() {
 	fi
 }
 
-_remove() {
+remove() {
         case $1 in
                 mate) SUITE="mate";;
                 xfce|xfce4) SUITE="xfce4" ;;
@@ -160,6 +160,23 @@ _remove() {
         else
                 lwarn "$SUITE is not installed."
         fi
+}
+
+upgrade() {
+	url_host="https://raw.githubusercontent.com"
+	url_org="/RandomCoderOrg"
+	repo="/fs-manager-udroid"
+	
+	if [ -n "$OVERRIDE_BRANCH" ]; then
+		BRANCH=$OVERRIDE_BRANCH
+	else
+		BRANCH="main"
+	fi
+
+	path="/$BRANCH/scripts/udroid/udroid.sh"
+	url="$url_host$url_org$repo$path"
+
+	download "$TERMUX/usr/bin/udroid" "$url"
 }
 
 is_installed() {
@@ -195,6 +212,7 @@ if [ $# -ge 0 ]; then
 		-i|--install) shift;_install $1 ;;
 		-re|--reset) shift ; _reset $1 ;;
 		-r|--remove) shift ; _remove $1 ;;
+		-S|--sync|--upgrade) upgrade ;;
 		*) l_login $*;;
 	esac
 fi
