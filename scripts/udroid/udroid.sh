@@ -28,9 +28,10 @@ _login() {
 	avalible_distros=$(find $D_INSTALLED_ROOTFS -maxdepth 1 -type d | grep udroid)
 	cd "$OLDPWD" || exit
 
-	if [ -n "$UDROID_SUITE" ]; then
+	if [ -z "$UDROID_SUITE" ]; then
 		default_suite="impish"
 	else
+		default_suite="$UDROID_SUITE"
 		msg "udroid suite [\$UDROID_SUITE] is set to ${UDROID_SUITE}"
 	fi
 
