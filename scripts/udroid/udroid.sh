@@ -23,25 +23,26 @@ _login() {
 
 	varient=$1; shift
 	extra_args=$*
+	default_suite="impish"
 
 	cd "$D_INSTALLED_ROOTFS" || die "$D_INSTALLED_ROOTFS Not Found.."
 	avalible_distros=$(find $D_INSTALLED_ROOTFS -maxdepth 1 -type d | grep udroid)
 	cd "$OLDPWD" || exit
 
 	if [ -z "$UDROID_SUITE" ]; then
-		default_suite="impish"
+		suite="impish"
 	else
-		default_suite="$UDROID_SUITE"
+		suite="$UDROID_SUITE"
 		msg "udroid suite [\$UDROID_SUITE] is set to ${UDROID_SUITE}"
 	fi
 
-	distro="${default_suite}-${varient}"
+	distro="$suite-$varient"
 	if [[ $avalible_distros =~ $distro ]]; then
 		# store distro aliases in cache
 		echo "$distro" > "$LOGIN_CACHE_FILE"
 
 		# start distro
-		start "${default_suite}-${varient}" $extra_args
+		start "$distro" $extra_args
 	else
 		# TODO: ADD SUGGESTIONS
 		lwarn "$distro not found..."
