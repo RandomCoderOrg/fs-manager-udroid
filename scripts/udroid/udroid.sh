@@ -4,6 +4,7 @@ TERMUX="/data/data/com.termux/files"
 D_SCRIPTS="${TERMUX}/usr/etc/proot-distro"
 D_INSTALLED_ROOTFS="${TERMUX}/usr/var/lib/proot-distro/installed-rootfs"
 D_CACHCE="${HOME}/.udroid-cache-root"
+LOGIN_CACHE_FILE="${D_CACHCE}/login_rec.cache"
 
 _c_magneta="\e[95m"
 _c_green="\e[32m"
@@ -15,50 +16,64 @@ die()    { echo -e "${_c_red}[E] ${*}${RST}";exit 1;:;}
 warn()   { echo -e "${_c_red}[W] ${*}${RST}";:;}
 shout()  { echo -e "${_c_blue}[-] ${*}${RST}";:;}
 lshout() { echo -e "${_c_blue}-> ${*}${RST}";:;}
+imsg()	 { if $UDROID_VERBOSE; then echo -e ": ${*} \e[0m" >&2;fi;:;}
 msg()    { echo -e "${*} \e[0m" >&2;:;}
 
 _login() {
-	case $1 in
-		mate) SUITE="mate" shift ;;
-		xfce|xfce4) SUITE="xfce4" shift ;;
-		kde) SUITE="kde" shift ;;
-		*) l_login $*;;
-	esac
 
-	if [ $# -gt 0 ]; then
-		extra_args=$*
-	fi
+	varient=$1; shift
+	extra_args=$*
 
-	suite="udroid-impish-$SUITE"
+	cd "$D_INSTALLED_ROOTFS" || die "$D_INSTALLED_ROOTFS Not Found.."
+	avalible_distros=$(find $D_INSTALLED_ROOTFS -maxdepth 1 -type d | grep udroid)
+	cd "$OLDPWD" || exit
 
-	if is_installed $suite; then
-		l_cache "$suite"
-		
-		pulseaudio \
-			--start \
-			--load="module-native-protocol-tcp auth-ip-acl=127.0.0.1 auth-anonymous=1" \
-			--exit-idle-time=-1 >> /dev/null
-
-		proot-distro login udroid \
-		--bind /dev/null:/proc/sys/kernel/cap_last_cap \
-		--shared-tmp \
-		$extra_args
+	if [ -n "$UDROID_SUITE" ]; then
+		default_suite="impish"
 	else
-		msg "looks like $SUITE is not installed."
-		msg "use udroid -i $SUITE"
+		msg "udroid suite [\$UDROID_SUITE] is set to ${UDROID_SUITE}"
 	fi
 
+	distro="${default_suite}-${varient}"
+	if [[ $avalible_distros =~ $distro ]]; then
+		# store distro aliases in cache
+		echo "$distro" > "$LOGIN_CACHE_FILE"
+
+		# start distro
+		start "${default_suite}-${varient}" $extra_args
+	else
+		# TODO: ADD SUGGESTIONS
+		lwarn "$distro not found..."
+	fi
+}
+
+start() {
+
+	distro=$1; shift
+	extra_args="--bind /dev/null:/proc/sys/kernel/cap_last_cap \
+	--shared-tmp \
+	$extra_args"
+
+	# start Pulse Audio tcp receiver
+
+	imsg "Starting pulseaudio"
+
+	# TODO: CHECK IS Pulseaudio RUNNING BEFORE EXECUTING
+	pulseaudio \
+		--start \
+		--load="module-native-protocol-tcp auth-ip-acl=127.0.0.1 auth-anonymous=1" \
+		--exit-idle-time=-1 >> /dev/null
+
+	imsg "Starting $distro.."
+	proot-distro login "$distro" "$extra_args"
 }
 
 l_login() {
-	if [ -f "${HOME}/.udroid/logindistro_cache" ]; then
-		if [ -s "${HOME}/.udroid/logindistro_cache" ]; then
-			login "$(${HOME}/.udroid/logindistro_cache)" $*
-		fi
-	else
-		_msg "login"
+	if [ -f "$LOGIN_CACHE_FILE" ]; then
+		start "$(cat LOGIN_CACHE_FILE)"
 	fi
 }
+
 
 _install() {
 	SUITE=$1
@@ -157,14 +172,6 @@ is_installed() {
 	fi
 
 	return 0
-}
-
-l_cache() {
-	if [ ! -d ${HOME}/.udroid ]; then
-		mkdir ${HOME}/.udroid
-	fi
-
-	cat $1 > ${HOME}/.udroid/logindistro_cache
 }
 
 download() {
