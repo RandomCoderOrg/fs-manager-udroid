@@ -52,9 +52,7 @@ _login() {
 start() {
 
 	distro=$1; shift
-	extra_args="--bind /dev/null:/proc/sys/kernel/cap_last_cap \
-	--shared-tmp \
-	$extra_args"
+	extra_args=$*
 
 	# start Pulse Audio tcp receiver
 
@@ -67,7 +65,9 @@ start() {
 		--exit-idle-time=-1 >> /dev/null
 
 	imsg "Starting $distro.."
-	proot-distro login "$distro" "$extra_args"
+	proot-distro login "$distro" --bind /dev/null:/proc/sys/kernel/cap_last_cap \
+	--shared-tmp \
+	$extra_args
 }
 
 l_login() {
