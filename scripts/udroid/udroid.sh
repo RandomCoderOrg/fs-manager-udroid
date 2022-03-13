@@ -176,7 +176,7 @@ upgrade() {
 	path="/$BRANCH/scripts/udroid/udroid.sh"
 	url="$url_host$url_org$repo$path"
 
-	download "$TERMUX/usr/bin/udroid" "$url"
+	download "$url" "$TERMUX/usr/bin/udroid"
 }
 
 is_installed() {
