@@ -16,7 +16,7 @@ die()    { echo -e "${_c_red}[E] ${*}${RST}";exit 1;:;}
 warn()   { echo -e "${_c_red}[W] ${*}${RST}";:;}
 shout()  { echo -e "${_c_blue}[-] ${*}${RST}";:;}
 lshout() { echo -e "${_c_blue}-> ${*}${RST}";:;}
-imsg()	 { if $UDROID_VERBOSE; then echo -e ": ${*} \e[0m" >&2;fi;:;}
+imsg()	 { if [ -n "$UDROID_VERBOSE" ]; then echo -e ": ${*} \e[0m" >&2;fi;:;}
 msg()    { echo -e "${*} \e[0m" >&2;:;}
 
 _login() {
