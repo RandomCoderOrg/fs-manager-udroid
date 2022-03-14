@@ -163,6 +163,7 @@ remove() {
 }
 
 upgrade() {
+	shout "Upgrade.."
 	url_host="https://raw.githubusercontent.com"
 	url_org="/RandomCoderOrg"
 	repo="/fs-manager-udroid"
@@ -175,8 +176,13 @@ upgrade() {
 
 	path="/$BRANCH/scripts/udroid/udroid.sh"
 	url="$url_host$url_org$repo$path"
-
-	download "$url" "$TERMUX/usr/bin/udroid"
+	lshout "Sync tool with GitHub..."
+	download "$url" "$TERMUX/usr/bin/udroid" || {
+		lwarn "failed to sync tool with GitHub"
+		exit 1
+	}
+	chmod +x "$TERMUX/usr/bin/udroid"
+	lshout "Sync tool with GitHub...done"
 }
 
 is_installed() {
