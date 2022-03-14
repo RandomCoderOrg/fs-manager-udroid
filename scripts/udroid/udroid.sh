@@ -71,8 +71,21 @@ start() {
 }
 
 l_login() {
-	if [ -f "$LOGIN_CACHE_FILE" ]; then
+	avalible_distros=$(find $D_INSTALLED_ROOTFS -maxdepth 1 -type d | grep udroid)
+
+	if [ -s "$LOGIN_CACHE_FILE" ]; then
 		start "$(cat LOGIN_CACHE_FILE)"
+	else
+		lshout "No distro found in login cache.."
+		# show avalible distros
+		msg "${_c_blue}Available distros to login:"
+		for distro in $avalible_distros; do
+			msg "  ${_c_magneta}$(basename $distro)${RST}"
+		done
+		msg
+
+		msg "${_c_blue}use ${_c_magneta}udroid -l <distro>${RST} to login"
+		msg "ex: ${_c_magneta}udroid -l xfce4${RST}"
 	fi
 }
 
@@ -80,6 +93,12 @@ l_login() {
 _install() {
 	SUITE=$1
 	
+	# make sure to satisy old docs
+	if [ -z "$SUITE" ]; then
+		imsg "falling back to defaults"
+		SUITE="xfce4"
+	fi
+
 	# relative path of plugins with respect to pd-plugins dir
 	# set this when you need to install another suite
 	if [ -n "$OVERRIDE_REMOTE_PLUGIN_DIR" ]; then
