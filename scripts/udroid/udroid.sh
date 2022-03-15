@@ -30,7 +30,7 @@ _login() {
 	cd "$OLDPWD" || exit
 
 	if [ -z "$UDROID_SUITE" ]; then
-		suite="impish"
+		suite="udroid-focal"
 	else
 		suite="$UDROID_SUITE"
 		msg "udroid suite [\$UDROID_SUITE] is set to ${UDROID_SUITE}"
