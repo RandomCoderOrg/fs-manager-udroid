@@ -216,6 +216,10 @@ upgrade() {
 	path="/$BRANCH/scripts/udroid/udroid.sh"
 	url="$url_host$url_org$repo$path"
 	lshout "Sync tool with GitHub..."
+	if [ -f "$TERMUX/usr/bin/udroid" ]; then
+		rm -rf "$TERMUX/usr/bin/udroid"
+	fi
+	
 	download "$url" "$TERMUX/usr/bin/udroid" || {
 		lwarn "failed to sync tool with GitHub"
 		exit 1
