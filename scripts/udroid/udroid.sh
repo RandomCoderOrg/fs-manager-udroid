@@ -21,8 +21,8 @@ msg()    { echo -e "${*} \e[0m" >&2;:;}
 
 _satisfy_deps() {
 	### Deps
-	for deb in {proot-distro,proot,tar}; do
-		if ! command -v $deb >> /dev/null; then
+	for deb in {proot-distro,proot,tar,pulseaudio}; do
+		if ! command -v $deb >>/dev/null; then
 			missing_debs="$deb $missing_debs"
 		fi
 	done
@@ -35,14 +35,15 @@ _satisfy_deps() {
 
 _login() {
 
-	varient=$1; shift
+	varient=$1
+	shift
 	extra_args=$*
 
 	cd "$D_INSTALLED_ROOTFS" || die "$D_INSTALLED_ROOTFS Not Found.."
 	avalible_distros=$(find $D_INSTALLED_ROOTFS -maxdepth 1 -type d | grep udroid)
 	cd "$OLDPWD" || exit
 
-	if [ -z "$UDROID_SUITE" ] && [ -z "$_SUITE" ] ; then
+	if [ -z "$UDROID_SUITE" ] && [ -z "$_SUITE" ]; then
 		suite="udroid-focal"
 	else
 		[[ -n "$UDROID_SUITE" ]] && suite="$UDROID_SUITE"
@@ -50,13 +51,24 @@ _login() {
 		msg "udroid suite is set to ${_SUITE}"
 	fi
 
-	distro="$suite-$varient"
+	distro="udroid-$_suite-$varient"
 	if [[ $avalible_distros =~ $distro ]]; then
-		# store distro aliases in cache
-		echo "$distro" > "$LOGIN_CACHE_FILE"
+		if is_installed "$distro"; then
+			# store distro aliases in cache
+			echo "$distro" >"$LOGIN_CACHE_FILE"
+			# start distro
+			start "$distro" $extra_args
+		else
+			msg "${_c_blue} ${distro} is either not installed.."
+			msg "${_c_blue}Available distros to login:"
+			for distro in $avalible_distros; do
+				msg "  ${_c_magneta}$(basename $distro)${RST}"
+			done
+			msg
 
-		# start distro
-		start "$distro" $extra_args
+			msg "${_c_blue}use ${_c_magneta}udroid -l <distro>${RST} to login"
+			msg "ex: ${_c_magneta}udroid -l xfce4${RST}"
+		fi
 	else
 		# TODO: ADD SUGGESTIONS
 		warn "$distro not found..."
@@ -65,7 +77,8 @@ _login() {
 
 start() {
 
-	distro=$1; shift
+	distro=$1
+	shift
 	extra_args=$*
 
 	# start Pulse Audio tcp receiver
@@ -76,12 +89,12 @@ start() {
 	pulseaudio \
 		--start \
 		--load="module-native-protocol-tcp auth-ip-acl=127.0.0.1 auth-anonymous=1" \
-		--exit-idle-time=-1 >> /dev/null
+		--exit-idle-time=-1 >>/dev/null
 
 	imsg "Starting $distro.. with args\n--bind /dev/null:/proc/sys/kernel/cap_last_cap\n--shared-tmp "
 	proot-distro login "$distro" --bind /dev/null:/proc/sys/kernel/cap_last_cap \
-	--shared-tmp \
-	$extra_args
+		--shared-tmp \
+		$extra_args
 }
 
 l_login() {
@@ -103,10 +116,9 @@ l_login() {
 	fi
 }
 
-
 _install() {
 	SUITE=$1
-	
+
 	# make sure to satisy old docs
 	if [ -z "$SUITE" ]; then
 		imsg "falling back to defaults"
@@ -116,10 +128,10 @@ _install() {
 	# relative path of plugins with respect to pd-plugins dir
 	# set this when you need to install another suite
 	if [ -n "$OVERRIDE_REMOTE_PLUGIN_DIR" ] || [ -n "$_SUITE" ]; then
-		
+
 		[[ -n "$OVERRIDE_REMOTE_PLUGIN_DIR" ]] && REMOTE_PLUGIN_DIR="$OVERRIDE_REMOTE_PLUGIN_DIR"
 		[[ -n "$_SUITE" ]] && REMOTE_PLUGIN_DIR="$_SUITE"
-		
+
 		warn "overriding remote plugin dir with $REMOTE_PLUGIN_DIR"
 	else
 		REMOTE_PLUGIN_DIR="default"
@@ -139,13 +151,13 @@ _install() {
 	download $plugin_location/plugins.prop "$D_CACHCE"/plugins.prop
 
 	source $D_CACHCE/plugins.prop || die "failed to parse plugin data..?"
-	
+
 	for v in "${avalibe_varients[@]}"; do
 		if [ "$v" == "$SUITE" ]; then
 			varient=$SUITE
 		fi
 	done
-	
+
 	if [ -z "$varient" ]; then
 		warn "unknown varient: $SUITE"
 		msg "varients founds: ${avalibe_varients[*]}"
@@ -161,18 +173,19 @@ _install() {
 	fi
 
 	shout "Installing $final_suite"
-	if [ ! -f "${D_SCRIPTS}/${final_suite}.sh" ] ; then
-		download "${plugin_location}/${final_suite}.sh" $local_target 
+	if [ ! -f "${D_SCRIPTS}/${final_suite}.sh" ]; then
+		download "${plugin_location}/${final_suite}.sh" $local_target
 	fi
 	shout "starting proot-distro"
 	proot-distro install $final_suite
 }
+
 _reset() {
 
 	avalible_distros=$(find $D_INSTALLED_ROOTFS -maxdepth 1 -type d | grep udroid)
 	varient=$1
 
-	if [ -z "$UDROID_SUITE" ] && [ -z "$_SUITE" ] ; then
+	if [ -z "$UDROID_SUITE" ] && [ -z "$_SUITE" ]; then
 		_suite="udroid-focal"
 	else
 		[[ -n "$UDROID_SUITE" ]] && _suite="$UDROID_SUITE"
@@ -192,7 +205,7 @@ _remove() {
 	avalible_distros=$(find $D_INSTALLED_ROOTFS -maxdepth 1 -type d | grep udroid)
 	varient=$1
 
-	if [ -z "$UDROID_SUITE" ] && [ -z "$_SUITE" ] ; then
+	if [ -z "$UDROID_SUITE" ] && [ -z "$_SUITE" ]; then
 		_suite="udroid-focal"
 	else
 		[[ -n "$UDROID_SUITE" ]] && _suite="$UDROID_SUITE"
@@ -201,11 +214,11 @@ _remove() {
 	fi
 	suite="${_suite}-$varient"
 
-    if is_installed "$suite"; then
-            proot-distro remove $suite
-    else
-            warn "$SUITE is not installed."
-    fi
+	if is_installed "$suite"; then
+		proot-distro remove $suite
+	else
+		warn "$SUITE is not installed."
+	fi
 }
 
 upgrade() {
@@ -213,7 +226,7 @@ upgrade() {
 	url_host="https://raw.githubusercontent.com"
 	url_org="/RandomCoderOrg"
 	repo="/fs-manager-udroid"
-	
+
 	if [ -n "$OVERRIDE_BRANCH" ]; then
 		BRANCH=$OVERRIDE_BRANCH
 	else
@@ -226,7 +239,7 @@ upgrade() {
 	if [ -f "$TERMUX/usr/bin/udroid" ]; then
 		rm -rf "$TERMUX/usr/bin/udroid"
 	fi
-	
+
 	download "$url" "$TERMUX/usr/bin/udroid" || {
 		warn "failed to sync tool with GitHub"
 		exit 1
@@ -237,7 +250,7 @@ upgrade() {
 
 is_installed() {
 	target_suite=$1
-	
+
 	if [ ! -f "${D_SCRIPTS}/${target_suite}.sh" ]; then
 		return 1
 	fi
@@ -267,13 +280,38 @@ _satisfy_deps
 
 while [ $# -gt 0 ]; do
 	case $1 in
-		--suite) shift; _SUITE="$1"; shift ;;
-		-l) shift; _login $*; break ;;
-		-i|--install) shift;_install $1; exit 0 ;;
-		-re|--reset) shift ; _reset $1; exit 0 ;;
-		-r|--remove) shift ; _remove $1; exit 0 ;;
-		-S|--sync|--upgrade) upgrade; exit 0 ;;
-		*) l_login $*; break;;
+	--suite)
+		shift
+		_SUITE="$1"
+		shift
+		;;
+	-l)
+		shift
+		_login $*
+		break
+		;;
+	-i | --install)
+		shift
+		_install $1
+		exit 0
+		;;
+	-re | --reset)
+		shift
+		_reset $1
+		exit 0
+		;;
+	-r | --remove)
+		shift
+		_remove $1
+		exit 0
+		;;
+	-S | --sync | --upgrade)
+		upgrade
+		exit 0
+		;;
+	*)
+		l_login $*
+		break
+		;;
 	esac
 done
-
