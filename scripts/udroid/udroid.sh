@@ -45,8 +45,8 @@ _login() {
 	if [ -z "$UDROID_SUITE" ] && [ -z "$_SUITE" ] ; then
 		suite="udroid-focal"
 	else
-		[[ -n "$UDROID_SUITE" ]] && _suite="$UDROID_SUITE"
-		[[ -n "$_SUITE" ]] && _suite="$_SUITE"
+		[[ -n "$UDROID_SUITE" ]] && suite="$UDROID_SUITE"
+		[[ -n "$_SUITE" ]] && suite="$_SUITE"
 		msg "udroid suite is set to ${_SUITE}"
 	fi
 
