@@ -51,7 +51,7 @@ _login() {
 		msg "udroid suite is set to ${_SUITE}"
 	fi
 
-	distro="udroid-$_suite-$varient"
+	distro="udroid-$suite-$varient"
 	if [[ $avalible_distros =~ $distro ]]; then
 		if is_installed "$distro"; then
 			# store distro aliases in cache
