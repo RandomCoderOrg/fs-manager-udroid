@@ -21,7 +21,7 @@ msg()    { echo -e "${*} \e[0m" >&2;:;}
 
 _satisfy_deps() {
 	### Deps
-	for deb in {proot-distro, proot, tar}; do
+	for deb in {proot-distro,proot,tar}; do
 		if ! command -v $deb >> /dev/null; then
 			missing_debs="$deb $missing_debs"
 		fi
