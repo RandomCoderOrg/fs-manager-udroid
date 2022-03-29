@@ -44,7 +44,7 @@ _login() {
 	cd "$OLDPWD" || exit
 
 	if [ -z "$UDROID_SUITE" ] && [ -z "$_SUITE" ]; then
-		suite="udroid-focal"
+		suite="focal"
 	else
 		[[ -n "$UDROID_SUITE" ]] && suite="$UDROID_SUITE"
 		[[ -n "$_SUITE" ]] && suite="$_SUITE"
@@ -206,13 +206,13 @@ _remove() {
 	varient=$1
 
 	if [ -z "$UDROID_SUITE" ] && [ -z "$_SUITE" ]; then
-		_suite="udroid-focal"
+		_suite="focal"
 	else
 		[[ -n "$UDROID_SUITE" ]] && _suite="$UDROID_SUITE"
 		[[ -n "$_SUITE" ]] && _suite="$_SUITE"
 		msg "udroid suite is set to ${_SUITE}"
 	fi
-	suite="${_suite}-$varient"
+	suite="udroid-${_suite}-$varient"
 
 	if is_installed "$suite"; then
 		proot-distro remove $suite
@@ -255,7 +255,7 @@ is_installed() {
 		return 1
 	fi
 
-	if [ ! -d "${D_INSTALLED_ROOTFS}/${target_suite}" ]; then
+	if [ ! -d "${D_INSTALLED_ROOTFS}/${target_suite}/bin" ]; then
 		return 1
 	fi
 
