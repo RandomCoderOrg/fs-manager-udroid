@@ -42,7 +42,7 @@ _login() {
 	avalible_distros=$(find $D_INSTALLED_ROOTFS -maxdepth 1 -type d | grep udroid)
 	cd "$OLDPWD" || exit
 
-	if [ -z "$UDROID_SUITE" ] || [ -z "$_SUITE" ] ; then
+	if [ -z "$UDROID_SUITE" ] && [ -z "$_SUITE" ] ; then
 		suite="udroid-focal"
 	else
 		[[ -n "$UDROID_SUITE" ]] && _suite="$UDROID_SUITE"
@@ -172,7 +172,7 @@ _reset() {
 	avalible_distros=$(find $D_INSTALLED_ROOTFS -maxdepth 1 -type d | grep udroid)
 	varient=$1
 
-	if [ -z "$UDROID_SUITE" ] || [ -z "$_SUITE" ] ; then
+	if [ -z "$UDROID_SUITE" ] && [ -z "$_SUITE" ] ; then
 		_suite="udroid-focal"
 	else
 		[[ -n "$UDROID_SUITE" ]] && _suite="$UDROID_SUITE"
@@ -188,11 +188,11 @@ _reset() {
 	fi
 }
 
-remove() {
+_remove() {
 	avalible_distros=$(find $D_INSTALLED_ROOTFS -maxdepth 1 -type d | grep udroid)
 	varient=$1
 
-	if [ -z "$UDROID_SUITE" ] || [ -z "$_SUITE" ] ; then
+	if [ -z "$UDROID_SUITE" ] && [ -z "$_SUITE" ] ; then
 		_suite="udroid-focal"
 	else
 		[[ -n "$UDROID_SUITE" ]] && _suite="$UDROID_SUITE"
