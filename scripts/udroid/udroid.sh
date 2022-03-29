@@ -120,8 +120,7 @@ _install() {
 		[[ -n "$OVERRIDE_REMOTE_PLUGIN_DIR" ]] && REMOTE_PLUGIN_DIR="$OVERRIDE_REMOTE_PLUGIN_DIR"
 		[[ -n "$_SUITE" ]] && REMOTE_PLUGIN_DIR="$_SUITE"
 		
-		warn "overriding remote plugin dir with $OVERRIDE_REMOTE_PLUGIN_DIR"
-		REMOTE_PLUGIN_DIR=$OVERRIDE_REMOTE_PLUGIN_DIR
+		warn "overriding remote plugin dir with $REMOTE_PLUGIN_DIR"
 	else
 		REMOTE_PLUGIN_DIR="default"
 	fi
@@ -267,7 +266,7 @@ _satisfy_deps
 
 while [ $# -gt 0 ]; do
 	case $1 in
-		--suite) shift; _SUITE="$1" ;;
+		--suite) shift; _SUITE="$1"; shift ;;
 		-l) shift; _login $*; break ;;
 		-i|--install) shift;_install $1; exit 0 ;;
 		-re|--reset) shift ; _reset $1; exit 0 ;;
