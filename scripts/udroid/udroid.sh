@@ -23,17 +23,16 @@ _login() {
 
 	varient=$1; shift
 	extra_args=$*
-	default_suite="impish"
 
 	cd "$D_INSTALLED_ROOTFS" || die "$D_INSTALLED_ROOTFS Not Found.."
 	avalible_distros=$(find $D_INSTALLED_ROOTFS -maxdepth 1 -type d | grep udroid)
 	cd "$OLDPWD" || exit
 
-	if [ -z "$UDROID_SUITE" ]; then
+	if [ -z "$UDROID_SUITE" ] || [ -z "$_SUITE" ] ; then
 		suite="udroid-focal"
 	else
 		suite="$UDROID_SUITE"
-		msg "udroid suite [\$UDROID_SUITE] is set to ${UDROID_SUITE}"
+		msg "udroid suite is set to ${UDROID_SUITE}"
 	fi
 
 	distro="$suite-$varient"
@@ -56,7 +55,7 @@ start() {
 
 	# start Pulse Audio tcp receiver
 
-	imsg "Starting pulseaudio"
+	imsg "Starting pulseaudio at 127.0.0.1"
 
 	# TODO: CHECK IS Pulseaudio RUNNING BEFORE EXECUTING
 	pulseaudio \
@@ -64,7 +63,7 @@ start() {
 		--load="module-native-protocol-tcp auth-ip-acl=127.0.0.1 auth-anonymous=1" \
 		--exit-idle-time=-1 >> /dev/null
 
-	imsg "Starting $distro.."
+	imsg "Starting $distro.. with args\n--bind /dev/null:/proc/sys/kernel/cap_last_cap\n--shared-tmp "
 	proot-distro login "$distro" --bind /dev/null:/proc/sys/kernel/cap_last_cap \
 	--shared-tmp \
 	$extra_args
@@ -138,7 +137,7 @@ _install() {
 	final_suite="udroid-$suite-$varient"
 	local_target="${D_SCRIPTS}/${final_suite}.sh"
 	if is_installed $final_suite; then
-		msg "$SUITE already installed."
+		die "$SUITE already installed."
 		exit 1
 	fi
 
@@ -150,15 +149,19 @@ _install() {
 	proot-distro install $final_suite
 }
 _reset() {
-	case $1 in
-                mate) SUITE="mate";;
-                xfce|xfce4) SUITE="xfce4" ;;
-                kde) SUITE="kde";;	
-	esac
 
-	suite="udroid-impish-$SUITE"
+	avalible_distros=$(find $D_INSTALLED_ROOTFS -maxdepth 1 -type d | grep udroid)
+	varient=$1
 
-	if is_installed "$suite"; then
+	if [ -z "$UDROID_SUITE" ] || [ -z "$_SUITE" ] ; then
+		_suite="udroid-focal"
+	else
+		_suite="$UDROID_SUITE"
+		msg "udroid suite is set to ${UDROID_SUITE}"
+	fi
+	suite="${_suite}-$varient"
+	if is_installed "$suite" && [[ $avalible_distros =~ $distro ]]; then
+		imsg "Executing $(which proot-distro) reset $suite"
 		proot-distro reset $suite
 	else
 		lwarn "$SUITE is not installed."
@@ -166,19 +169,22 @@ _reset() {
 }
 
 remove() {
-        case $1 in
-                mate) SUITE="mate";;
-                xfce|xfce4) SUITE="xfce4" ;;
-                kde) SUITE="kde";;
-        esac
+	avalible_distros=$(find $D_INSTALLED_ROOTFS -maxdepth 1 -type d | grep udroid)
+	varient=$1
 
-        suite="udroid-impish-$SUITE"
+	if [ -z "$UDROID_SUITE" ] || [ -z "$_SUITE" ] ; then
+		_suite="udroid-focal"
+	else
+		_suite="$UDROID_SUITE"
+		msg "udroid suite is set to ${UDROID_SUITE}"
+	fi
+	suite="${_suite}-$varient"
 
-        if is_installed "$suite"; then
-                proot-distro remove $suite
-        else
-                lwarn "$SUITE is not installed."
-        fi
+    if is_installed "$suite"; then
+            proot-distro remove $suite
+    else
+            lwarn "$SUITE is not installed."
+    fi
 }
 
 upgrade() {
@@ -211,7 +217,7 @@ is_installed() {
 		return 1
 	fi
 
-	if [ ! -d "${D_INSTALLED_ROOTFS}/${target_suite}.sh" ]; then
+	if [ ! -d "${D_INSTALLED_ROOTFS}/${target_suite}" ]; then
 		return 1
 	fi
 
@@ -231,14 +237,15 @@ if [ ! -d "$D_CACHCE" ]; then
 	mkdir -p "$D_CACHCE"
 fi
 
-if [ $# -ge 0 ]; then
+while [ $# -gt 0 ]; do
 	case $1 in
+		--suite) shift; _SUITE="$1" ;;
 		-l) shift; _login $* ;;
-		-i|--install) shift;_install $1 ;;
-		-re|--reset) shift ; _reset $1 ;;
-		-r|--remove) shift ; _remove $1 ;;
-		-S|--sync|--upgrade) upgrade ;;
+		-i|--install) shift;_install $1; exit 0 ;;
+		-re|--reset) shift ; _reset $1; exit 0 ;;
+		-r|--remove) shift ; _remove $1; exit 0 ;;
+		-S|--sync|--upgrade) upgrade; exit 0 ;;
 		*) l_login $*;;
 	esac
-fi
+done
 
