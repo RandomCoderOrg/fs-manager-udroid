@@ -261,12 +261,12 @@ _satisfy_deps
 while [ $# -gt 0 ]; do
 	case $1 in
 		--suite) shift; _SUITE="$1" ;;
-		-l) shift; _login $* ;;
+		-l) shift; _login $*; break ;;
 		-i|--install) shift;_install $1; exit 0 ;;
 		-re|--reset) shift ; _reset $1; exit 0 ;;
 		-r|--remove) shift ; _remove $1; exit 0 ;;
 		-S|--sync|--upgrade) upgrade; exit 0 ;;
-		*) l_login $*;;
+		*) l_login $*; break;;
 	esac
 done
 
