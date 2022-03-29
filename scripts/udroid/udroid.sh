@@ -152,7 +152,8 @@ _install() {
 		die "installation failed."
 	fi
 
-	final_suite="udroid-$suite-$varient"
+	# * suite is sourced from plugins.prop file
+	final_suite="$suite-$varient"
 	local_target="${D_SCRIPTS}/${final_suite}.sh"
 	if is_installed $final_suite; then
 		die "$SUITE already installed."
