@@ -19,6 +19,20 @@ lshout() { echo -e "${_c_blue}-> ${*}${RST}";:;}
 imsg()	 { if [ -n "$UDROID_VERBOSE" ]; then echo -e ": ${*} \e[0m" >&2;fi;:;}
 msg()    { echo -e "${*} \e[0m" >&2;:;}
 
+_satisfy_deps() {
+	### Deps
+	for deb in {proot-distro, proot, tar}; do
+		if ! command -v $deb >> /dev/null; do
+			missing_debs="$deb $missing_debs"
+		fi
+	done
+
+	if [ -n "$missing_debs" ]; then
+		shout "Trying to install required packages..."
+		apt install -y $missing_debs
+	fi
+}
+
 _login() {
 
 	varient=$1; shift
@@ -236,6 +250,9 @@ download() {
 if [ ! -d "$D_CACHCE" ]; then
 	mkdir -p "$D_CACHCE"
 fi
+
+# make sure of required packages before any option
+_satisfy_deps
 
 while [ $# -gt 0 ]; do
 	case $1 in
