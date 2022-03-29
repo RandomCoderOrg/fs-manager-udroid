@@ -45,8 +45,9 @@ _login() {
 	if [ -z "$UDROID_SUITE" ] || [ -z "$_SUITE" ] ; then
 		suite="udroid-focal"
 	else
-		suite="$UDROID_SUITE"
-		msg "udroid suite is set to ${UDROID_SUITE}"
+		[[ -n "$UDROID_SUITE" ]] && _suite="$UDROID_SUITE"
+		[[ -n "$_SUITE" ]] && _suite="$_SUITE"
+		msg "udroid suite is set to ${_SUITE}"
 	fi
 
 	distro="$suite-$varient"
@@ -58,7 +59,7 @@ _login() {
 		start "$distro" $extra_args
 	else
 		# TODO: ADD SUGGESTIONS
-		lwarn "$distro not found..."
+		warn "$distro not found..."
 	fi
 }
 
@@ -114,7 +115,11 @@ _install() {
 
 	# relative path of plugins with respect to pd-plugins dir
 	# set this when you need to install another suite
-	if [ -n "$OVERRIDE_REMOTE_PLUGIN_DIR" ]; then
+	if [ -n "$OVERRIDE_REMOTE_PLUGIN_DIR" ] || [ -n "$_SUITE" ]; then
+		
+		[[ -n "$OVERRIDE_REMOTE_PLUGIN_DIR" ]] && REMOTE_PLUGIN_DIR="$OVERRIDE_REMOTE_PLUGIN_DIR"
+		[[ -n "$_SUITE" ]] && REMOTE_PLUGIN_DIR="$_SUITE"
+		
 		warn "overriding remote plugin dir with $OVERRIDE_REMOTE_PLUGIN_DIR"
 		REMOTE_PLUGIN_DIR=$OVERRIDE_REMOTE_PLUGIN_DIR
 	else
@@ -170,15 +175,16 @@ _reset() {
 	if [ -z "$UDROID_SUITE" ] || [ -z "$_SUITE" ] ; then
 		_suite="udroid-focal"
 	else
-		_suite="$UDROID_SUITE"
-		msg "udroid suite is set to ${UDROID_SUITE}"
+		[[ -n "$UDROID_SUITE" ]] && _suite="$UDROID_SUITE"
+		[[ -n "$_SUITE" ]] && _suite="$_SUITE"
+		msg "udroid suite is set to ${_SUITE}"
 	fi
 	suite="${_suite}-$varient"
 	if is_installed "$suite" && [[ $avalible_distros =~ $distro ]]; then
 		imsg "Executing $(which proot-distro) reset $suite"
 		proot-distro reset $suite
 	else
-		lwarn "$SUITE is not installed."
+		warn "$SUITE is not installed."
 	fi
 }
 
@@ -189,15 +195,16 @@ remove() {
 	if [ -z "$UDROID_SUITE" ] || [ -z "$_SUITE" ] ; then
 		_suite="udroid-focal"
 	else
-		_suite="$UDROID_SUITE"
-		msg "udroid suite is set to ${UDROID_SUITE}"
+		[[ -n "$UDROID_SUITE" ]] && _suite="$UDROID_SUITE"
+		[[ -n "$_SUITE" ]] && _suite="$_SUITE"
+		msg "udroid suite is set to ${_SUITE}"
 	fi
 	suite="${_suite}-$varient"
 
     if is_installed "$suite"; then
             proot-distro remove $suite
     else
-            lwarn "$SUITE is not installed."
+            warn "$SUITE is not installed."
     fi
 }
 
@@ -221,7 +228,7 @@ upgrade() {
 	fi
 	
 	download "$url" "$TERMUX/usr/bin/udroid" || {
-		lwarn "failed to sync tool with GitHub"
+		warn "failed to sync tool with GitHub"
 		exit 1
 	}
 	chmod +x "$TERMUX/usr/bin/udroid"
