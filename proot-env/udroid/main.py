@@ -4,7 +4,7 @@ import optparse
 from utils.info import *
 from utils.funs import *
 
-def vnc_mode(port=1,mode="start",xstartup="~/.vnc/xstartup"):
+def vnc_mode(port=1,mode="start",xstartup=os.getenv('HOME')+"/.vnc/xstartup"):
     import utils.vnc as vnc
     
     if os.path.exists(xstartup):
