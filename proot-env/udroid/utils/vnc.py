@@ -23,7 +23,8 @@ def startvnc(port:int) -> bool:
     if isvncstarted(port):
         return False
     else:
-        return os.WEXITSTATUS(os.system("vncserver :"+str(port)))
+        os.WEXITSTATUS(os.system("vncserver :"+str(port)))
+        return True
 
 def stopvnc(port:int) -> bool:
     """
@@ -33,4 +34,7 @@ def stopvnc(port:int) -> bool:
         port = int(os.getenv('DEFAULT_VNC_PORT'))
 
     if isvncstarted(port):
-        return os.WEXITSTATUS(os.system("vncserver -kill :"+str(port)))
+        os.WEXITSTATUS(os.system("vncserver -kill :"+str(port)))
+        return True
+    else:
+        return False
