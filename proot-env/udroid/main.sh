@@ -1,7 +1,7 @@
 #!/bin/bash
 
 
-case $0 in
+case $(echo "$0" | cut -d "/" -f 4) in
     "startvnc")
         python3 /usr/share/udroid/main.py --startvnc $*
     ;;
