@@ -47,6 +47,6 @@ fi
 ln -s /usr/share/udroid/main.sh /usr/bin/startvnc || {
     die "Failed to create symlink"
 }
-ls -s /usr/share/udroid/main.sh /usr/bin/stopvnc || {
+ln -s /usr/share/udroid/main.sh /usr/bin/stopvnc || {
     die "Failed to create symlink"
 }
