@@ -44,9 +44,9 @@ if [ -f main.sh ]; then
     }
 fi
 
-ln -s /usr/share/udroid/main.sh /usr/bin/startvnc || {
+ln -sv /usr/share/udroid/main.sh /usr/bin/startvnc || {
     die "Failed to create symlink"
 }
-ln -s /usr/share/udroid/main.sh /usr/bin/stopvnc || {
+ln -sv /usr/share/udroid/main.sh /usr/bin/stopvnc || {
     die "Failed to create symlink"
 }
