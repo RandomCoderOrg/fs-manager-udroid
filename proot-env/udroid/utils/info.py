@@ -1,5 +1,5 @@
 import os
-from funs import *
+from utils.funs import *
 
 ######## VNC
 HOSTPUBIP=os.system("hostname -I | cut -d ' ' -f 2")
