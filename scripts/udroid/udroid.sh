@@ -90,10 +90,15 @@ start() {
 		--start \
 		--load="module-native-protocol-tcp auth-ip-acl=127.0.0.1 auth-anonymous=1" \
 		--exit-idle-time=-1 >>/dev/null
+	
+	# check for clipboard buffer file
+	if [ -f ~/.clipboard ]; then
+		mount_points="--bind ~/.clipboard:/tmp/clipboard"
+	fi
 
 	imsg "Starting $distro.. with args\n--bind /dev/null:/proc/sys/kernel/cap_last_cap\n--shared-tmp "
 	proot-distro login "$distro" --bind /dev/null:/proc/sys/kernel/cap_last_cap \
-		--shared-tmp \
+		"$mount_points" --shared-tmp \
 		$extra_args
 }
 
@@ -221,6 +226,42 @@ _remove() {
 	fi
 }
 
+_clipboard_service() {
+	req_pkgs="termux-clipboard-get"
+
+	# check for packages
+	if [ "$(command -v $req_pkgs)" ]; then
+		imsg "$req_pkgs exists on system"
+	else
+		lwarn "unable to find $req_pkgs"
+		shout "installing $req_pkgs"
+		apt-get install termux-api -y
+		lshout "Make sure to install termux-api from playstore of from termux-api github repo"
+		sleep 5
+	fi
+	
+
+	# test response from termux api with timeout
+	imsg "Testing termux-clipboard-get response..."
+	if timeout \
+		--foreground \
+		--kill-after=3 \
+		--signal=SIGKILL \
+		termux-clipboard-get > /dev/null 2>&1; then
+		imsg "termux-api clipboard-get succeeded"
+	else
+		imsg "request timeout missing termux-api app ?"
+		die "failed to get response from termux-clipboard-get"
+	fi
+
+	# start service
+	msg "* starting clipboard service.."
+	msg "* press CTRL+C to stop"
+	while true; do
+	sleep 0.4
+	termux-clipboard-get > ~/.clipboard
+	done
+}
 upgrade() {
 	shout "Upgrade.."
 	url_host="https://raw.githubusercontent.com"
@@ -280,6 +321,10 @@ _satisfy_deps
 
 while [ $# -gt 0 ]; do
 	case $1 in
+	--clipboard-service)
+		_clipboard_service
+		break
+		;;
 	--suite)
 		shift
 		_SUITE="$1"
