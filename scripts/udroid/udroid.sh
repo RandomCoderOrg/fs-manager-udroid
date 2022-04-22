@@ -91,7 +91,7 @@ start() {
 		--load="module-native-protocol-tcp auth-ip-acl=127.0.0.1 auth-anonymous=1" \
 		--exit-idle-time=-1 >>/dev/null
 	
-	# check for clipboard buffer file
+	# check for clipboard buffer file mount if found.
 	if [ -f ~/.clipboard ]; then
 		mount_points="--bind ~/.clipboard:/tmp/clipboard"
 	fi
@@ -289,6 +289,23 @@ upgrade() {
 	lshout "Sync tool with GitHub...done"
 }
 
+_list() {
+	installed_distros="$(ls ${D_SCRIPTS} | grep udroid| cut -d - -f 2| uniq)"
+
+	if [ -z "$installed_distros" ]; then
+		msg "* no distros installed"
+	fi
+
+	shout "Installed udroid Distros/varients:"
+	msg
+	for distro in $installed_distros; do
+		msg "$distro:"
+		for varient in $(ls ${D_SCRIPTS} | grep "udroid-$distro" | cut -d - -f 3 | cut -d . -f 1);do
+			msg "${_c_blue}$varient"
+		done
+	done
+}
+
 is_installed() {
 	target_suite=$1
 
@@ -352,6 +369,10 @@ while [ $# -gt 0 ]; do
 		;;
 	-S | --sync | --upgrade)
 		upgrade
+		exit 0
+		;;
+		--list)
+		_list
 		exit 0
 		;;
 	*)
