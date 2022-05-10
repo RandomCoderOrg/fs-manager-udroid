@@ -5,6 +5,7 @@ D_SCRIPTS="${TERMUX}/usr/etc/proot-distro"
 D_INSTALLED_ROOTFS="${TERMUX}/usr/var/lib/proot-distro/installed-rootfs"
 D_CACHCE="${HOME}/.udroid-cache-root"
 LOGIN_CACHE_FILE="${D_CACHCE}/login_rec.cache"
+PLUGIN_REDOWNLOAD=false
 
 _c_magneta="\e[95m"
 _c_green="\e[32m"
@@ -173,6 +174,11 @@ _install() {
 	fi
 
 	shout "Installing $final_suite"
+	if $PLUGIN_REDOWNLOAD; then
+		imsg "trying to remove plugin.."
+		rm -rf "${D_SCRIPTS}/${final_suite}.sh"
+	fi
+
 	if [ ! -f "${D_SCRIPTS}/${final_suite}.sh" ]; then
 		download "${plugin_location}/${final_suite}.sh" $local_target
 	fi
@@ -283,6 +289,10 @@ while [ $# -gt 0 ]; do
 	--suite)
 		shift
 		_SUITE="$1"
+		shift
+		;;
+	--reinstall-plugin)
+		PLUGIN_REDOWNLOAD=true
 		shift
 		;;
 	-l)
