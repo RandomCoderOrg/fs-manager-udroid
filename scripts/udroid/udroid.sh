@@ -92,6 +92,7 @@ start() {
 		--exit-idle-time=-1 >>/dev/null
 	
 	# check for clipboard buffer file
+	[[ ! -f ~/.clipboard ]] && touch ~/.clipboard
 	if [ -f ~/.clipboard ]; then
 		mount_points="--bind ~/.clipboard:/tmp/clipboard"
 	fi
