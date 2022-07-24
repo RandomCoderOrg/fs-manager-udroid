@@ -66,10 +66,6 @@ deb $MIRROR $SUITE-backports main restricted universe multiverse
 # deb-src $MIRROR $SUITE-backports main restricted universe multiverse
 EOF
 
-# Trigger apt [ update & upgrade ]
-
-run_proot_cmd apt update || apt-get update
-run_proot_cmd apt upgrade -y || apt upgrade -y
 }
 
 # get confirmation
