@@ -31,6 +31,7 @@ esac
 
 [[ ! -f etc/apt/sources.list ]] && touch etc/apt/sources.list
 [[ ! -w etc/apt/sources.list ]] && chmod +r+x etc/apt/sources.list
+SUITE=$DISTRO
 
 cat <<-  EOF > etc/apt/sources.list
 # See http://help.ubuntu.com/community/UpgradeNotes for how to upgrade to
