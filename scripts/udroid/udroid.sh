@@ -45,7 +45,7 @@ _login() {
 	cd "$OLDPWD" || exit
 
 	if [ -z "$UDROID_SUITE" ] && [ -z "$_SUITE" ]; then
-		suite="focal"
+		suite="impish"
 	else
 		[[ -n "$UDROID_SUITE" ]] && suite="$UDROID_SUITE"
 		[[ -n "$_SUITE" ]] && suite="$_SUITE"
@@ -192,7 +192,7 @@ _reset() {
 	varient=$1
 
 	if [ -z "$UDROID_SUITE" ] && [ -z "$_SUITE" ]; then
-		_suite="udroid-focal"
+		_suite="udroid-impish"
 	else
 		[[ -n "$UDROID_SUITE" ]] && _suite="$UDROID_SUITE"
 		[[ -n "$_SUITE" ]] && _suite="$_SUITE"
@@ -212,7 +212,7 @@ _remove() {
 	varient=$1
 
 	if [ -z "$UDROID_SUITE" ] && [ -z "$_SUITE" ]; then
-		_suite="focal"
+		_suite="impish"
 	else
 		[[ -n "$UDROID_SUITE" ]] && _suite="$UDROID_SUITE"
 		[[ -n "$_SUITE" ]] && _suite="$_SUITE"
