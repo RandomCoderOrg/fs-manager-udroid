@@ -68,8 +68,8 @@ EOF
 
 # Trigger apt [ update & upgrade ]
 
-run_cmd apt update || apt-get update
-run_cmd apt upgrade -y || apt upgrade -y
+run_proot_cmd apt update || apt-get update
+run_proot_cmd apt upgrade -y || apt upgrade -y
 }
 
 # get confirmation
