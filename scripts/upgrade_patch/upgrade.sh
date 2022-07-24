@@ -20,7 +20,7 @@ ask() {
 
 function upgrade() {	
 # set MIRROR
-case $(run_cmd dpkg --print-architecture) in
+case $(run_proot_cmd dpkg --print-architecture) in
         amd64|i386) MIRROR=$_MIRROR ;;
         *) MIRROR=$_MIRROR_PORTS ;;
 esac
