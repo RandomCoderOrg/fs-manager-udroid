@@ -87,9 +87,9 @@ echo "This script may take around ~2hrs depending on device speed to fully upgra
 
 if ask "Do you want to continue ?"; then
 	echo "get some snacks 🍪"
-	sleep
+	sleep 1
 	echo "watch a movie 🍿"
-	sleep
+	sleep 1
 	echo "This is gonna take some time!"
 	sleep 2
 	upgrade
