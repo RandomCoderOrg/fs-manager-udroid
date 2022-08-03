@@ -56,6 +56,7 @@ _login() {
 	if [[ $avalible_distros =~ $distro ]]; then
 		if is_installed "$distro"; then
 			# store distro aliases in cache
+			[[ ! -f $LOGIN_CACHE_FILE ]] && touch $LOGIN_CACHE_FILE
 			echo "$distro" >"$LOGIN_CACHE_FILE"
 			# start distro
 			start "$distro" $extra_args
