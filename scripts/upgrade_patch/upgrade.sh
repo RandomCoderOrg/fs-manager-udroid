@@ -90,8 +90,7 @@ if ask "Do you want to continue ?"; then
 	echo "This is gonna take some time!"
 	sleep 2
 	upgrade
-	echo "👌 Upgrade function did its job!"
-	echo "A script by udroid_team"
+	echo "[1/3] Froce source injection done.."
 else
-	echo "Upgrade skipped"
+	echo "[0/0] Upgrade skipped"
 fi
