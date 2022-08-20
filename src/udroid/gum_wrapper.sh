@@ -54,7 +54,8 @@ function g_confirm() {
 
 function g_spin() {
     spinner=$1; shift
+    title=$1; shift
     cmd=$*
 
-    $GUM spin -s "$spinner" --title "something" -- $cmd
+    $GUM spin -s "$spinner" --title "$title" -- $cmd
 }
