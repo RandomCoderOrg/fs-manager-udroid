@@ -1,5 +1,7 @@
 #!/bin/bash
 
+ERROR_DUMP_FILE="/tmp/proot-utils-error.log"
+
 msg() { echo -e "${*} \e[0m" >&2;:;}
 
 p_extract() {
@@ -29,7 +31,7 @@ p_extract() {
     if ! $NO_PROG; then
         pv $file | proot \
                 --link2symlink \
-                tar -xvz -C "$path"
+                tar -xvz -C "$path" &> $ERROR_DUMP_FILE
     else
         proot \
                 --link2symlink \
