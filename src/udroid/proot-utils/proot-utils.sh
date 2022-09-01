@@ -1,5 +1,7 @@
 #!/bin/bash
 
+msg() { echo -e "${*} \e[0m" >&2;:;}
+
 p_extract() {
     # OPTIONS:
     # --path -> to set custom path
