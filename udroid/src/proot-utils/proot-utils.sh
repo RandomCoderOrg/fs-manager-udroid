@@ -45,13 +45,57 @@ login() {
     # --disable-auto-init
     # --disable progress
 
-    
+    local root_fs_path
+
     while [ $# -gt 0 ]; do
         case $1 in
         --disable-special-mounts) NO_S_M=true;;
         --disable-auto-init) NO_A_I=true;;
+        --path) root_fs_path=$2; shift 2;;
+        --) shift 1; cmd_string=$*; break;;
+        *) break ;;
         esac
     done
+
+    # TODO: Make it good :)
+    proot \
+        --link2symlink \
+        --sysvipc \
+        --kill-on-exit \
+        -b /system \
+        -b /sys \
+        -b /proc \
+        -b /dev \
+        -b /dev/urandom:/dev/random \
+        -b /proc/self/fd/1:/dev/stdout \
+        -b /proc/self/fd/2:/dev/stderr \
+        -b /proc/self/fd/0:/dev/stdin \
+        -b /proc/self/fd:/dev/fd \
+        -b ${root_fs_path}/proc/.vmstat:/proc/vmstat \
+        -b ${root_fs_path}/proc/.version:/proc/version \
+        -b ${root_fs_path}/proc/.uptime:/proc/uptime \
+        -b ${root_fs_path}/proc/.stat:/proc/stat \
+        -b ${root_fs_path}/proc/.loadavg:/proc/loadavg \
+        -b /linkerconfig/ld.config.txt \
+        -b /data/data/com.termux/files/usr \
+        -b /data/data/com.termux/files/home \
+        -b /data/data/com.termux/cache \
+        -b /storage/self/primary:/sdcard \
+        -b ${root_fs_path}/tmp:/dev/shm \
+        --root-id \
+        --cwd=/root -L \
+        --kernel-release=5.4.0-faked \
+        --sysvipc \
+        --kill-on-exit \
+        --rootfs=${root_fs_path} \
+        -w /root \
+            /usr/bin/env -i \
+            HOME=/root \
+            PATH=/usr/local/sbin:/usr/local/bin:/bin:/usr/bin:/sbin:/usr/sbin \
+            TERM=$TERM \
+            LANG=C.UTF-8 \
+            $cmd_string
+
 }
 
 while [ $# -gt 0 ]; do

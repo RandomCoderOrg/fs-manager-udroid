@@ -5,12 +5,12 @@ DESKTOP="$XDG_CURRENT_DESKTOP"
 
 case "$DESKTOP" in
         XFCE)
-                ;;
+;;
         *)
-                echo 'ERROR: HiDPI mode only works on Xfce desktop' >&2
-                notify-send -i dialog-warning 'ERROR: HiDPI mode only works on Xfce desktop'
-                exit 1
-                ;;
+echo 'ERROR: HiDPI mode only works on Xfce desktop' >&2
+notify-send -i dialog-warning 'ERROR: HiDPI mode only works on Xfce desktop'
+exit 1
+;;
 esac
 
 mkdir -p "$SETTINGS_DIR"
@@ -53,21 +53,21 @@ disable_hidpi()
 toggle_hidpi() {
         if [ -r "${SETTINGS_DIR}xsession-settings" ]
         then
-                disable_hidpi
-                { sleep 5 && notify-send -i dialog-information 'HiDPI mode disabled'; } &
+disable_hidpi
+{ sleep 5 && notify-send -i dialog-information 'HiDPI mode disabled'; } &
         else
-                enable_hidpi
-                { sleep 5 && notify-send -i dialog-information 'HiDPI mode enabled'; } &
+enable_hidpi
+{ sleep 5 && notify-send -i dialog-information 'HiDPI mode enabled'; } &
         fi
 
         if [ "$DESKTOP" = 'XFCE' ]
         then
-                killall xfce4-notifyd 2> /dev/null # Hide existing notifications
-                for process in xfsettingsd xfce4-panel xfdesktop
-                do
-                        killall -9 $process
-                        $process >/dev/null 2>&1 &
-                done
+killall xfce4-notifyd 2> /dev/null # Hide existing notifications
+for process in xfsettingsd xfce4-panel xfdesktop
+do
+        killall -9 $process
+        $process >/dev/null 2>&1 &
+done
         fi
 }
 
