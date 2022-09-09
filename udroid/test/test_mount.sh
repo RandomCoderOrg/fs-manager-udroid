@@ -4,7 +4,7 @@ set -e -u
 unset LD_PRELOAD
 
 TERMUX_ROOT="/data/data/com.termux/files"
-PROOT_DLCACHE="$TERMUX_ROOT/usr/var/lib/proot-distro/dlcache"
+PROOT_DLCACHE="$TERMUX_ROOT/usr/var/lib/proot-distro/installed-rootfs"
 
 source proot-utils/proot-utils.sh
 
