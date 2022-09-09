@@ -13,8 +13,8 @@ p_extract() {
 
     while [ $# -gt 0 ]; do
         case $1 in
-            --file | -f)        file=$2; shift  ;;
-            --path)             path=$2 shift 2 ;;
+            --file | -f)        file=$2; shift 2 ;;
+            --path)             path=$2; shift 2 ;;
             --disable-progress) NO_PROG=true    ;;
             *)
                 msg "unkown option [$1]"
