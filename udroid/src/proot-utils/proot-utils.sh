@@ -1,6 +1,7 @@
 #!/bin/bash
 
-ERROR_DUMP_FILE="/tmp/proot-utils-error.log"
+[[ -z $TMPDIR ]] && TMPDIR=/tmp
+ERROR_DUMP_FILE="$TMPDIR/proot-utils.log"
 
 msg() { echo -e "${*} \e[0m" >&2;:;}
 
