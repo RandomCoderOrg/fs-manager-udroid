@@ -4,6 +4,8 @@
 ERROR_DUMP_FILE="$TMPDIR/proot-utils.log"
 
 msg() { echo -e "${*} \e[0m" >&2;:;}
+ELOG() { echo "[$(date +%F) | $(date +%R)] Error: ${*}" >> "${ERROR_DUMP_FILE}";:;}
+LOG() { echo "[$(date +%F) | $(date +%R)] MSG:${*}" >> "${ERROR_DUMP_FILE}";:;}
 
 p_extract() {
     # OPTIONS:
