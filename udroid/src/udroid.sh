@@ -6,6 +6,8 @@
 source proot-utils/proot-utils.sh
 source gum_wrapper.sh
 
+DLCACHE="${TODO_DIR}/dlcache"
+
 install() {
     local arg=$1
     local suite=${arg%%:*}
@@ -57,6 +59,16 @@ install() {
     LOG "function args => suite=$suite varient=$varient"
 
     # Finally to get link
+    arch=$(dpkg --print-architecture)
+    link=$(cat $file | jq -r ".$suite.$varient.${arch}url")
+    name=$(cat $file | jq -r ".$suite.$varient.Name")
+
+    # echo "$link + $name"
+    download "$name" "$link"
+
+    # Start Extracting
+    p_extract --file "$DLCACHE/$name" --path "$TODO_DIR"
+
 }
 
 login() {
@@ -68,13 +80,24 @@ remove() {
 }
 
 ####################
+downlaod() {
+    local name=$1
+    local link=$2
 
+    axel -o ${DLCACHE}/$name $link
+}
+####################
 
+if [ $# -eq 0 ]; then
+    echo "usage: $0 [install|login|remove]"
+    exit 1
+fi
 
 while [ $# -gt 0 ]; do
     case $1 in
-        --install|-i)   ;;
+        --install|-i) shift 1; install $1; break ;;
         --login|-l)     ;;
         --remove | --uninstall ) ;;
+        *) echo "unkown option [$1]" ;;
     esac
 done
