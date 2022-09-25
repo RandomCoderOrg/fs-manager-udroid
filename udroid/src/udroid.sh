@@ -36,7 +36,16 @@ install() {
     LOG "[USER] function args => suite=$suite varient=$varient"
     [[ -n $TEST_MODE ]] && distro_data=test.json
 
-    # check if seperator is present
+    ############### START OF OPTION PARSER ##############
+
+    # implemenation to parse two words seperated by a colon
+    #   eg: jammy:xfce4
+    #  Fallback conditions
+    #  1. if no colon is found, then instead of error try to guess the user intentiom
+    #      and give a promt to select missing value the construct the colon seperated arg
+    #  2. if both colon seperated words are same then => ERROR
+
+    # check if seperator is present & Guess logic
     [[ $(echo $arg | awk '/:/' | wc -l) == 0 ]] && {
         ELOG "seperator not found"
         LOG "trying to guess what does that mean"
@@ -57,6 +66,7 @@ install() {
         fi
     }
     
+    # Check if somehow suite and varient are same ( which is not the case )
     if [[ $suite -eq $varient ]]; then
         [[ -n "$suite" ]] && [[ -n "$varient" ]] && {
             ELOG "Parsing error in [$arg] (both can't be same)"
@@ -68,6 +78,7 @@ install() {
 
     suites=$(cat $distro_data | jq -r '.suites[]')
 
+    # if suite or varient is empty prompt user to select it!
     [[ -z $suite ]] && {
         suite=$(g_choose $(cat $distro_data | jq -r '.suites[]'))
     }
@@ -77,7 +88,9 @@ install() {
         varient=$(g_choose $(cat $distro_data | jq -r ".$suite.varients[]"))
     }
     [[ ! $varient =~ $varient ]] && echo "varient not found" && exit 1
+
     LOG "[Final] function args => suite=$suite varient=$varient"
+    ############### END OF OPTION PARSER ##############
 
     # Finally to get link
     arch=$(dpkg --print-architecture)
