@@ -41,13 +41,13 @@ install() {
         ELOG "seperator not found"
         LOG "trying to guess what does that mean"
 
-        if [[ $(cat $file | jq -r '.suites[]') =~ $arg ]]; then
+        if [[ $(cat $distro_data | jq -r '.suites[]') =~ $arg ]]; then
             LOG "found suite [$arg]"
             suite=$arg
             varient=""
         else
-            for _suites in $(cat $file | jq -r '.suites[]'); do
-                for _varients in $(cat $file | jq -r ".${_suites}.varients[]"); do
+            for _suites in $(cat $distro_data | jq -r '.suites[]'); do
+                for _varients in $(cat $distro_data | jq -r ".${_suites}.varients[]"); do
                     if [[ $_varients =~ $arg ]]; then
                         suite=$""
                         varient=$arg
@@ -66,23 +66,23 @@ install() {
     fi
 
 
-    suites=$(cat $file | jq -r '.suites[]')
+    suites=$(cat $distro_data | jq -r '.suites[]')
 
     [[ -z $suite ]] && {
-        suite=$(g_choose $(cat $file | jq -r '.suites[]'))
+        suite=$(g_choose $(cat $distro_data | jq -r '.suites[]'))
     }
     [[ ! $suites =~ $suite ]] && echo "suite not found" && exit 1
 
     [[ -z $varient ]] && {
-        varient=$(g_choose $(cat $file | jq -r ".$suite.varients[]"))
+        varient=$(g_choose $(cat $distro_data | jq -r ".$suite.varients[]"))
     }
     [[ ! $varient =~ $varient ]] && echo "varient not found" && exit 1
     LOG "[Final] function args => suite=$suite varient=$varient"
 
     # Finally to get link
     arch=$(dpkg --print-architecture)
-    link=$(cat $file | jq -r ".$suite.$varient.${arch}url")
-    name=$(cat $file | jq -r ".$suite.$varient.Name")
+    link=$(cat $distro_data | jq -r ".$suite.$varient.${arch}url")
+    name=$(cat $distro_data | jq -r ".$suite.$varient.Name")
 
     # echo "$link + $name"
     download "$name" "$link"
