@@ -1,8 +1,8 @@
 #!/bin/bash -x
 
-TERMUX_ROOT="/data/data/com.termux/files"
-BIN="$TERMUX_ROOT/usr/bin"
-INSTALL_DIR="${TERMUX_ROOT}/usr/etc/udroid"
+BIN="$PREFIX/bin"
+INSTALL_DIR="${PREFIX}/etc/udroid"
+
 
 [[ ! -d "$INSTALL_DIR" ]] && mkdir -pv $INSTALL_DIR
 [[ -f ./gum_wrapper.sh ]] && source ./gum_wrapper.sh
