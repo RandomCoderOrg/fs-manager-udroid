@@ -6,7 +6,27 @@
 source proot-utils/proot-utils.sh
 source gum_wrapper.sh
 
+export distro_data
+
+RTR="${PREFIX}/etc/udroid"
 DLCACHE="${TODO_DIR}/dlcache"
+RTCACHE="${RTR}/.cache"
+
+fetch_distro_data() {
+    URL="https://raw.githubusercontent.com/RandomCoderOrg/udroid-download/main/distro-data.json"
+    _path="${RTCACHE}/distro-data.json.cache"
+
+    gum_spin dot "Fetching distro data.." curl -L -s -o $_path $URL || {
+        ELOG "[${0}] failed to fetch distro data"
+    }
+
+    if [[ -f $_path ]]; then
+        LOG "set distro_data to $_path"
+        distro_data=$_path
+    else
+        die "Distro data fetch failed!"
+    fi
+}
 
 install() {
     local arg=$1
@@ -14,6 +34,7 @@ install() {
     local varient=${arg#*:}
 
     LOG "[USER] function args => suite=$suite varient=$varient"
+    [[ -n $TEST_MODE ]] && distro_data=test.json
 
     # check if seperator is present
     [[ $(echo $arg | awk '/:/' | wc -l) == 0 ]] && {
