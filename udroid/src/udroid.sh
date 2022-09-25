@@ -13,7 +13,7 @@ install() {
     local suite=${arg%%:*}
     local varient=${arg#*:}
 
-    LOG "function args => suite=$suite varient=$varient"
+    LOG "[USER] function args => suite=$suite varient=$varient"
 
     # check if seperator is present
     [[ $(echo $arg | awk '/:/' | wc -l) == 0 ]] && {
@@ -56,7 +56,7 @@ install() {
         varient=$(g_choose $(cat $file | jq -r ".$suite.varients[]"))
     }
     [[ ! $varient =~ $varient ]] && echo "varient not found" && exit 1
-    LOG "function args => suite=$suite varient=$varient"
+    LOG "[Final] function args => suite=$suite varient=$varient"
 
     # Finally to get link
     arch=$(dpkg --print-architecture)
