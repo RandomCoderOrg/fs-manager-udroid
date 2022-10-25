@@ -4,10 +4,10 @@
         "varients": ["xfce4", "mate","raw"],
         "xfce4": {
             "Name": "-",
-            "arm64url": "http://",
+            "aarch64url": "http://",
             "armhfurl": "http://",
             "amd64url": "http://",
-            "arm64sha": "http://",
+            "aarch64sha": "http://",
             "armhfsha": "http://",
             "amd64sha": "http://"
         },
@@ -15,19 +15,19 @@
             "Name": "-",
             "FirendlyName": "Udroid Mate",
             "Description": "Udroid Mate based on ubuntu ",
-            "arm64url": "http://",
+            "aarch64url": "http://",
             "armhfurl": "http://",
             "amd64url": "http://",
-            "arm64sha": "http://",
+            "aarch64sha": "http://",
             "armhfsha": "http://",
             "amd64sha": "http://"
         },
         "kde": {
             "Name": "-",
-            "arm64url": "http://",
+            "aarch64url": "http://",
             "armhfurl": "http://",
             "amd64url": "http://",
-            "arm64sha": "http://",
+            "aarch64sha": "http://",
             "armhfsha": "http://",
             "amd64sha": "http://"
         }
@@ -36,28 +36,28 @@
         "varients": ["xfce4", "mate","raw"],
         "xfce4": {
             "Name": "udroid-jammy-xfce4",
-            "arm64url": "http://",
+            "aarch64url": "http://",
             "armhfurl": "http://",
             "amd64url": "https://github.com/RandomCoderOrg/ubuntu-on-android/releases/download/v3/udroid-impish-xfce4-beta.tar.gz",
-            "arm64sha": "http://",
+            "aarch64sha": "http://",
             "armhfsha": "http://",
             "amd64sha": "http://"
         },
         "mate": {
             "Name": "udroid-jammy-mate",
-            "arm64url": "http://",
+            "aarch64url": "http://",
             "armhfurl": "http://",
             "amd64url": "http://",
-            "arm64sha": "http://",
+            "aarch64sha": "http://",
             "armhfsha": "http://",
             "amd64sha": "http://"
         },
         "kde": {
             "Name": "udroid-jammy-kde",
-            "arm64url": "http://",
+            "aarch64url": "http://",
             "armhfurl": "http://",
             "amd64url": "http://",
-            "arm64sha": "http://",
+            "aarch64sha": "http://",
             "armhfsha": "http://",
             "amd64sha": "http://"
         }
