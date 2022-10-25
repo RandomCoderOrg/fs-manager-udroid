@@ -132,6 +132,6 @@ while [ $# -gt 0 ]; do
         --install|-i) shift 1; install $1; break ;;
         --login|-l)     ;;
         --remove | --uninstall ) ;;
-        *) echo "unkown option [$1]" ;;
+        *) echo "unkown option [$1]"; break ;;
     esac
 done
