@@ -27,7 +27,7 @@ p_extract() {
     done
 
     [[ -z $file ]] && msg "file not specified" && return 1
-    [[ -z $path ]] && echo "no path provided" && exit 1
+    [[ -z $path ]] && echo "no path provided"  && exit 1
     [[ ! -f $file ]] && msg "file not found" && return 1
     [[ ! -d $path ]] && msg "path not found" && return 1
 

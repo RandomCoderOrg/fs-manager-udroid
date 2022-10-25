@@ -9,6 +9,8 @@ source gum_wrapper.sh
 export distro_data
 
 RTR="${PREFIX}/etc/udroid"
+DEFAULT_ROOT="${PREFIX}/var/lib/udroid"
+DEFAULT_FS_INSTALL_DIR="installed-filesystems"
 DLCACHE="${TODO_DIR}/dlcache"
 RTCACHE="${RTR}/.cache"
 
@@ -30,11 +32,30 @@ fetch_distro_data() {
 
 install() {
     local arg=$1
+    local path=""
     local suite=${arg%%:*}
     local varient=${arg#*:}
 
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            -p | --path) 
+                shift
+                local path=$1
+                LOG "(install) custom installation path set to $path"
+            ;;
+            *) break ;;
+        esac
+    done
+
     LOG "[USER] function args => suite=$suite varient=$varient"
-    [[ -n $TEST_MODE ]] && distro_data=test.json
+    [[ -n $TEST_MODE ]] && {
+        LOG "[TEST] test mode enabled"
+        distro_data=test.json
+        DLCACHE="./tmp/dlcache"
+        mkdir -p $DLCACHE
+        LOG "[TEST] DLCACHE=$DLCACHE"
+        LOG "[TEST] distro_data=$distro_data"
+    }
 
     ############### START OF OPTION PARSER ##############
 
@@ -67,7 +88,7 @@ install() {
     }
     
     # Check if somehow suite and varient are same ( which is not the case )
-    if [[ $suite -eq $varient ]]; then
+    if [[ "$suite" == "$varient" ]]; then
         [[ -n "$suite" ]] && [[ -n "$varient" ]] && {
             ELOG "Parsing error in [$arg] (both can't be same)"
             LOG "function args => suite=$suite varient=$varient"
@@ -108,11 +129,30 @@ install() {
         exit 1 
     }
 
-    # echo "$link + $name"
-    download "$name" "$link"
+    # file extension
+    ext=$(echo $link | awk -F. '{print $NF}')
+    
+    # if path is set then download fs and extract it to path
+    # cause it make better use of path
+    if [[ -z $path ]]; then
+        # echo "$link + $name"
+        download "$name.tar.$ext" "$link"
 
-    # Start Extracting
-    p_extract --file "$DLCACHE/$name" --path "$TODO_DIR"
+        # Start Extracting
+        LOG "Extracting $name.tar.$ext"
+        p_extract --file "$DLCACHE/$name.tar.$ext" --path "$DEFAULT_FS_INSTALL_DIR/$name"
+    else
+        download "$name.tar.$ext" "$link" "$path"
+
+        [[ -d $path ]] && {
+            LOG "Extracting $name.tar.$ext"
+            mkdir -p $path/$name
+        } || {
+            ELOG "ERROR: path $path not found"
+            echo "ERROR: path $path not found"
+        }
+        p_extract --file "$path/$name.tar.$ext" --path "$path/$name"
+    fi
 
 }
 
@@ -125,11 +165,19 @@ remove() {
 }
 
 ####################
-downlaod() {
+download() {
     local name=$1
     local link=$2
 
-    axel -o ${DLCACHE}/$name $link
+    [[ -n "$3" ]] && local path=$3
+    [[ -z $path ]] && path="$DLCACHE"
+
+    LOG "download() args => name=$name link=$link path=$path"
+    axel -a -o ${path}/$name $link || {
+        ELOG "failed to download $name"
+        echo "failed to download $name"
+        exit 1
+    }
 }
 ####################
 

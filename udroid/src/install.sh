@@ -3,9 +3,9 @@
 BIN="$PREFIX/bin"
 INSTALL_DIR="${PREFIX}/etc/udroid"
 
-FSDIR="${PREFIX}/var/lib/udroid"
-FS_INSTALL_DIR="${FS_DIR}/installed_fs"
-DLCACHE="${FSDIR}/dlcache"
+DEFAULT_ROOT="${PREFIX}/var/lib/udroid"
+DEFAULT_FS_INSTALL_DIR="${FS_DIR}/installed_fs"
+DLCACHE="${DEFAULT_ROOT}/dlcache"
 RTCACHE="${RTR}/.cache"
 
 [[ -f ./gum_wrapper.sh ]] && source ./gum_wrapper.sh
@@ -21,8 +21,8 @@ function create_dir() {
 }
 
 create_dir $INSTALL_DIR
-create_dir $FSDIR
-create_dir $FS_INSTALL_DIR
+create_dir $DEFAULT_ROOT
+create_dir $DEFAULT_FS_INSTALL_DIR
 create_dir $DLCACHE
 create_dir $RTCACHE
 
