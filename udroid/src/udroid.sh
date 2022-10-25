@@ -95,7 +95,18 @@ install() {
     # Finally to get link
     arch=$(dpkg --print-architecture)
     link=$(cat $distro_data | jq -r ".$suite.$varient.${arch}url")
+    LOG "link=$link"
     name=$(cat $distro_data | jq -r ".$suite.$varient.Name")
+    LOG "name=$name"
+    # final checks
+    [[ "$link" == "null" ]] && {
+        ELOG "link not found for $suite:$varient"
+        echo "ERROR:"
+        echo "link not found for $suite:$varient"
+        echo "either the suite or varient is not supported or invalid options supplied"
+        echo "Report this issue at https://github.com/RandomCoderOrg/ubuntu-on-android/issues"
+        exit 1 
+    }
 
     # echo "$link + $name"
     download "$name" "$link"
