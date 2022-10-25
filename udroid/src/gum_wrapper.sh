@@ -58,4 +58,5 @@ function g_spin() {
     cmd=$*
 
     $GUM spin -s "$spinner" --title "$title" -- $cmd
+    echo -e "[\xE2\x9C\x94] $title"
 }
