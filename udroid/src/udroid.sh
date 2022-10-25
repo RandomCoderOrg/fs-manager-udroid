@@ -200,7 +200,7 @@ download() {
 
     LOG "download() args => name=$name link=$link path=$path"
 
-    wget -q --show-progress --progress=bar:force -o ${path}/$name  "$link"  2>&1 | progressfilt || {
+    wget -q --show-progress --progress=bar:force -O ${path}/$name  "$link"  2>&1 | progressfilt || {
         ELOG "failed to download $name"
         echo "failed to download $name"
         exit 1
