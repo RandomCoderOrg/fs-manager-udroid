@@ -42,6 +42,14 @@ p_extract() {
     fi
 }
 
+is_valid_rootfs() {
+    local path=$1
+
+    [[ -d $1/usr ]] && [[ -d $1/lib ]] && [[ -f $1/usr/bin/env ]] && {
+        [[ -f /usr/bin/sh ]] || [[ -f /bin/bash ]] || [[ -f /bin/sh ]]
+    } && return 0 || return 1
+}
+
 login() {
     # OPTIONS:
     # --disable-special-mounts
@@ -49,17 +57,22 @@ login() {
     # --disable progress
 
     local root_fs_path
+    local container_user
 
     while [ $# -gt 0 ]; do
         case $1 in
         --disable-special-mounts) NO_S_M=true;;
         --disable-auto-init) NO_A_I=true;;
         --path) root_fs_path=$2; shift 2;;
+        # -b | --bind ) bind=$2; shift 2;;
+        -u | --user ) container_user=$2; shift 2;;
         --) shift 1; cmd_string=$*; break;;
         *) break ;;
         esac
     done
 
+    # user logic
+    [[ -z $container_user ]] && container_user="root"
     # TODO: Make it good :)
     proot \
         --link2symlink \
@@ -97,6 +110,7 @@ login() {
             PATH=/usr/local/sbin:/usr/local/bin:/bin:/usr/bin:/sbin:/usr/sbin \
             TERM=$TERM \
             LANG=C.UTF-8 \
+            /bin/su -l $container_user \
             $cmd_string
 
 }
