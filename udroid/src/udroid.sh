@@ -9,9 +9,9 @@ source gum_wrapper.sh
 export distro_data
 
 RTR="${PREFIX}/etc/udroid"
-DEFAULT_ROOT="${PREFIX}/var/lib/udroid"
-DEFAULT_FS_INSTALL_DIR="installed-filesystems"
-DLCACHE="${TODO_DIR}/dlcache"
+DEFAULT_ROOT="${PREFIX}/usr/var/lib/udroid"
+DEFAULT_FS_INSTALL_DIR="${DEFAULT_ROOT}/installed-filesystems"
+DLCACHE="${DEFAULT_ROOT}/dlcache"
 RTCACHE="${RTR}/.cache"
 
 fetch_distro_data() {
@@ -31,7 +31,18 @@ fetch_distro_data() {
 }
 
 install() {
-    local arg=$1
+    ###
+    # install()
+    #
+    # stages:
+    #   1) take the arguments supplied ( i.e "arg"->$1 and "path"->$2 )
+    #   2) parse the arg for suite and varient
+    #       2-1) if suite or varient is null (i.e not supplied) the try to prompt by guessing it with avalible arguments
+    #   3) parse the download link from json ( if null exit )
+    #   4) Extract the filesystem to target path
+    #   5) execute fixes file
+
+    local arg=$1; shift 1
     local path=""
     local suite=${arg%%:*}
     local varient=${arg#*:}
@@ -39,6 +50,13 @@ install() {
     while [[ $# -gt 0 ]]; do
         case $1 in
             -p | --path) 
+
+                # Custom paths are set either to point a new directory instead of default
+                # this is not-recommended cause managing installed filesystems becomes harder when they are outside of DEFAULT directories
+                #       operations like: remove, reset or analyzing filesystems
+                # using custom path results in abonded installation -> script only cares when its path is supplied again
+                #
+                # possible solution is to cache the loaction every time a path is supplied and use that for operations
                 shift
                 local path=$1
                 LOG "(install) custom installation path set to $path"
@@ -48,6 +66,8 @@ install() {
     done
 
     LOG "[USER] function args => suite=$suite varient=$varient"
+    
+    # if TEST_MODE is set run scripts in current directory and use test.json for distro_conf
     [[ -n $TEST_MODE ]] && {
         LOG "[TEST] test mode enabled"
         distro_data=test.json
@@ -128,6 +148,12 @@ install() {
         echo "Report this issue at https://github.com/RandomCoderOrg/ubuntu-on-android/issues"
         exit 1 
     }
+    if [[ -d $DEFAULT_FS_INSTALL_DIR/$name ]]; then
+        ELOG "filesystem already installed"
+        echo "filesystem already installed ."
+        # [TODO]: write about reset and remove
+        exit 1
+    fi
 
     # file extension
     ext=$(echo $link | awk -F. '{print $NF}')
@@ -173,7 +199,8 @@ download() {
     [[ -z $path ]] && path="$DLCACHE"
 
     LOG "download() args => name=$name link=$link path=$path"
-    axel -a -o ${path}/$name $link || {
+
+    wget -q --show-progress --progress=bar:force -o ${path}/$name  "$link"  2>&1 | progressfilt || {
         ELOG "failed to download $name"
         echo "failed to download $name"
         exit 1
