@@ -162,7 +162,7 @@ install() {
     # cause it make better use of path
     if [[ -z $path ]]; then
         # echo "$link + $name"
-        msg_download $name $link "$DEFAULT_FS_INSTALL_DIR/$name"
+        msg_download $name "$DEFAULT_FS_INSTALL_DIR/$name.tar.$ext" $link
         download "$name.tar.$ext" "$link"
 
         # Start Extracting
@@ -177,7 +177,7 @@ install() {
 
         gum_spin minidot "Applying proot fixes" bash proot-utils/proot-fixes.sh "$DEFAULT_FS_INSTALL_DIR/$name"
     else
-        msg_download $name $link "$path/$name"
+        msg_download $name "$path/$name.tar.$ext" "$link"
         download "$name.tar.$ext" "$link" "$path"
 
         [[ -d $path ]] && {
