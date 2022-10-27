@@ -137,7 +137,7 @@ install() {
     
     # arch transition
     case $(dpkg --print-architecture) in
-        arm64 | aarch64) arch=arm64 ;;
+        arm64 | aarch64) arch=aarch64 ;;
         armhf | armv7l | armv8l) arch=armhf ;;
         x86_64| amd64) arch=amd64;;
         *) die "unsupported architecture" ;;
