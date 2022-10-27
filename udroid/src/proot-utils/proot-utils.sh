@@ -31,6 +31,7 @@ p_extract() {
     [[ ! -f $file ]] && msg "file not found" && return 1
     [[ ! -d $path ]] && msg "path not found" && return 1
 
+    unset LD_PRELOAD
     if ! $NO_PROG; then
         pv $file | proot \
                 --link2symlink \
