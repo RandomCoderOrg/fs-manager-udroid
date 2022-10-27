@@ -162,6 +162,7 @@ install() {
     # cause it make better use of path
     if [[ -z $path ]]; then
         # echo "$link + $name"
+        msg_download $name $link "$DEFAULT_FS_INSTALL_DIR/$name"
         download "$name.tar.$ext" "$link"
 
         # Start Extracting
@@ -171,8 +172,12 @@ install() {
         mkdir -p $name
 
         # call proot extract
+        msg_extract "$DEFAULT_FS_INSTALL_DIR/$name"
         p_extract --file "$DLCACHE/$name.tar.$ext" --path "$DEFAULT_FS_INSTALL_DIR/$name"
+
+        gum_spin minidot "Applying proot fixes" bash proot-utils/proot-fixes.sh "$DEFAULT_FS_INSTALL_DIR/$name"
     else
+        msg_download $name $link "$path/$name"
         download "$name.tar.$ext" "$link" "$path"
 
         [[ -d $path ]] && {
@@ -182,12 +187,22 @@ install() {
             ELOG "ERROR: path $path not found"
             echo "ERROR: path $path not found"
         }
+
+        msg_extract "$path/$name"
         p_extract --file "$path/$name.tar.$ext" --path "$path/$name"
+
+        gum_spin minidot "Applying proot fixes" bash proot-utils/proot-fixes.sh "$path/$name"
     fi
+
+    echo -e "[\xE2\x9C\x94] $name installed."
 
 }
 
 login() {
+    :
+}
+
+list() {
     :
 }
 
@@ -211,6 +226,27 @@ download() {
         exit 1
     }
 }
+
+msg_download() {
+    local name=$1
+    local path=$2
+    local link=$3
+
+    grey_color="\e[90m"
+    reset_color="\e[0m"
+
+    echo -e "Downloading $name filesystem ${grey_color}($link)${reset_color}"
+    echo -e ":[PATH]= ${grey_color}${path}${reset_color}"
+}
+
+msg_extract() {
+    local path=$1
+
+    echo
+    echo -e "Extracting filesystem to ${grey_color}${path}${reset_color}"
+    echo -e "This may take a while..."
+    echo
+}
 ####################
 
 if [ $# -eq 0 ]; then
@@ -220,8 +256,8 @@ fi
 
 while [ $# -gt 0 ]; do
     case $1 in
-        --install|-i) shift 1; install $1; break ;;
-        --login|-l)     ;;
+        --install|-i) shift 1; install "$*" ; break ;;
+        --login|-l) shift 1; login "$*"; break ;;
         --remove | --uninstall ) ;;
         *) echo "unkown option [$1]"; break ;;
     esac
