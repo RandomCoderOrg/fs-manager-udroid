@@ -166,6 +166,11 @@ install() {
 
         # Start Extracting
         LOG "Extracting $name.tar.$ext"
+
+        # create $name directory
+        mkdir -p $name
+
+        # call proot extract
         p_extract --file "$DLCACHE/$name.tar.$ext" --path "$DEFAULT_FS_INSTALL_DIR/$name"
     else
         download "$name.tar.$ext" "$link" "$path"
@@ -200,7 +205,7 @@ download() {
 
     LOG "download() args => name=$name link=$link path=$path"
 
-    wget -q --show-progress --progress=bar:force -O ${path}/$name  "$link"  2>&1 | progressfilt || {
+    wget -q --show-progress --progress=bar:force -O ${path}/$name  "$link"  2>&1 || {
         ELOG "failed to download $name"
         echo "failed to download $name"
         exit 1

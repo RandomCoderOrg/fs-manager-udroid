@@ -17,7 +17,7 @@ function install_symlinks() {
 
 function create_dir() {
     [[ -d $1 ]] && rm -rf $1
-    g_spin minidot "Creating directory..." mkdir -p $1    
+    g_spin minidot "Creating directory \"$1\"..." mkdir -p $1    
 }
 
 create_dir $INSTALL_DIR
