@@ -74,6 +74,8 @@ p_login() {
     # user logic
     [[ -z $container_user ]] && container_user="root"
     # TODO: Make it good :)
+
+    unset LD_PRELOAD
     proot \
         --link2symlink \
         --sysvipc \
