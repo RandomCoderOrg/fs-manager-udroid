@@ -134,7 +134,15 @@ install() {
     ############### END OF OPTION PARSER ##############
 
     # Finally to get link
-    arch=$(dpkg --print-architecture)
+    
+    # arch transition
+    case $(dpkg --print-architecture) in
+        arm64 | aarch64) arch=arm64 ;;
+        armhf | armv7l | armv8l) arch=armhf ;;
+        x86_64| amd64) arch=amd64;;
+        *) die "unsupported architecture" ;;
+    esac
+
     link=$(cat $distro_data | jq -r ".$suite.$varient.${arch}url")
     LOG "link=$link"
     name=$(cat $distro_data | jq -r ".$suite.$varient.Name")
