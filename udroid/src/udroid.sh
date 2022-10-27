@@ -184,7 +184,8 @@ install() {
         msg_extract "$DEFAULT_FS_INSTALL_DIR/$name"
         p_extract --file "$DLCACHE/$name.tar.$ext" --path "$DEFAULT_FS_INSTALL_DIR/$name"
 
-        g_spin minidot "Applying proot fixes" bash proot-utils/proot-fixes.sh "$DEFAULT_FS_INSTALL_DIR/$name"
+        echo -e "Applying proot fixes"
+        bash proot-utils/proot-fixes.sh "$DEFAULT_FS_INSTALL_DIR/$name"
     else
         msg_download $name "$path/$name.tar.$ext" "$link"
         download "$name.tar.$ext" "$link" "$path"
