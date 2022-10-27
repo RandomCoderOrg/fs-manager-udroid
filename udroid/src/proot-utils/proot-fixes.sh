@@ -25,18 +25,18 @@ fs=${root_fs_path}
 
 # /proc/version
 PROG_PRINT "writing fake /proc/version"
-cat << EOF > ${fs}/.version
+cat << EOF > ${fs}/proc/.version
 Linux version 5.19.0-76051900-faked (udroid@RandomCoder.org) #202207312230~1660780566~22.04~9d60db1 SMP PREEMPT_DYNAMIC Thu A
 EOF
 
 # /proc/uptime
 PROG_PRINT "writing fake /proc/uptime"
-cat << EOF > ${fs}/.uptime
+cat << EOF > ${fs}/proc/.uptime
 7857.09 54258.46
 EOF
 
 # /dev/shm
-mkdir -p /dev/shm
+mkdir -p ${root_fs_path}/dev/shm
 
 # /etc/hosts
 PROG_PRINT "writing /etc/hosts for connectivity"
@@ -61,9 +61,8 @@ EOF
 
 # /etc/resolv.conf
 PROG_PRINT "writing /etc/resolv.conf for connectivity"
-[[ ! -f ${fs}/etc/resolv.conf ]] && {
-    touch ${fs}/etc/resolv.conf
-}
+rm -rf ${fs}/etc/resolv.conf
+touch ${fs}/etc/resolv.conf
 cat << EOF > ${fs}/etc/.resolv.conf
 nameserver 1.1.1.1
 nameserver 8.8.8.8
@@ -71,7 +70,7 @@ EOF
 
 # /proc/vmstat
 PROG_PRINT "writing fake /proc/vmstat"
-cat << EOF > ${fs}/.vmstat
+cat << EOF > ${fs}/proc/.vmstat
 nr_free_pages 797479
 nr_zone_inactive_anon 1350842
 nr_zone_active_anon 5792

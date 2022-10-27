@@ -200,7 +200,9 @@ install() {
         msg_extract "$path/$name"
         p_extract --file "$path/$name.tar.$ext" --path "$path/$name"
 
-        gum_spin minidot "Applying proot fixes" bash proot-utils/proot-fixes.sh "$path/$name"
+        # apply proot-fixes
+        echo -e "Applying proot fixes"
+        bash proot-utils/proot-fixes.sh "$path/$name"
     fi
 
     echo -e "[\xE2\x9C\x94] $name installed."
