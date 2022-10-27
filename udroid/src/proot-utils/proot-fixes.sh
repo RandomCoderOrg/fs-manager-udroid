@@ -10,6 +10,8 @@
 # /etc/hosts
 # /etc/resolv.conf
 
+root_fs_path=$1
+
 PROG_PRINT() {
     echo -e "\t-> ${*}"
 }
