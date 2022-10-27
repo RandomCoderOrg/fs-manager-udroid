@@ -199,7 +199,42 @@ install() {
 }
 
 login() {
-    :
+    
+    path=$DEFAULT_FS_INSTALL_DIR
+
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            -p | --path) 
+
+                # Custom paths are set either to point a new directory instead of default
+                # this is not-recommended cause managing installed filesystems becomes harder when they are outside of DEFAULT directories
+                #       operations like: remove, reset or analyzing filesystems
+                # using custom path results in abonded installation -> script only cares when its path is supplied again
+                #
+                # possible solution is to cache the loaction every time a path is supplied and use that for operations
+                local path=$2; shift 2
+                LOG "(login) custom installation path set to $path"
+            ;;
+            -*)
+                echo "Unknown option: $1"
+                exit 1
+            ;;
+            *) distro=$1; shift; break ;;
+        esac
+    done
+
+    [[ -z $distro ]] && echo "ERROR: distro not specified" && exit 1
+
+    if [ -d $path/$distro ]; then
+        LOG "login to $distro"
+        p_login --path $path/$distro
+    else
+        ELOG "ERROR: $distro not found"
+        echo "ERROR: $distro not found"
+        # echo "use 'install' to install it"
+        exit 1
+    fi
+
 }
 
 list() {
