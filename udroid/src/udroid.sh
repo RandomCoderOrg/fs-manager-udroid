@@ -169,7 +169,7 @@ install() {
         LOG "Extracting $name.tar.$ext"
 
         # create $name directory
-        mkdir -p $name
+        mkdir -p $DEFAULT_FS_INSTALL_DIR/$name
 
         # call proot extract
         msg_extract "$DEFAULT_FS_INSTALL_DIR/$name"
