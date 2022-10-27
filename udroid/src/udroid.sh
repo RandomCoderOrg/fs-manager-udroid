@@ -180,13 +180,13 @@ install() {
         msg_download $name "$path/$name.tar.$ext" "$link"
         download "$name.tar.$ext" "$link" "$path"
 
-        [[ -d $path ]] && {
+        if [[ -d $path ]]; then
             LOG "Extracting $name.tar.$ext"
             mkdir -p $path/$name
-        } || {
+        else
             ELOG "ERROR: path $path not found"
             echo "ERROR: path $path not found"
-        }
+        fi
 
         msg_extract "$path/$name"
         p_extract --file "$path/$name.tar.$ext" --path "$path/$name"
