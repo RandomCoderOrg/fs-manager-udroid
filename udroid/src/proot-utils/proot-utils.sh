@@ -50,7 +50,7 @@ is_valid_rootfs() {
     } && return 0 || return 1
 }
 
-login() {
+p_login() {
     # OPTIONS:
     # --disable-special-mounts
     # --disable-auto-init
