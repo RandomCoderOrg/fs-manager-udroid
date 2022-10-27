@@ -23,6 +23,10 @@ PROG_PRINT() {
 
 fs=${root_fs_path}
 
+# fix permission to write into proc
+[[ ! -d ${fs}/proc ]] && mkdir -p ${fs}/proc
+chmod 700 ${fs}/proc
+
 # /proc/version
 PROG_PRINT "writing fake /proc/version"
 cat << EOF > ${fs}/proc/.version

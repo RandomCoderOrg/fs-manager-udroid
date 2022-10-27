@@ -22,7 +22,7 @@ fetch_distro_data() {
     gum_spin dot "Fetching distro data.." curl -L -s -o $_path $URL || {
         ELOG "[${0}] failed to fetch distro data"
     }
-
+    
     if [[ -f $_path ]]; then
         LOG "set distro_data to $_path"
         distro_data=$_path
