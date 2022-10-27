@@ -1,5 +1,12 @@
 #!/bin/bash
 
+RTR="${PREFIX}/etc/udroid"
+DEFAULT_ROOT="${PREFIX}/usr/var/lib/udroid"
+DEFAULT_FS_INSTALL_DIR="${DEFAULT_ROOT}/installed-filesystems"
+DLCACHE="${DEFAULT_ROOT}/dlcache"
+RTCACHE="${RTR}/.cache"
+
+[[ -d ${RTR} ]] && cd $RTR || exit 1
 [[ ! -f proot-utils/proot-utils.sh ]] && echo "proot-utils.sh not found" && exit 1
 [[ ! -f gum_wrapper.sh ]] && echo "gum_wrapper.sh not found" && exit 1
 
@@ -7,12 +14,6 @@ source proot-utils/proot-utils.sh
 source gum_wrapper.sh
 
 export distro_data
-
-RTR="${PREFIX}/etc/udroid"
-DEFAULT_ROOT="${PREFIX}/usr/var/lib/udroid"
-DEFAULT_FS_INSTALL_DIR="${DEFAULT_ROOT}/installed-filesystems"
-DLCACHE="${DEFAULT_ROOT}/dlcache"
-RTCACHE="${RTR}/.cache"
 
 fetch_distro_data() {
     URL="https://raw.githubusercontent.com/RandomCoderOrg/udroid-download/main/distro-data.json"
