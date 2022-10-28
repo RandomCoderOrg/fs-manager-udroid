@@ -16,15 +16,16 @@ function install_symlinks() {
 }
 
 function create_dir() {
-    [[ -d $1 ]] && rm -rf $1
+    local remove=$1; shift 1
+    [[ -n $remove ]] && [[ -d $1 ]] && rm -rf $1
     g_spin minidot "Creating directory \"$1\"..." mkdir -p $1    
 }
 
-create_dir $INSTALL_DIR
+create_dir 0 $INSTALL_DIR
 create_dir $DEFAULT_ROOT
 create_dir $DEFAULT_FS_INSTALL_DIR
 create_dir $DLCACHE
-create_dir $RTCACHE
+create_dir 0 $RTCACHE
 
 g_spin minidot "installing $(basename $(pwd))..." cp -rv ./* $INSTALL_DIR
 g_spin minidot "processing symbolic link..." bash -x install_sim.sh
