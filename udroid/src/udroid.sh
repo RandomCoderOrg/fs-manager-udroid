@@ -19,10 +19,13 @@ fetch_distro_data() {
     URL="https://raw.githubusercontent.com/RandomCoderOrg/udroid-download/main/distro-data.json"
     _path="${RTCACHE}/distro-data.json.cache"
 
+    mv _path _path.old
+
     gum_spin dot "Fetching distro data.." curl -L -s -o $_path $URL || {
         ELOG "[${0}] failed to fetch distro data"
+        mv _path.old _path
     }
-    
+
     if [[ -f $_path ]]; then
         LOG "set distro_data to $_path"
         distro_data=$_path
@@ -69,14 +72,18 @@ install() {
     LOG "[USER] function args => suite=$suite varient=$varient"
     
     # if TEST_MODE is set run scripts in current directory and use test.json for distro_conf
-    [[ -n $TEST_MODE ]] && {
+    if [[ -n $TEST_MODE ]]; then
         LOG "[TEST] test mode enabled"
         distro_data=test.json
         DLCACHE="./tmp/dlcache"
         mkdir -p $DLCACHE
         LOG "[TEST] DLCACHE=$DLCACHE"
         LOG "[TEST] distro_data=$distro_data"
-    }
+    else
+        mkdir $RTCACHE 2> /dev/null
+        fetch_distro_data
+        distro_data=${RTCACHE}/distro-data.json.cache
+    fi
 
     ############### START OF OPTION PARSER ##############
 
