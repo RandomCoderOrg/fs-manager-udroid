@@ -427,14 +427,14 @@ chmod u+rw ${fs}/etc/group
 chmod u+rw ${fs}/etc/gshadow
 
 for group in $AID_GROUPS ;do
-    if grep -q "$(echo $group | cut -d : -f 2)" /etc/group; then
+    if grep -q "$(echo $group | cut -d : -f 2)" ${fs}/etc/group; then
         echo -e "[\e[1;32mF\e[0m]\tGroup $group exists"
     else
         echo -e "[\e[1;31mM\e[0m]\tGroup $group does not exist"
 
-        # add group to /etc/group and /etc/gshadow
-        echo $(echo $group | cut -d : -f 1):x:$(echo $group | cut -d : -f 2):root,aid_$(id -un) >> /etc/group
-        echo $(echo $group | cut -d : -f 1):*::root,aid_$(id -un) >> /etc/gshadow
+        # add group to ${fs}/etc/group and ${fs}/etc/gshadow
+        echo $(echo $group | cut -d : -f 1):x:$(echo $group | cut -d : -f 2):root,aid_$(id -un) >> ${fs}/etc/group
+        echo $(echo $group | cut -d : -f 1):*::root,aid_$(id -un) >> ${fs}/etc/gshadow
         echo -e "[\e[1;32mF\e[0m]\tGroup $group added"
     fi
 done
