@@ -3,7 +3,7 @@
 BIN="$PREFIX/bin"
 INSTALL_DIR="${PREFIX}/etc/udroid"
 
-DEFAULT_ROOT="${PREFIX}/usr/var/lib/udroid"
+DEFAULT_ROOT="${PREFIX}/var/lib/udroid"
 DEFAULT_FS_INSTALL_DIR="${DEFAULT_ROOT}/installed-filesystems"
 DLCACHE="${DEFAULT_ROOT}/dlcache"
 RTCACHE="${RTR}/.cache"
