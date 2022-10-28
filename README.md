@@ -5,6 +5,14 @@ A tool manage common things with ubuntu-on-android
 
 [![CodeFactor](https://www.codefactor.io/repository/github/randomcoderorg/fs-manager-udroid/badge)](https://www.codefactor.io/repository/github/randomcoderorg/fs-manager-udroid)
 
+## Manual installation
+
+```bash
+git clone -b revamp-v2.5 https://github.com/RandomCoderOrg/fs-manager-udroid.git
+cd fs-manager-udroid
+bash install.sh
+```
+
 ## Usage
 
 three main arguments `install`, `login`, `remove`
