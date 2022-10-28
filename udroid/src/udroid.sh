@@ -19,9 +19,9 @@ fetch_distro_data() {
     URL="https://raw.githubusercontent.com/RandomCoderOrg/udroid-download/main/distro-data.json"
     _path="${RTCACHE}/distro-data.json.cache"
 
-    mv _path _path.old
+    mv $_path $_path.old
 
-    gum_spin dot "Fetching distro data.." curl -L -s -o $_path $URL || {
+    g_spin dot "Fetching distro data.." curl -L -s -o $_path $URL || {
         ELOG "[${0}] failed to fetch distro data"
         mv _path.old _path
     }
