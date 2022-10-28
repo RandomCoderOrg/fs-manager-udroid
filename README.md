@@ -1,10 +1,46 @@
 # fs-manager-udroid
+
 A tool manage common things with ubuntu-on-android
 & some scripts and linux apps
 
 [![CodeFactor](https://www.codefactor.io/repository/github/randomcoderorg/fs-manager-udroid/badge)](https://www.codefactor.io/repository/github/randomcoderorg/fs-manager-udroid)
-<!-- 
-## Target to V01
-- [X] upgrade system
-- [X] launch shorcuts vncserver and others ( [0530e7965907002c614e70c6f8a398c6b9d13fd8](https://github.com/RandomCoderOrg/fs-manager-udroid/commit/0530e7965907002c614e70c6f8a398c6b9d13fd8) to [5a4ee56e9219988b24204e8b49787a8f7ed3b8ef](https://github.com/RandomCoderOrg/fs-manager-udroid/commit/5a4ee56e9219988b24204e8b49787a8f7ed3b8ef) )
- -->
+
+## Usage
+
+three main arguments `install`, `login`, `remove`
+
+### install ( `-i` )
+
+```bash
+udroid -i jammy:raw
+```
+
+install argument takes a strings of two words seperated by `:` left side is suite name and right is varient name
+
+More Avalible examples
+
+```bash
+udroid -i impish:raw
+udroid -i impish:xfce
+udroid -i impish:mate
+```
+
+```bash
+udroid -i focal:xfce4
+```
+
+### login (`-l`)
+
+```bash
+udroid -l udroid-jammy-raw
+```
+
+> WIP
+
+### remove (`-r`)
+
+> WIP
+
+## Contributing
+
+for now there is no guide for contributing. try to look at code and make a pull request if you have any corrections or improvements ( 💟 )
