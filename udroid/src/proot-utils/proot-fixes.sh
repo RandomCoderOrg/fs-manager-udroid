@@ -67,7 +67,7 @@ EOF
 PROG_PRINT "writing /etc/resolv.conf for connectivity"
 rm -rf ${fs}/etc/resolv.conf
 touch ${fs}/etc/resolv.conf
-cat << EOF > ${fs}/etc/.resolv.conf
+cat << EOF > ${fs}/etc/resolv.conf
 nameserver 1.1.1.1
 nameserver 8.8.8.8
 EOF
