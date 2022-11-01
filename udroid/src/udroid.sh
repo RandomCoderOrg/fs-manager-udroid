@@ -313,7 +313,6 @@ list() {
                 if [[ -d $path/$name ]]; then
                     echo -e "\t- $varient $_installed $_size"
                 fi
-
             fi
         done
     done
@@ -370,10 +369,10 @@ fi
 
 while [ $# -gt 0 ]; do
     case $1 in
-        --install|-i) shift 1; install "$*" ; break ;;
-        --login|-l) shift 1; login "$*"; break ;;
+        --install|-i) shift 1; install $@ ; break ;;
+        --login|-l) shift 1; login $@; break ;;
         --remove | --uninstall ) ;;
-        --list) shift 1; list "$*"; break ;;
+        --list) shift 1; list $@; break ;;
         *) echo "unkown option [$1]"; break ;;
     esac
 done
