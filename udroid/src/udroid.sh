@@ -282,12 +282,12 @@ list() {
     # loop over suites
     for suite in $suites; do
         echo "$suite: "
-        varients=$(cat $distro_data | jq -r "$suite.varients[]")
+        varients=$(cat $distro_data | jq -r ".$suite.varients[]")
         
         # loop over varients
         for varient in $varients; do
             # get name
-            name=$(cat $distro_data | jq -r "$suite.$varient.Name")
+            name=$(cat $distro_data | jq -r ".$suite.$varient.Name")
             # check if installed
             if [[ -d $path/$name ]]; then
                 _installed="[installed]"
