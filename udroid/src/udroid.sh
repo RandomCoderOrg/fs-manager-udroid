@@ -299,6 +299,8 @@ list() {
             if [[ $size == true ]]; then
                 if [[ -d $path/$name ]]; then
                     _size="[ SIZE: $(du -sh $path/$name | awk '{print $1}') ]"
+                else
+                    _size=""
                 fi
             else
                 _size=""
