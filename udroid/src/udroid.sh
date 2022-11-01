@@ -370,6 +370,7 @@ while [ $# -gt 0 ]; do
         --install|-i) shift 1; install "$*" ; break ;;
         --login|-l) shift 1; login "$*"; break ;;
         --remove | --uninstall ) ;;
+        --list) shift 1; list "$*"; break ;;
         *) echo "unkown option [$1]"; break ;;
     esac
 done
