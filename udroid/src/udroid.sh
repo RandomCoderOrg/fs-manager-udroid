@@ -15,6 +15,8 @@ source gum_wrapper.sh
 
 export distro_data
 
+DIE() { echo "${@}"; exit 1 ;:;}
+
 fetch_distro_data() {
     URL="https://raw.githubusercontent.com/RandomCoderOrg/udroid-download/main/distro-data.json"
     _path="${RTCACHE}/distro-data.json.cache"
@@ -30,7 +32,7 @@ fetch_distro_data() {
         LOG "set distro_data to $_path"
         distro_data=$_path
     else
-        die "Distro data fetch failed!"
+        DIE "Distro data fetch failed!"
     fi
 }
 
@@ -257,7 +259,62 @@ login() {
 }
 
 list() {
-    :
+    ## List
+    # list all the avalible suites varients and their status
+    
+    export size=false
+    export show_installed_only=false
+    local path=$DEFAULT_FS_INSTALL_DIR
+
+    while [ $# -gt 0 ]; do
+        case $1 in
+            --size) size=true;;
+            --list-installed) show_installed_only=true;;
+            --path) path=$2; LOG "list(): looking in $path";;
+        esac
+    done
+
+    fetch_distro_data
+
+    suites=$(cat $distro_data | jq -r '.suites[]')
+
+    # loop over suites
+    for suite in $suites; do
+        echo "$suite: "
+        varients=$(cat $distro_data | jq -r "$suite.varients[]")
+        
+        # loop over varients
+        for varient in $varients; do
+            # get name
+            name=$(cat $distro_data | jq -r "$suite.$varient.Name")
+            # check if installed
+            if [[ -d $path/$name ]]; then
+                _installed="[installed]"
+            else
+                _installed=""
+            fi
+
+            # check size
+            if [[ $size == true ]]; then
+                if [[ -d $path/$name ]]; then
+                    _size="[ SIZE: $(du -sh $path/$name | awk '{print $1}') ]"
+                fi
+            else
+                _size=""
+            fi
+
+            # print out
+            if ! $show_installed_only; then
+                echo -e "\t- $varient $_installed $_size"
+            else
+                if [[ -d $path/$name ]]; then
+                    echo -e "\t- $varient $_installed $_size"
+                fi
+
+            fi
+        done
+    done
+
 }
 
 remove() {
