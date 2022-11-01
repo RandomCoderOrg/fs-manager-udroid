@@ -268,9 +268,10 @@ list() {
 
     while [ $# -gt 0 ]; do
         case $1 in
-            --size) size=true;;
-            --list-installed) show_installed_only=true;;
-            --path) path=$2; LOG "list(): looking in $path";;
+            --size) size=true; shift 1;;
+            --list-installed) show_installed_only=true; shift 1;;
+            --path) path=$2; LOG "list(): looking in $path"; shift 2;;
+            *) shift ;;
         esac
     done
 
