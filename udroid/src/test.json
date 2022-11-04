@@ -3,6 +3,7 @@
     "jammy": {
         "varients": ["raw"],
         "raw": {
+            "arch": ["aarch64", "armv7l", "armhf", "amd64", "x86_64"],
             "Name": "udroid-jammy-raw",
             "FirendlyName": "Ubuntu Jammy (raw)",
             "aarch64url": "https://github.com/RandomCoderOrg/udroid-download/releases/download/V3R3/jammy-raw-arm64.tar.gz",
@@ -17,6 +18,7 @@
     "impish": {
         "varients": ["xfce4", "mate", "raw"],
         "raw": {
+            "arch": ["aarch64", "armv7l", "armhf", "amd64", "x86_64"],
             "Name": "udroid-impish-raw",
             "FirendlyName": "Ubuntu Impish (raw)",
             "aarch64url": "https://github.com/RandomCoderOrg/udroid-download/releases/download/V3R3/impish-raw-arm64.tar.gz",
@@ -27,6 +29,7 @@
             "amd64sha": "c5ce02ed7be92537bb1e2bcc5eb2ab588afc50c147972e1336a2a9c290813245"
         },
         "xfce4": {
+            "arch": ["aarch64", "amd64", "x86_64"],
             "Name": "udroid-impish-xfce4",
             "FirendlyName": "Ubuntu Impish (xfce4)",
             "aarch64url": "https://github.com/RandomCoderOrg/ubuntu-on-android/releases/download/v3/udroid-arm64-xfce4-V3MBB2.tar.gz",
@@ -35,6 +38,7 @@
             "amd64sha": "88a5f5f079aef994b6d5b2e3df773aa875ed2157d1f00c8fda504bda9f01e680"
         },
         "mate": {
+            "arch": ["aarch64"],
             "Name": "udroid-impish-mate",
             "FirendlyName": "Ubuntu Impish (mate)",
             "aarch64url": "https://github.com/RandomCoderOrg/ubuntu-on-android/releases/download/v3/udroid-mate-arm64-betav2.tar.gz",
@@ -44,6 +48,7 @@
     "focal": {
         "varients": ["xfce4"],
         "xfce4":{
+            "arch": ["aarch64", "armv7l", "armv8l", "armhf"],
             "Name": "udroid-focal-xfce4",
             "FirendlyName": "Ubuntu Focal (xfce4)",
             "aarch64url": "https://github.com/RandomCoderOrg/ubuntu-on-android/releases/download/v02-xfce4/hippo-arm64-v02-xfce4.tar.gz",
