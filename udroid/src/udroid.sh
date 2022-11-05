@@ -291,14 +291,12 @@ list() {
             supported_arch=$(cat $distro_data | jq -r ".$suite.$varient.arch")
 
             host_arch=$(dpkg --print-architecture)
-            for arch in $supported_arch; do
-                if [[ "$arch" == "$host_arch" ]]; then
+            if [[ $host_arch =~ $supported_arch ]]; then
                     supported=true
                     break
                 else
                     supported=false
-                fi
-            done
+            fi
             
             # check if installed
             if [[ -d $path/$name ]]; then
@@ -322,7 +320,7 @@ list() {
             if [[ $supported == true ]]; then
                 support_status="\e[1;32m [supported]\e[0m"
             else
-                support_status="\e[31m [unsupported]\e0m"
+                support_status="\e[31m [unsupported]\e[0m"
             fi
 
             # print out
