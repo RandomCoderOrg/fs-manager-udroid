@@ -293,7 +293,6 @@ list() {
             host_arch=$(dpkg --print-architecture)
             if [[ $host_arch =~ $supported_arch ]]; then
                     supported=true
-                    break
                 else
                     supported=false
             fi
