@@ -288,6 +288,18 @@ list() {
         for varient in $varients; do
             # get name
             name=$(cat $distro_data | jq -r ".$suite.$varient.Name")
+            supported_arch=$(cat $distro_data | jq -r ".$suite.$varient.arch")
+
+            host_arch=$(dpkg --print-architecture)
+            for arch in $supported_arch; do
+                if [[ "$arch" == "$host_arch" ]]; then
+                    supported=true
+                    break
+                else
+                    supported=false
+                fi
+            done
+            
             # check if installed
             if [[ -d $path/$name ]]; then
                 _installed="[installed]"
@@ -306,12 +318,19 @@ list() {
                 _size=""
             fi
 
+            # set support status
+            if [[ $supported == true ]]; then
+                support_status="\e[1;32m [supported]\e[0m"
+            else
+                support_status="\e[31m [unsupported]\e0m"
+            fi
+
             # print out
             if ! $show_installed_only; then
-                echo -e "\t- $varient $_installed $_size"
+                echo -e "\t- $varient $support_status $_installed $_size"
             else
                 if [[ -d $path/$name ]]; then
-                    echo -e "\t- $varient $_installed $_size"
+                    echo -e "\t- $varient $support_status $_installed $_size"
                 fi
             fi
         done
