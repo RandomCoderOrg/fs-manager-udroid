@@ -15,6 +15,8 @@ source gum_wrapper.sh
 
 export distro_data
 
+DIE() { echo "${@}"; exit 1 ;:;}
+
 fetch_distro_data() {
     URL="https://raw.githubusercontent.com/RandomCoderOrg/udroid-download/main/distro-data.json"
     _path="${RTCACHE}/distro-data.json.cache"
@@ -30,7 +32,7 @@ fetch_distro_data() {
         LOG "set distro_data to $_path"
         distro_data=$_path
     else
-        die "Distro data fetch failed!"
+        DIE "Distro data fetch failed!"
     fi
 }
 
@@ -257,7 +259,80 @@ login() {
 }
 
 list() {
-    :
+    ## List
+    # list all the avalible suites varients and their status
+    
+    export size=false
+    export show_installed_only=false
+    local path=$DEFAULT_FS_INSTALL_DIR
+
+    while [ $# -gt 0 ]; do
+        case $1 in
+            --size) size=true; shift 1;;
+            --list-installed) show_installed_only=true; shift 1;;
+            --path) path=$2; LOG "list(): looking in $path"; shift 2;;
+            *) shift ;;
+        esac
+    done
+
+    fetch_distro_data
+
+    suites=$(cat $distro_data | jq -r '.suites[]')
+
+    # loop over suites
+    for suite in $suites; do
+        echo "$suite: "
+        varients=$(cat $distro_data | jq -r ".$suite.varients[]")
+        
+        # loop over varients
+        for varient in $varients; do
+            # get name
+            name=$(cat $distro_data | jq -r ".$suite.$varient.Name")
+            supported_arch=$(cat $distro_data | jq -r ".$suite.$varient.arch")
+
+            host_arch=$(dpkg --print-architecture)
+            if [[ $host_arch =~ $supported_arch ]]; then
+                    supported=true
+                else
+                    supported=false
+            fi
+            
+            # check if installed
+            if [[ -d $path/$name ]]; then
+                _installed="[installed]"
+            else
+                _installed=""
+            fi
+
+            # check size
+            if [[ $size == true ]]; then
+                if [[ -d $path/$name ]]; then
+                    _size="[ SIZE: $(du -sh $path/$name | awk '{print $1}') ]"
+                else
+                    _size=""
+                fi
+            else
+                _size=""
+            fi
+
+            # set support status
+            if [[ $supported == true ]]; then
+                support_status="\e[1;32m [supported]\e[0m"
+            else
+                support_status="\e[31m [unsupported]\e[0m"
+            fi
+
+            # print out
+            if ! $show_installed_only; then
+                echo -e "\t- $varient $support_status $_installed $_size"
+            else
+                if [[ -d $path/$name ]]; then
+                    echo -e "\t- $varient $support_status $_installed $_size"
+                fi
+            fi
+        done
+    done
+
 }
 
 remove() {
@@ -310,9 +385,10 @@ fi
 
 while [ $# -gt 0 ]; do
     case $1 in
-        --install|-i) shift 1; install "$*" ; break ;;
-        --login|-l) shift 1; login "$*"; break ;;
+        --install|-i) shift 1; install $@ ; break ;;
+        --login|-l) shift 1; login $@; break ;;
         --remove | --uninstall ) ;;
+        --list) shift 1; list $@; break ;;
         *) echo "unkown option [$1]"; break ;;
     esac
 done
