@@ -12,6 +12,7 @@ RTCACHE="${RTR}/.cache"
 
 source proot-utils/proot-utils.sh
 source gum_wrapper.sh
+source help_udroid.sh
 
 export distro_data
 
