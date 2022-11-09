@@ -237,13 +237,32 @@ login() {
                 local path=$2; shift 2
                 LOG "(login) custom installation path set to $path"
             ;;
+            --name)
+                local _name=$2; shift 2
+                LOG "(login) custom name set to $name"
+            ;;
             -*)
                 echo "Unknown option: $1"
                 exit 1
             ;;
-            *) distro=$1; shift; break ;;
+            *) 
+                [[ -n $_name ]] && {
+                    ELOG "login() error: name already set to $_name"
+                    echo "--name supplied $_name"
+                }
+                arg=$1
+                shift
+                break
+            ;;
         esac
     done
+
+    if [[ -z $_name ]]; then
+        parser $arg
+        distro=$name
+    else
+        distro=$_name
+    fi
 
     [[ -z $distro ]] && echo "ERROR: distro not specified" && exit 1
 
@@ -257,6 +276,100 @@ login() {
         exit 1
     fi
 
+}
+
+parser() {
+    local arg=$1
+
+    local suite=${arg%%:*}
+    local varient=${arg#*:}
+
+    LOG "[USER] function args => suite=$suite varient=$varient"
+    
+    # if TEST_MODE is set run scripts in current directory and use test.json for distro_conf
+    if [[ -n $TEST_MODE ]]; then
+        LOG "[TEST] test mode enabled"
+        distro_data=test.json
+        DLCACHE="./tmp/dlcache"
+        mkdir -p $DLCACHE
+        LOG "[TEST] DLCACHE=$DLCACHE"
+        LOG "[TEST] distro_data=$distro_data"
+    else
+        mkdir $RTCACHE 2> /dev/null
+        fetch_distro_data
+        distro_data=${RTCACHE}/distro-data.json.cache
+    fi
+
+    ############### START OF OPTION PARSER ##############
+
+    # implemenation to parse two words seperated by a colon
+    #   eg: jammy:xfce4
+    #  Fallback conditions
+    #  1. if no colon is found, then instead of error try to guess the user intentiom
+    #      and give a promt to select missing value the construct the colon seperated arg
+    #  2. if both colon seperated words are same then => ERROR
+
+    # check if seperator is present & Guess logic
+    [[ $(echo $arg | awk '/:/' | wc -l) == 0 ]] && {
+        ELOG "seperator not found"
+        LOG "trying to guess what does that mean"
+
+        if [[ $(cat $distro_data | jq -r '.suites[]') =~ $arg ]]; then
+            LOG "found suite [$arg]"
+            suite=$arg
+            varient=""
+        else
+            for _suites in $(cat $distro_data | jq -r '.suites[]'); do
+                for _varients in $(cat $distro_data | jq -r ".${_suites}.varients[]"); do
+                    if [[ $_varients =~ $arg ]]; then
+                        suite=$""
+                        varient=$arg
+                    fi
+                done
+            done
+        fi
+    }
+    
+    # Check if somehow suite and varient are same ( which is not the case )
+    if [[ "$suite" == "$varient" ]]; then
+        [[ -n "$suite" ]] && [[ -n "$varient" ]] && {
+            ELOG "Parsing error in [$arg] (both can't be same)"
+            LOG "function args => suite=$suite varient=$varient"
+            echo "parse error"
+        }
+    fi
+
+
+    suites=$(cat $distro_data | jq -r '.suites[]')
+
+    # if suite or varient is empty prompt user to select it!
+    [[ -z $suite ]] && {
+        suite=$(g_choose $(cat $distro_data | jq -r '.suites[]'))
+    }
+    [[ ! $suites =~ $suite ]] && echo "suite not found" && exit 1
+
+    [[ -z $varient ]] && {
+        varient=$(g_choose $(cat $distro_data | jq -r ".$suite.varients[]"))
+    }
+    [[ ! $varient =~ $varient ]] && echo "varient not found" && exit 1
+
+    LOG "[Final] function args => suite=$suite varient=$varient"
+    ############### END OF OPTION PARSER ##############
+
+    # Finally to get link
+    
+    # arch transition
+    case $(dpkg --print-architecture) in
+        arm64 | aarch64) arch=aarch64 ;;
+        armhf | armv7l | armv8l) arch=armhf ;;
+        x86_64| amd64) arch=amd64;;
+        *) die "unsupported architecture" ;;
+    esac
+
+    link=$(cat $distro_data | jq -r ".$suite.$varient.${arch}url")
+    LOG "link=$link"
+    name=$(cat $distro_data | jq -r ".$suite.$varient.Name")
+    LOG "name=$name"
 }
 
 list() {
