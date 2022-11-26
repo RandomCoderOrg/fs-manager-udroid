@@ -132,8 +132,7 @@ login() {
     local root_fs_path=""
     local login_user="root"
     local -a custom_fs_bindings
-
-    path=$DEFAULT_FS_INSTALL_DIR
+    local path=$DEFAULT_FS_INSTALL_DIR
 
     while [[ $# -gt 0 ]]; do
         case $1 in
@@ -228,6 +227,7 @@ login() {
     else
         distro=$_name
     fi
+    root_fs_path=$path/$distro
 
     [[ -z $distro ]] && echo "ERROR: distro not specified" && exit 1
 
