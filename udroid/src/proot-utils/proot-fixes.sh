@@ -47,6 +47,35 @@ PROG_PRINT "writing /etc/hosts for connectivity"
 [[ ! -f ${fs}/etc/hosts ]] && {
     touch ${fs}/etc/hosts
 }
+
+# profile for env variables
+if [ -d "${root_fs_path}/etc/profile.d" ]; then
+    profile_script="${root_fs_path}/etc/profile.d/udroid.sh"
+else
+    chmod 755 ${root_fs_path}/etc/profile > /dev/null 2>&1
+    profile_script="${root_fs_path}/etc/profile"
+fi
+PROG_PRINT "adding ANDROID env variables to container.."
+cat <<- EOF >> "$profile_script"
+export ANDROID_ART_ROOT=${ANDROID_ART_ROOT-}
+export ANDROID_DATA=${ANDROID_DATA-}
+export ANDROID_I18N_ROOT=${ANDROID_I18N_ROOT-}
+export ANDROID_ROOT=${ANDROID_ROOT-}
+export ANDROID_RUNTIME_ROOT=${ANDROID_RUNTIME_ROOT-}
+export ANDROID_TZDATA_ROOT=${ANDROID_TZDATA_ROOT-}
+export BOOTCLASSPATH=${BOOTCLASSPATH-}
+export COLORTERM=${COLORTERM-}
+export DEX2OATBOOTCLASSPATH=${DEX2OATBOOTCLASSPATH-}
+export EXTERNAL_STORAGE=${EXTERNAL_STORAGE-}
+[ -z "\$LANG" ] && export LANG=C.UTF-8
+export PATH=\${PATH}:@TERMUX_PREFIX@/bin:/system/bin:/system/xbin
+export TERM=${TERM-xterm-256color}
+export TMPDIR=/tmp
+export PULSE_SERVER=127.0.0.1
+export MOZ_FAKE_NO_SANDBOX=1
+EOF
+
+PROG_PRINT "writing default /etc/hosts"
 cat << EOF > ${fs}/etc/hosts
 127.0.0.1 localhost
 127.0.0.1 localhost.localdomain
