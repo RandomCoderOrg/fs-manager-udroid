@@ -53,11 +53,11 @@ install() {
     #   4) Extract the filesystem to target path
     #   5) execute fixes file
 
-    while [[ $# -gt 0 ]]; do
-        case $1 in
-            
-        esac
-    done
+    local arg=$1
+
+    # parse the arg for suite and varient and get name,link
+    parser $1
+
     # final checks
     [[ "$link" == "null" ]] && {
         ELOG "link not found for $suite:$varient"
