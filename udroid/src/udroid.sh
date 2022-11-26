@@ -20,7 +20,7 @@ source help_udroid.sh
 export distro_data
 
 DIE() { echo -e "${@}"; exit 1 ;:;}
-GWARN() { echo -e "\e[90m${*}\e0m";:;}
+GWARN() { echo -e "\e[90m${*}\e[0m";:;}
 
 fetch_distro_data() {
     URL="https://raw.githubusercontent.com/RandomCoderOrg/udroid-download/main/distro-data.json"
