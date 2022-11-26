@@ -434,8 +434,8 @@ login() {
 
         exec proot "$@"
     else
-        ELOG "ERROR: $distro not found"
-        echo "ERROR: $distro not found"
+        ELOG "ERROR: $distro not found or installed"
+        echo "ERROR: $distro not found or installed"
         # echo "use 'install' to install it"
         exit 1
     fi
