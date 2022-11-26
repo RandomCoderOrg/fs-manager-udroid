@@ -16,7 +16,8 @@ source help_udroid.sh
 
 export distro_data
 
-DIE() { echo "${@}"; exit 1 ;:;}
+DIE() { echo -e "${@}"; exit 1 ;:;}
+GWARN() { echo -e "\e[90m${*}\e0m";:;}
 
 fetch_distro_data() {
     URL="https://raw.githubusercontent.com/RandomCoderOrg/udroid-download/main/distro-data.json"
@@ -49,115 +50,11 @@ install() {
     #   4) Extract the filesystem to target path
     #   5) execute fixes file
 
-    local arg=$1; shift 1
-    local path=""
-    local suite=${arg%%:*}
-    local varient=${arg#*:}
-
     while [[ $# -gt 0 ]]; do
         case $1 in
-            -p | --path) 
-
-                # Custom paths are set either to point a new directory instead of default
-                # this is not-recommended cause managing installed filesystems becomes harder when they are outside of DEFAULT directories
-                #       operations like: remove, reset or analyzing filesystems
-                # using custom path results in abonded installation -> script only cares when its path is supplied again
-                #
-                # possible solution is to cache the loaction every time a path is supplied and use that for operations
-                shift
-                local path=$1
-                LOG "(install) custom installation path set to $path"
-            ;;
-            *) break ;;
+            
         esac
     done
-
-    LOG "[USER] function args => suite=$suite varient=$varient"
-    
-    # if TEST_MODE is set run scripts in current directory and use test.json for distro_conf
-    if [[ -n $TEST_MODE ]]; then
-        LOG "[TEST] test mode enabled"
-        distro_data=test.json
-        DLCACHE="./tmp/dlcache"
-        mkdir -p $DLCACHE
-        LOG "[TEST] DLCACHE=$DLCACHE"
-        LOG "[TEST] distro_data=$distro_data"
-    else
-        mkdir $RTCACHE 2> /dev/null
-        fetch_distro_data
-        distro_data=${RTCACHE}/distro-data.json.cache
-    fi
-
-    ############### START OF OPTION PARSER ##############
-
-    # implemenation to parse two words seperated by a colon
-    #   eg: jammy:xfce4
-    #  Fallback conditions
-    #  1. if no colon is found, then instead of error try to guess the user intentiom
-    #      and give a promt to select missing value the construct the colon seperated arg
-    #  2. if both colon seperated words are same then => ERROR
-
-    # check if seperator is present & Guess logic
-    [[ $(echo $arg | awk '/:/' | wc -l) == 0 ]] && {
-        ELOG "seperator not found"
-        LOG "trying to guess what does that mean"
-
-        if [[ $(cat $distro_data | jq -r '.suites[]') =~ $arg ]]; then
-            LOG "found suite [$arg]"
-            suite=$arg
-            varient=""
-        else
-            for _suites in $(cat $distro_data | jq -r '.suites[]'); do
-                for _varients in $(cat $distro_data | jq -r ".${_suites}.varients[]"); do
-                    if [[ $_varients =~ $arg ]]; then
-                        suite=$""
-                        varient=$arg
-                    fi
-                done
-            done
-        fi
-    }
-    
-    # Check if somehow suite and varient are same ( which is not the case )
-    if [[ "$suite" == "$varient" ]]; then
-        [[ -n "$suite" ]] && [[ -n "$varient" ]] && {
-            ELOG "Parsing error in [$arg] (both can't be same)"
-            LOG "function args => suite=$suite varient=$varient"
-            echo "parse error"
-        }
-    fi
-
-
-    suites=$(cat $distro_data | jq -r '.suites[]')
-
-    # if suite or varient is empty prompt user to select it!
-    [[ -z $suite ]] && {
-        suite=$(g_choose $(cat $distro_data | jq -r '.suites[]'))
-    }
-    [[ ! $suites =~ $suite ]] && echo "suite not found" && exit 1
-
-    [[ -z $varient ]] && {
-        varient=$(g_choose $(cat $distro_data | jq -r ".$suite.varients[]"))
-    }
-    [[ ! $varient =~ $varient ]] && echo "varient not found" && exit 1
-
-    LOG "[Final] function args => suite=$suite varient=$varient"
-    ############### END OF OPTION PARSER ##############
-
-    # Finally to get link
-    
-    # arch transition
-    case $(dpkg --print-architecture) in
-        arm64 | aarch64) arch=aarch64 ;;
-        armhf | armv7l | armv8l) arch=armhf ;;
-        x86_64| amd64) arch=amd64;;
-        *) die "unsupported architecture" ;;
-    esac
-
-    link=$(cat $distro_data | jq -r ".$suite.$varient.${arch}url")
-    LOG "link=$link"
-    name=$(cat $distro_data | jq -r ".$suite.$varient.Name")
-    LOG "name=$name"
     # final checks
     [[ "$link" == "null" ]] && {
         ELOG "link not found for $suite:$varient"
@@ -221,11 +118,28 @@ install() {
 }
 
 login() {
-    
+    unset LD_PRELOAD
+
+    local isolated_environment=false
+    local use_termux_home=false
+    local no_link2symlink=false
+    local no_sysvipc=false
+    local no_kill_on_exit=false
+    local no_cwd_active_directory=false
+    local no_fake_root_id=false
+    local fix_low_ports=false
+    local make_host_tmp_shared=true # its better to run with shared tmp
+    local root_fs_path=""
+    local login_user="root"
+    local -a custom_fs_bindings
+
     path=$DEFAULT_FS_INSTALL_DIR
 
     while [[ $# -gt 0 ]]; do
         case $1 in
+            -- )
+             shift break
+             ;;
             -p | --path) 
 
                 # Custom paths are set either to point a new directory instead of default
@@ -236,15 +150,63 @@ login() {
                 # possible solution is to cache the loaction every time a path is supplied and use that for operations
                 local path=$2; shift 2
                 LOG "(login) custom installation path set to $path"
-            ;;
+                ;;
             --name)
                 local _name=$2; shift 2
                 LOG "(login) custom name set to $name"
+                ;;
+            --bind | -b )
+                # For extra mount points
+                [[ $# -ge 2 ]] && {
+                    [[ -z $1 ]] && {
+                        ELOG "ERROR: --bind requires a path"
+                        echo "ERROR: --bind requires a path"
+                        exit 1
+                    }
+                    custom_fs_bindings+=("$1")
+
+                    if [[ -z $UDROID_MOUNT_SANITY_CHECK ]]; then
+                        [[ ! -d ${1%%:*} ]] && {
+                            LOG  "WARNING: --bind path $1 not found"
+                            GWARN "WARNING: --bind path $1 not found"
+                        }
+                    fi
+                }
+                ;;
+            --user)
+                [[ $# -ge 2 ]] && [[ -n $2 ]] && {
+                    login_user=$2
+                    shift 2
+                }
             ;;
+            # --termux-home)
+            #     use_termux_home=true
+            #     ;;
+            --isolated)
+                isolated_environment=true
+                ;;
+            --fix-low-parts)
+                fix_low_ports=true
+                ;;
+            --no-shared-tmp)
+                make_host_tmp_shared=false
+                ;;
+            --no-link2symlink)
+                no_link2symlink=true
+                ;;
+            --no-sysvipc)
+                no_sysvipc=true
+                ;;
+            --no-cwd-active-directory | --ncwd)
+                no_cwd_active_directory=true
+                ;;
+            --no-kill-on-exit)
+                no_kill_on_exit=true
+                ;;
             -*)
                 echo "Unknown option: $1"
                 exit 1
-            ;;
+                ;;
             *) 
                 [[ -n $_name ]] && {
                     ELOG "login() error: name already set to $_name"
@@ -253,7 +215,7 @@ login() {
                 arg=$1
                 shift
                 break
-            ;;
+                ;;
         esac
     done
 
@@ -267,8 +229,204 @@ login() {
     [[ -z $distro ]] && echo "ERROR: distro not specified" && exit 1
 
     if [ -d $path/$distro ]; then
-        LOG "login to $distro"
-        p_login --path $path/$distro
+        # set PROOT_L2S_DIR
+        if [ -d "${root_fs_path}/.l2s" ]; then
+            export PROOT_L2S_DIR="${root_fs_path}/.l2s"
+        fi
+
+        # PARSE extra container command arguments and set SHELL
+        if [ $# -ge 1 ]; then
+            # Wrap in quotes each argument to prevent word splitting.
+            local -a shell_command_args
+            for i in "$@"; do
+                shell_command_args+=("'$i'")
+            done
+            
+            if stat "${root_fs_path}/bin/su" >/dev/null 2>&1; then
+                set -- "/bin/su" "-l" "$login_user" "-c" "${shell_command_args[*]}"
+            else
+                GWARN "Warning: no /bin/su available in rootfs!"
+                LOG "login() => Warning: no /bin/su available in rootfs!"
+
+                if [ -x "${root_fs_path}/bin/bash" ]; then
+                    set -- "/bin/bash" "-l" "-c" "${shell_command_args[*]}"
+                else
+                    set -- "/bin/sh" "-l" "-c" "${shell_command_args[*]}"
+                fi
+            fi
+        else
+            if stat "${root_fs_path}/bin/su" >/dev/null 2>&1; then
+                set -- "/bin/su" "-l" "$login_user"
+            else
+                GWARN "Warning: no /bin/su available in rootfs! You may need to install package 'util-linux' or 'shadow' (shadow-utils) or equivalent, depending on distribution."
+                if [ -x "${root_fs_path}/bin/bash" ]; then
+                    set -- "/bin/bash" "-l"
+                else
+                    set -- "/bin/sh" "-l"
+                fi
+            fi
+        fi
+
+        # set basic environment variables
+        set -- "/usr/bin/env" "-i" \
+        "HOME=/root" \
+        "LANG=C.UTF-8" \
+        "TERM=${TERM-xterm-256color}" \
+        "$@"
+
+        # set --rootfs
+        set -- "--rootfs=${root_fs_path}" "$@"
+
+        # [CONDIRIONAL]: set --kill on exit
+        if ! $no_kill_on_exit; then
+            set -- "--kill-on-exit" "$@"
+        fi
+
+        # [CONDIRIONAL]: set --link2symlink
+        if ! $no_link2symlink; then
+            set -- "--link2symlink" "$@"
+        fi
+
+        # [CONDIRIONAL]: set --sysvipc
+        if ! $no_sysvipc; then
+            set -- "--sysvipc" "$@"
+        fi
+
+        # set fake kernel version string
+        set -- "--kernel-release=5.4.2-proot-facked" "$@"
+        
+        # Fix lstat
+        set -- "-L" "$@"
+
+        # [CONDIRIONAL]: set cwd
+        if ! $no_cwd_active_directory && ! $isolated_environment; then
+            set -- "--cwd=$PWD" "$@"
+        fi
+        
+        if $no_cwd_active_directory; then
+            set -- "--cwd=/root" "$@"
+        fi
+
+        # root-id ( fake 0 id for proot )
+        if ! $no_fake_root_id; then
+            set -- "--root-id" "$@"
+        fi
+
+        # [CONDITIONAL]: parse special binds from fs
+        if [ -f ${root_fs_path}/udroid_proot_mounts ]; then
+            LOG "login() => Custom mount points found in ${root_fs_path}/udroid_proot_mounts"
+            LOG "login() => parsing udroid_proot_mounts"
+            while read -r line; do
+                [[ -z $line ]] && continue
+                [[ $line == \#* ]] && continue
+                custom_fs_bindings+=("$line")
+            done < ${root_fs_path}/udroid_proot_mounts
+        fi
+
+        # set up core-mounts [ /dev /proc /sys /tmp ]
+        set -- "--bind=/dev" "$@"
+        set -- "--bind=/dev/urandom:/dev/random" "$@"
+        set -- "--bind=/proc" "$@"
+        set -- "--bind=/proc/self/fd:/dev/fd" "$@"
+        set -- "--bind=/proc/self/fd/0:/dev/stdin" "$@"
+        set -- "--bind=/proc/self/fd/1:/dev/stdout" "$@"
+        set -- "--bind=/proc/self/fd/2:/dev/stderr" "$@"
+        set -- "--bind=/sys" "$@"
+        
+        if $make_host_tmp_shared; then
+            set -- "--bind=@TERMUX_PREFIX@/tmp:/tmp" "$@"
+        else
+            mkdir -p "${root_fs_path}/tmp"
+            set -- "--bind=${root_fs_path}/tmp:/dev/shm" "$@"
+        fi
+
+        # set up custom binds
+        for i in "${custom_fs_bindings[@]}"; do
+            set -- "--bind=$i" "$@"
+        done
+
+        # [CONDITIONAL]: resolv fake mounts
+        if ! cat /proc/loadavg >/dev/null 2>&1; then
+            set -- "--bind=${root_fs_path}/proc/.loadavg:/proc/loadavg" "$@"
+        fi
+
+        # Fake /proc/stat if necessary.
+        if ! cat /proc/stat >/dev/null 2>&1; then
+            set -- "--bind=${root_fs_path}/proc/.stat:/proc/stat" "$@"
+        fi
+
+        # Fake /proc/uptime if necessary.
+        if ! cat /proc/uptime >/dev/null 2>&1; then
+            set -- "--bind=${root_fs_path}/proc/.uptime:/proc/uptime" "$@"
+        fi
+
+        # Fake /proc/version if necessary.
+        if ! cat /proc/version >/dev/null 2>&1; then
+            set -- "--bind=${root_fs_path}/proc/.version:/proc/version" "$@"
+        fi
+
+        # Fake /proc/vmstat if necessary.
+        if ! cat /proc/vmstat >/dev/null 2>&1; then
+            set -- "--bind=${root_fs_path}/proc/.vmstat:/proc/vmstat" "$@"
+        fi
+
+        
+        # [CONDITIONAL]: set binds for local storage
+        if ! $isolated_environment; then
+            set -- "--bind=/data/dalvik-cache" "$@"
+            set -- "--bind=/data/data/@TERMUX_APP_PACKAGE@/cache" "$@"
+            if [ -d "/data/data/@TERMUX_APP_PACKAGE@/files/apps" ]; then
+                set -- "--bind=/data/data/@TERMUX_APP_PACKAGE@/files/apps" "$@"
+            fi
+            set -- "--bind=@TERMUX_HOME@" "$@"
+    
+            # Setup bind mounting for shared storage.
+            # We want to use the primary shared storage mount point there
+            # with avoiding secondary and legacy mount points. As Android
+            # OS versions are different, some directories may be unavailable
+            # and we need to try them all.
+            if ls -1U /storage/self/primary/ >/dev/null 2>&1; then
+                set -- "--bind=/storage/self/primary:/sdcard" "$@"
+            elif ls -1U /storage/emulated/0/ >/dev/null 2>&1; then
+                set -- "--bind=/storage/emulated/0:/sdcard" "$@"
+            elif ls -1U /sdcard/ >/dev/null 2>&1; then
+                set -- "--bind=/sdcard:/sdcard" "$@"
+            else
+                # No access to shared storage.
+                :
+            fi
+    
+            # /storage also optional bind mounting.
+            # If we can't access it, don't provide this directory
+            # in proot environment.
+            if ls -1U /storage >/dev/null 2>&1; then
+                set -- "--bind=/storage" "$@"
+            fi
+            # [CONDITIONAL]: set binds for /apex /vendor /system
+
+            if [ -d "/apex" ]; then
+            set -- "--bind=/apex" "$@"
+            fi
+            if [ -e "/linkerconfig/ld.config.txt" ]; then
+                set -- "--bind=/linkerconfig/ld.config.txt" "$@"
+            fi
+            set -- "--bind=@TERMUX_PREFIX@" "$@"
+            set -- "--bind=/system" "$@"
+            set -- "--bind=/vendor" "$@"
+            if [ -f "/plat_property_contexts" ]; then
+                set -- "--bind=/plat_property_contexts" "$@"
+            fi
+            if [ -f "/property_contexts" ]; then
+                set -- "--bind=/property_contexts" "$@"
+            fi
+        fi
+
+        # [CONDITIONAL]: fix low ports
+        if $fix_low_ports; then
+            set -- "-p" "$@"
+        fi
+
+        exec proot "$@"
     else
         ELOG "ERROR: $distro not found"
         echo "ERROR: $distro not found"
