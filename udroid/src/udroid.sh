@@ -1,7 +1,10 @@
 #!/bin/bash
 
-RTR="${PREFIX}/etc/udroid"
-DEFAULT_ROOT="${PREFIX}/var/lib/udroid"
+TERMUX_APP_PACKAGE="com.termux"
+TERMUX_PREFIX="/data/data/${TERMUX_APP_PACKAGE}/files/usr"
+TERMUX_ANDROID_HOME="/data/data/${TERMUX_APP_PACKAGE}/files/home"
+RTR="${TERMUX_PREFIX}/etc/udroid"
+DEFAULT_ROOT="${TERMUX_PREFIX}/var/lib/udroid"
 DEFAULT_FS_INSTALL_DIR="${DEFAULT_ROOT}/installed-filesystems"
 DLCACHE="${DEFAULT_ROOT}/dlcache"
 RTCACHE="${RTR}/.cache"
@@ -337,7 +340,7 @@ login() {
         set -- "--bind=/sys" "$@"
         
         if $make_host_tmp_shared; then
-            set -- "--bind=@TERMUX_PREFIX@/tmp:/tmp" "$@"
+            set -- "--bind=$TERMUX_PREFIX/tmp:/tmp" "$@"
         else
             mkdir -p "${root_fs_path}/tmp"
             set -- "--bind=${root_fs_path}/tmp:/dev/shm" "$@"
@@ -377,11 +380,11 @@ login() {
         # [CONDITIONAL]: set binds for local storage
         if ! $isolated_environment; then
             set -- "--bind=/data/dalvik-cache" "$@"
-            set -- "--bind=/data/data/@TERMUX_APP_PACKAGE@/cache" "$@"
-            if [ -d "/data/data/@TERMUX_APP_PACKAGE@/files/apps" ]; then
-                set -- "--bind=/data/data/@TERMUX_APP_PACKAGE@/files/apps" "$@"
+            set -- "--bind=/data/data/$TERMUX_APP_PACKAGE/cache" "$@"
+            if [ -d "/data/data/$TERMUX_APP_PACKAGE/files/apps" ]; then
+                set -- "--bind=/data/data/$TERMUX_APP_PACKAGE/files/apps" "$@"
             fi
-            set -- "--bind=@TERMUX_HOME@" "$@"
+            set -- "--bind=$TERMUX_HOME" "$@"
     
             # Setup bind mounting for shared storage.
             # We want to use the primary shared storage mount point there
@@ -413,7 +416,7 @@ login() {
             if [ -e "/linkerconfig/ld.config.txt" ]; then
                 set -- "--bind=/linkerconfig/ld.config.txt" "$@"
             fi
-            set -- "--bind=@TERMUX_PREFIX@" "$@"
+            set -- "--bind=$TERMUX_PREFIX" "$@"
             set -- "--bind=/system" "$@"
             set -- "--bind=/vendor" "$@"
             if [ -f "/plat_property_contexts" ]; then
