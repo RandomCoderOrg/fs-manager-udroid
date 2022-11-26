@@ -197,6 +197,9 @@ login() {
             --no-sysvipc)
                 no_sysvipc=true
                 ;;
+            --no-fake-root-id)
+                no_fake_root_id=true
+                ;;
             --no-cwd-active-directory | --ncwd)
                 no_cwd_active_directory=true
                 ;;
