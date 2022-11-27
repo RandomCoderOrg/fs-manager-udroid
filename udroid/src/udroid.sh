@@ -121,6 +121,11 @@ install() {
 }
 
 login() {
+    # [ yoinked & modified ]
+    # Most of the code is taken from proot-utils.sh 
+    # PERMALINK : https://github.com/termux/proot-distro/blob/fcee91ca6c7632c09898c9d0a680c8ff72c3357f/proot-distro.sh#L933
+    # 
+    # @termux/proot-distro (C) GNU V3 License
     unset LD_PRELOAD
 
     local isolated_environment=false
