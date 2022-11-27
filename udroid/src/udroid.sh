@@ -3,6 +3,7 @@
 TERMUX_APP_PACKAGE="com.termux"
 TERMUX_PREFIX="/data/data/${TERMUX_APP_PACKAGE}/files/usr"
 TERMUX_ANDROID_HOME="/data/data/${TERMUX_APP_PACKAGE}/files/home"
+TERMUX_HOME=${TERMUX_ANDROID_HOME}
 RTR="${TERMUX_PREFIX}/etc/udroid"
 DEFAULT_ROOT="${TERMUX_PREFIX}/var/lib/udroid"
 DEFAULT_FS_INSTALL_DIR="${DEFAULT_ROOT}/installed-filesystems"
