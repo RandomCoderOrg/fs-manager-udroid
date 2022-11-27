@@ -165,13 +165,12 @@ login() {
             --bind | -b )
                 # For extra mount points
                 [[ $# -ge 2 ]] && {
-                    [[ -z $1 ]] && {
+                    [[ -z $2 ]] && {
                         ELOG "ERROR: --bind requires a path"
-                        echo "ERROR: --bind requires a path"
-                        exit 1
+                        DIE "ERROR: --bind requires a path"
                     }
-                    custom_fs_bindings+=("$1")
-
+                    custom_fs_bindings+=("$2")
+                    shift 2
                     if [[ -z $UDROID_MOUNT_SANITY_CHECK ]]; then
                         [[ ! -d ${1%%:*} ]] && {
                             LOG  "WARNING: --bind path $1 not found"
