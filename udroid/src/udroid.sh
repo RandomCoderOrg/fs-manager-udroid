@@ -145,8 +145,9 @@ login() {
 
     while [[ $# -gt 0 ]]; do
         case $1 in
-            -- )
-             shift break
+            --)
+             shift
+             break
              ;;
             -p | --path) 
 
@@ -222,7 +223,12 @@ login() {
                     ELOG "login() error: name already set to $_name"
                     echo "--name supplied $_name"
                 }
-                arg=$1
+                
+                if [[ -z $arg ]]; then
+                    arg=$1
+                else
+                    ELOG "unkown option $1"
+                fi
                 shift
                 break
                 ;;
