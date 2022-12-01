@@ -302,168 +302,177 @@ direct_map_level3_splits 9
 nr_unstable 0
 EOF
 
+PROG_PRINT "adding container to android specific GID's"
+while read -r group_name group_id; do
+	echo "aid_${group_name}:x:${group_id}:root,aid_$(id -un)" >> \
+		"${root_fs_path}/etc/group"
+	if [ -f "${root_fs_path}/etc/gshadow" ]; then
+		echo "aid_${group_name}:*::root,aid_$(id -un)" >> \
+			"${root_fs_path}/etc/gshadow"
+	fi
+done < <(paste <(id -Gn | tr ' ' '\n') <(id -G | tr ' ' '\n'))
 
-## android GID
-# a list of all android groups
-AID_GROUPS="aid_ROOT:0
-aid_DAEMON:1
-aid_BIN:2
-aid_SYS:3
-aid_SYSTEM:1000
-aid_RADIO:1001
-aid_BLUETOOTH:1002
-aid_GRAPHICS:1003
-aid_INPUT:1004
-aid_AUDIO:1005
-aid_CAMERA:1006
-aid_LOG:1007
-aid_COMPASS:1008
-aid_MOUNT:1009
-aid_WIFI:1010
-aid_ADB:1011
-aid_INSTALL:1012
-aid_MEDIA:1013
-aid_DHCP:1014
-aid_SDCARD_RW:1015
-aid_VPN:1016
-aid_KEYSTORE:1017
-aid_USB:1018
-aid_DRM:1019
-aid_MDNSR:1020
-aid_GPS:1021
-aid_UNUSED1:1022
-aid_MEDIA_RW:1023
-aid_MTP:1024
-aid_UNUSED2:1025
-aid_DRMRPC:1026
-aid_NFC:1027
-aid_SDCARD_R:1028
-aid_CLAT:1029
-aid_LOOP_RADIO:1030
-aid_MEDIA_DRM:1031
-aid_PACKAGE_INFO:1032
-aid_SDCARD_PICS:1033
-aid_SDCARD_AV:1034
-aid_SDCARD_ALL:1035
-aid_LOGD:1036
-aid_SHARED_RELRO:1037
-aid_DBUS:1038
-aid_TLSDATE:1039
-aid_MEDIA_EX:1040
-aid_AUDIOSERVER:1041
-aid_METRICS_COLL:1042
-aid_METRICSD:1043
-aid_WEBSERV:1044
-aid_DEBUGGERD:1045
-aid_MEDIA_CODEC:1046
-aid_CAMERASERVER:1047
-aid_FIREWALL:1048
-aid_TRUNKS:1049
-aid_NVRAM:1050
-aid_DNS:1051
-aid_DNS_TETHER:1052
-aid_WEBVIEW_ZYGOTE:1053
-aid_VEHICLE_NETWORK:1054
-aid_MEDIA_AUDIO:1055
-aid_MEDIA_VIDEO:1056
-aid_MEDIA_IMAGE:1057
-aid_TOMBSTONED:1058
-aid_MEDIA_OBB:1059
-aid_ESE:1060
-aid_OTA_UPDATE:1061
-aid_AUTOMOTIVE_EVS:1062
-aid_LOWPAN:1063
-aid_HSM:1064
-aid_RESERVED_DISK:1065
-aid_STATSD:1066
-aid_INCIDENTD:1067
-aid_SECURE_ELEMENT:1068
-aid_LMKD:1069
-aid_LLKD:1070
-aid_IORAPD:1071
-aid_GPU_SERVICE:1072
-aid_NETWORK_STACK:1073
-aid_GSID:1074
-aid_FSVERITY_CERT:1075
-aid_CREDSTORE:1076
-aid_EXTERNAL_STORAGE:1077
-aid_EXT_DATA_RW:1078
-aid_EXT_OBB_RW:1079
-aid_CONTEXT_HUB:1080
-aid_VIRTUALIZATIONSERVICE:1081
-aid_ARTD:1082
-aid_UWB:1083
-aid_THREAD_NETWORK:1084
-aid_DICED:1085
-aid_DMESGD:1086
-aid_JC_WEAVER:1087
-aid_JC_STRONGBOX:1088
-aid_JC_IDENTITYCRED:1089
-aid_SDK_SANDBOX:1090
-aid_SECURITY_LOG_WRITER:1091
-aid_PRNG_SEEDER:1092
-aid_SHELL:2000
-aid_CACHE:2001
-aid_DIAG:2002
-aid_NET_BT_ADMIN:3001
-aid_NET_BT:3002
-aid_INET:3003
-aid_NET_RAW:3004
-aid_NET_ADMIN:3005
-aid_NET_BW_STATS:3006
-aid_NET_BW_ACCT:3007
-aid_READPROC:3009
-aid_WAKELOCK:3010
-aid_UHID:3011
-aid_READTRACEFS:3012
-aid_OEM_RESERVED_2_START:5000
-aid_OEM_RESERVED_2_END:5999
-aid_SYSTEM_RESERVED_START:6000
-aid_SYSTEM_RESERVED_END:6499
-aid_ODM_RESERVED_START:6500
-aid_ODM_RESERVED_END:6999
-aid_PRODUCT_RESERVED_START:7000
-aid_PRODUCT_RESERVED_END:7499
-aid_SYSTEM_EXT_RESERVED_START:7500
-aid_SYSTEM_EXT_RESERVED_END:7999
-aid_EVERYBODY:9997
-aid_MISC:9998
-aid_NOBODY:9999
-aid_APP:10000
-aid_APP_START:10000
-aid_APP_END:19999
-aid_CACHE_GID_START:20000
-aid_CACHE_GID_END:29999
-aid_EXT_GID_START:30000
-aid_EXT_GID_END:39999
-aid_EXT_CACHE_GID_START:40000
-aid_EXT_CACHE_GID_END:49999
-aid_SHARED_GID_START:50000
-aid_SHARED_GID_END:59999
-aid_OVERFLOWUID:65534
-aid_SDK_SANDBOX_PROCESS_START:20000
-aid_SDK_SANDBOX_PROCESS_END:29999
-aid_ISOLATED_START:90000
-aid_ISOLATED_END:99999
-aid_USER:100000
-aid_USER_OFFSET:100000
-aid_A400:50400
-aid_u0_a400_cache:20400
-"
+# ## android GID
+# # a list of all android groups
+# AID_GROUPS="aid_ROOT:0
+# aid_DAEMON:1
+# aid_BIN:2
+# aid_SYS:3
+# aid_SYSTEM:1000
+# aid_RADIO:1001
+# aid_BLUETOOTH:1002
+# aid_GRAPHICS:1003
+# aid_INPUT:1004
+# aid_AUDIO:1005
+# aid_CAMERA:1006
+# aid_LOG:1007
+# aid_COMPASS:1008
+# aid_MOUNT:1009
+# aid_WIFI:1010
+# aid_ADB:1011
+# aid_INSTALL:1012
+# aid_MEDIA:1013
+# aid_DHCP:1014
+# aid_SDCARD_RW:1015
+# aid_VPN:1016
+# aid_KEYSTORE:1017
+# aid_USB:1018
+# aid_DRM:1019
+# aid_MDNSR:1020
+# aid_GPS:1021
+# aid_UNUSED1:1022
+# aid_MEDIA_RW:1023
+# aid_MTP:1024
+# aid_UNUSED2:1025
+# aid_DRMRPC:1026
+# aid_NFC:1027
+# aid_SDCARD_R:1028
+# aid_CLAT:1029
+# aid_LOOP_RADIO:1030
+# aid_MEDIA_DRM:1031
+# aid_PACKAGE_INFO:1032
+# aid_SDCARD_PICS:1033
+# aid_SDCARD_AV:1034
+# aid_SDCARD_ALL:1035
+# aid_LOGD:1036
+# aid_SHARED_RELRO:1037
+# aid_DBUS:1038
+# aid_TLSDATE:1039
+# aid_MEDIA_EX:1040
+# aid_AUDIOSERVER:1041
+# aid_METRICS_COLL:1042
+# aid_METRICSD:1043
+# aid_WEBSERV:1044
+# aid_DEBUGGERD:1045
+# aid_MEDIA_CODEC:1046
+# aid_CAMERASERVER:1047
+# aid_FIREWALL:1048
+# aid_TRUNKS:1049
+# aid_NVRAM:1050
+# aid_DNS:1051
+# aid_DNS_TETHER:1052
+# aid_WEBVIEW_ZYGOTE:1053
+# aid_VEHICLE_NETWORK:1054
+# aid_MEDIA_AUDIO:1055
+# aid_MEDIA_VIDEO:1056
+# aid_MEDIA_IMAGE:1057
+# aid_TOMBSTONED:1058
+# aid_MEDIA_OBB:1059
+# aid_ESE:1060
+# aid_OTA_UPDATE:1061
+# aid_AUTOMOTIVE_EVS:1062
+# aid_LOWPAN:1063
+# aid_HSM:1064
+# aid_RESERVED_DISK:1065
+# aid_STATSD:1066
+# aid_INCIDENTD:1067
+# aid_SECURE_ELEMENT:1068
+# aid_LMKD:1069
+# aid_LLKD:1070
+# aid_IORAPD:1071
+# aid_GPU_SERVICE:1072
+# aid_NETWORK_STACK:1073
+# aid_GSID:1074
+# aid_FSVERITY_CERT:1075
+# aid_CREDSTORE:1076
+# aid_EXTERNAL_STORAGE:1077
+# aid_EXT_DATA_RW:1078
+# aid_EXT_OBB_RW:1079
+# aid_CONTEXT_HUB:1080
+# aid_VIRTUALIZATIONSERVICE:1081
+# aid_ARTD:1082
+# aid_UWB:1083
+# aid_THREAD_NETWORK:1084
+# aid_DICED:1085
+# aid_DMESGD:1086
+# aid_JC_WEAVER:1087
+# aid_JC_STRONGBOX:1088
+# aid_JC_IDENTITYCRED:1089
+# aid_SDK_SANDBOX:1090
+# aid_SECURITY_LOG_WRITER:1091
+# aid_PRNG_SEEDER:1092
+# aid_SHELL:2000
+# aid_CACHE:2001
+# aid_DIAG:2002
+# aid_NET_BT_ADMIN:3001
+# aid_NET_BT:3002
+# aid_INET:3003
+# aid_NET_RAW:3004
+# aid_NET_ADMIN:3005
+# aid_NET_BW_STATS:3006
+# aid_NET_BW_ACCT:3007
+# aid_READPROC:3009
+# aid_WAKELOCK:3010
+# aid_UHID:3011
+# aid_READTRACEFS:3012
+# aid_OEM_RESERVED_2_START:5000
+# aid_OEM_RESERVED_2_END:5999
+# aid_SYSTEM_RESERVED_START:6000
+# aid_SYSTEM_RESERVED_END:6499
+# aid_ODM_RESERVED_START:6500
+# aid_ODM_RESERVED_END:6999
+# aid_PRODUCT_RESERVED_START:7000
+# aid_PRODUCT_RESERVED_END:7499
+# aid_SYSTEM_EXT_RESERVED_START:7500
+# aid_SYSTEM_EXT_RESERVED_END:7999
+# aid_EVERYBODY:9997
+# aid_MISC:9998
+# aid_NOBODY:9999
+# aid_APP:10000
+# aid_APP_START:10000
+# aid_APP_END:19999
+# aid_CACHE_GID_START:20000
+# aid_CACHE_GID_END:29999
+# aid_EXT_GID_START:30000
+# aid_EXT_GID_END:39999
+# aid_EXT_CACHE_GID_START:40000
+# aid_EXT_CACHE_GID_END:49999
+# aid_SHARED_GID_START:50000
+# aid_SHARED_GID_END:59999
+# aid_OVERFLOWUID:65534
+# aid_SDK_SANDBOX_PROCESS_START:20000
+# aid_SDK_SANDBOX_PROCESS_END:29999
+# aid_ISOLATED_START:90000
+# aid_ISOLATED_END:99999
+# aid_USER:100000
+# aid_USER_OFFSET:100000
+# aid_A400:50400
+# aid_u0_a400_cache:20400
+# "
 
-## Own /etc/group & /etc/gshadow
-chmod u+rw ${fs}/etc/group
-chmod u+rw ${fs}/etc/gshadow
+# ## Own /etc/group & /etc/gshadow
+# chmod u+rw ${fs}/etc/group
+# chmod u+rw ${fs}/etc/gshadow
 
-for group in $AID_GROUPS ;do
-    if grep -q "$(echo $group | cut -d : -f 2)" ${fs}/etc/group; then
-        echo -e "[\e[1;32mF\e[0m]\tGroup $group exists"
-    else
-        echo -e "[\e[1;31mM\e[0m]\tGroup $group does not exist"
+# for group in $AID_GROUPS ;do
+#     if grep -q "$(echo $group | cut -d : -f 2)" ${fs}/etc/group; then
+#         echo -e "[\e[1;32mF\e[0m]\tGroup $group exists"
+#     else
+#         echo -e "[\e[1;31mM\e[0m]\tGroup $group does not exist"
 
-        # add group to ${fs}/etc/group and ${fs}/etc/gshadow
-        echo $(echo $group | cut -d : -f 1):x:$(echo $group | cut -d : -f 2):root,aid_$(id -un) >> ${fs}/etc/group
-        echo $(echo $group | cut -d : -f 1):*::root,aid_$(id -un) >> ${fs}/etc/gshadow
-        echo -e "[\e[1;32mF\e[0m]\tGroup $group added"
-    fi
-done
+#         # add group to ${fs}/etc/group and ${fs}/etc/gshadow
+#         echo $(echo $group | cut -d : -f 1):x:$(echo $group | cut -d : -f 2):root,aid_$(id -un) >> ${fs}/etc/group
+#         echo $(echo $group | cut -d : -f 1):*::root,aid_$(id -un) >> ${fs}/etc/gshadow
+#         echo -e "[\e[1;32mF\e[0m]\tGroup $group added"
+#     fi
+# done
