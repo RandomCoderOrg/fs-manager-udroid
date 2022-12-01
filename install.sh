@@ -12,8 +12,12 @@ apt install -y jq wget proot pv
 # Android version warinigs
 android_version_code=$(getprop ro.system.build.version.release)
 if (( $android_version_code >= 12 )); then
+    sleep 1
+    echo
     GWARN "[Warning]: Android version ${android_version_code} detected"
     GWARN "You many experience issues like crashing"
+    echo
+    sleep 2
 fi
 
 cd udroid/src || exit 1
