@@ -24,21 +24,33 @@ DIE() { echo -e "${@}"; exit 1 ;:;}
 GWARN() { echo -e "\e[90m${*}\e[0m";:;}
 
 fetch_distro_data() {
+
+    offline_mode=false
+    mode=$1
+
+    if (( mode == "offline" )); then
+        offline_mode=true
+    fi
+
     URL="https://raw.githubusercontent.com/RandomCoderOrg/udroid-download/main/distro-data.json"
     _path="${RTCACHE}/distro-data.json.cache"
 
     [[ -f $_path ]] && mv $_path $_path.old
 
-    g_spin dot "Fetching distro data.." curl -L -s -o $_path $URL || {
-        ELOG "[${0}] failed to fetch distro data"
-        mv _path.old _path
-    }
-
     if [[ -f $_path ]]; then
-        LOG "set distro_data to $_path"
+        if ! $offline_mode; then
+            g_spin dot "Fetching distro data.." curl -L -s -o $_path $URL || {
+                ELOG "[${0}] failed to fetch distro data"
+                mv $_path.old $_path
+            }
+        fi
         distro_data=$_path
     else
-        DIE "Distro data fetch failed!"
+        g_spin dot "Fetching distro data.." curl -L -s -o $_path $URL || {
+            ELOG "[${0}] failed to fetch distro data"
+            DIE "Failed to fetch distro data from $URL"
+        }
+        distro_data=$_path
     fi
 }
 
@@ -57,7 +69,7 @@ install() {
     local arg=$1
 
     # parse the arg for suite and varient and get name,link
-    parser $1
+    parser $1 "online"
 
     # final checks
     [[ "$link" == "null" ]] && {
@@ -236,7 +248,7 @@ login() {
     done
 
     if [[ -z $_name ]]; then
-        parser $arg
+        parser $arg "offline"
         distro=$name
     else
         distro=$_name
@@ -455,7 +467,7 @@ login() {
 
 parser() {
     local arg=$1
-
+    local mode=$2
     local suite=${arg%%:*}
     local varient=${arg#*:}
 
@@ -471,7 +483,7 @@ parser() {
         LOG "[TEST] distro_data=$distro_data"
     else
         mkdir $RTCACHE 2> /dev/null
-        fetch_distro_data
+        fetch_distro_data $mode
         distro_data=${RTCACHE}/distro-data.json.cache
     fi
 
@@ -564,7 +576,7 @@ list() {
         esac
     done
 
-    fetch_distro_data
+    fetch_distro_data "offline"
 
     suites=$(cat $distro_data | jq -r '.suites[]')
 
