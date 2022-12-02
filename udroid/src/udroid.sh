@@ -690,6 +690,7 @@ remove() {
         bash proot-utils/proot-uninstall-suite.sh "$root_fs_path"
     
     if [[ $reset == true ]]; then
+        unset path
         install $arg
     fi
 
