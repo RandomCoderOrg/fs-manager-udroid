@@ -635,7 +635,56 @@ list() {
 }
 
 remove() {
-    :
+    local _name
+    local arg
+    local path=${DEFAULT_FS_INSTALL_DIR}
+
+    while [ $# -gt 0 ]; do
+        case $1 in
+            --name) _name=$2; LOG "remove(): --name supplied to $name"; shift 2;;
+            --path) path=$2; LOG "remove(): looking in $path"; shift 2;;
+            --reset) reset=true; shift 1;;
+            *) 
+                [[ -n $_name ]] && {
+                    ELOG "remove() error: name already set to $_name"
+                    echo "--name supplied $_name"
+                }
+                
+                if [[ -z $arg ]]; then
+                    arg=$1
+                else
+                    ELOG "unkown option $1"
+                fi
+                shift
+                break 
+            ;;
+        esac
+    done
+
+    if [[ -z $_name ]]; then
+        parser $arg "offline"
+        distro=$name
+    else
+        distro=$_name
+    fi
+    root_fs_path=$path/$distro
+
+    [[ -z $distro ]] && echo "ERROR: distro not specified" && exit 1
+    [[ ! -d $root_fs_path ]] && echo "ERROR: distro ($distro) not found or installed" && exit 1
+
+    g_spin "dot" \
+        "setting up $distro to be removed" \
+        bash proot-utils/proot-uninstall-suite.sh "$root_fs_path"
+    
+    if [[ $reset == true ]]; then
+        install $arg
+    fi
+
+}
+
+_reset() {
+    local arg=$1
+    remove --reset $arg
 }
 
 ####################
@@ -648,11 +697,16 @@ download() {
 
     LOG "download() args => name=$name link=$link path=$path"
 
-    wget -q --show-progress --progress=bar:force -O ${path}/$name  "$link"  2>&1 || {
-        ELOG "failed to download $name"
-        echo "failed to download $name"
-        exit 1
-    }
+    if [[ -f $path/$name ]]; then
+        LOG "download(): $name already exists in $path"
+        GWARN "$name already exists, continuing with existing file"
+    else
+        wget -q --show-progress --progress=bar:force -O ${path}/$name  "$link"  2>&1 || {
+            ELOG "failed to download $name"
+            echo "failed to download $name"
+            exit 1
+        }
+    fi
 }
 
 msg_download() {
@@ -686,7 +740,8 @@ while [ $# -gt 0 ]; do
     case $1 in
         --install|-i) shift 1; install $@ ; break ;;
         --login|-l) shift 1; login $@; break ;;
-        --remove | --uninstall ) ;;
+        --remove | --uninstall ) remove $@; break;;
+        --reset | --reinstall ) _reset $@; break;;
         --list) shift 1; list $@; break ;;
         *) echo "unkown option [$1]"; break ;;
     esac
