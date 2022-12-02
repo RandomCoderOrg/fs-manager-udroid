@@ -22,6 +22,8 @@ export distro_data
 
 DIE() { echo -e "${@}"; exit 1 ;:;}
 GWARN() { echo -e "\e[90m${*}\e[0m";:;}
+INFO() { echo -e "\e[32m${*}\e[0m";:;}
+TITLE() { echo -e "\e[100m${*}\e[0m";:;}
 
 fetch_distro_data() {
 
@@ -661,6 +663,12 @@ remove() {
         esac
     done
 
+    if ! reset; then
+        TITLE "> REMOVE $arg($distro)"
+    else
+        TITLE "> RESET $arg($distro)"
+    fi
+
     if [[ -z $_name ]]; then
         parser $arg "offline"
         distro=$name
@@ -673,7 +681,7 @@ remove() {
     [[ ! -d $root_fs_path ]] && echo "ERROR: distro ($distro) not found or installed" && exit 1
 
     g_spin "dot" \
-        "setting up $distro to be removed" \
+        "Removing $arg($distro)" \
         bash proot-utils/proot-uninstall-suite.sh "$root_fs_path"
     
     if [[ $reset == true ]]; then
