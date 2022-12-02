@@ -760,11 +760,11 @@ fi
 
 while [ $# -gt 0 ]; do
     case $1 in
-        --install|-i) shift 1; install $@ ; break ;;
-        --login|-l) shift 1; login $@; break ;;
-        --remove | --uninstall ) shift 1 ; remove $@; break;;
-        --reset | --reinstall )  shift 1 ; _reset $@; break;;
-        --list) shift 1; list $@; break ;;
+        install | --install|-i) shift 1; install $@ ; break ;;
+        login   | --login|-l) shift 1; login $@; break ;;
+        remove  | --remove | --uninstall ) shift 1 ; remove $@; break;;
+        reset   | --reset | --reinstall )  shift 1 ; _reset $@; break;;
+        list    | --list) shift 1; list $@; break ;;
         *) echo "unkown option [$1]"; break ;;
     esac
 done
