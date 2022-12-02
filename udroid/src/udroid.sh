@@ -635,8 +635,8 @@ list() {
 }
 
 remove() {
-    local _name
-    local arg
+    local _name=""
+    local arg=""
     local path=${DEFAULT_FS_INSTALL_DIR}
 
     while [ $# -gt 0 ]; do
@@ -740,8 +740,8 @@ while [ $# -gt 0 ]; do
     case $1 in
         --install|-i) shift 1; install $@ ; break ;;
         --login|-l) shift 1; login $@; break ;;
-        --remove | --uninstall ) remove $@; break;;
-        --reset | --reinstall ) _reset $@; break;;
+        --remove | --uninstall ) shift 1 ; remove $@; break;;
+        --reset | --reinstall )  shift 1 ; _reset $@; break;;
         --list) shift 1; list $@; break ;;
         *) echo "unkown option [$1]"; break ;;
     esac
