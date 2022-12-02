@@ -738,7 +738,7 @@ msg_extract() {
     echo
 }
 ####################
-trap 'echo "exiting gracefully..."; exit 1' HUP INT TERM SIGINT SIGTERM
+trap 'echo "exiting gracefully..."; exit 1' HUP INT TERM
 ####################
 
 if [ $# -eq 0 ]; then
