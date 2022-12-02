@@ -584,6 +584,7 @@ list() {
             --size) size=true; shift 1;;
             --list-installed) show_installed_only=true; shift 1;;
             --path) path=$2; LOG "list(): looking in $path"; shift 2;;
+            --help) help_list; exit 0;;
             *) shift ;;
         esac
     done
@@ -659,6 +660,7 @@ remove() {
             --name) distro=$2; LOG "remove(): --name supplied to $name"; shift 2;;
             --path) path=$2; LOG "remove(): looking in $path"; shift 2;;
             --reset) reset=true; shift 1;;
+            --help) help_remove; exit 0;;
             *) 
                 [[ -n $distro ]] && {
                     ELOG "remove() error: name already set to $distro"
