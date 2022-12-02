@@ -695,12 +695,10 @@ remove() {
     fi
 
 }
-
 _reset() {
-    local arg=$1
-    remove --reset $arg
+    # TODO
+    TITLE "[TODO]"
 }
-
 ####################
 download() {
     local name=$1
