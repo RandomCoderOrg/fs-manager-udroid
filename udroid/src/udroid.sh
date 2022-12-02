@@ -640,6 +640,7 @@ remove() {
     local _name=""
     local arg=""
     local path=${DEFAULT_FS_INSTALL_DIR}
+    local reset=false
 
     while [ $# -gt 0 ]; do
         case $1 in
