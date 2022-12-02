@@ -25,19 +25,28 @@ GWARN() { echo -e "\e[90m${*}\e[0m";:;}
 INFO() { echo -e "\e[32m${*}\e[0m";:;}
 TITLE() { echo -e "\e[100m${*}\e[0m";:;}
 
+# Fetch distro data from the internet and save it to RTCACHE
+# @param mode [online/offline] - online mode will fetch data from the internet, offline will use the cached data
+# @return distro_data [string] - path to the downloaded data
+
 fetch_distro_data() {
 
+    # default to online mode
     offline_mode=false
     mode=$1
 
+    # if mode is offline, set offline_mode to true
     if (( mode == "offline" )); then
         offline_mode=true
     fi
 
+    # setup URL and path variables
     URL="https://raw.githubusercontent.com/RandomCoderOrg/udroid-download/main/distro-data.json"
     _path="${RTCACHE}/distro-data.json.cache"
 
+    # if the cache file exists, check for updates
     if [[ -f $_path ]]; then
+        # if not in offline mode, fetch the data from the internet
         if ! $offline_mode; then
             g_spin dot "Fetching distro data.." curl -L -s -o $_path $URL || {
                 ELOG "[${0}] failed to fetch distro data"
@@ -45,6 +54,7 @@ fetch_distro_data() {
             }
         fi
         distro_data=$_path
+    # otherwise, fetch the data from the internet
     else
         g_spin dot "Fetching distro data.." curl -L -s -o $_path $URL || {
             ELOG "[${0}] failed to fetch distro data"
@@ -639,20 +649,20 @@ list() {
 }
 
 remove() {
-    local _name=""
+    local distro=""
     local arg=""
     local path=${DEFAULT_FS_INSTALL_DIR}
     local reset=false
 
     while [ $# -gt 0 ]; do
         case $1 in
-            --name) _name=$2; LOG "remove(): --name supplied to $name"; shift 2;;
+            --name) distro=$2; LOG "remove(): --name supplied to $name"; shift 2;;
             --path) path=$2; LOG "remove(): looking in $path"; shift 2;;
             --reset) reset=true; shift 1;;
             *) 
-                [[ -n $_name ]] && {
-                    ELOG "remove() error: name already set to $_name"
-                    echo "--name supplied $_name"
+                [[ -n $distro ]] && {
+                    ELOG "remove() error: name already set to $distro"
+                    echo "--name supplied $distro"
                 }
                 
                 if [[ -z $arg ]]; then
@@ -674,11 +684,9 @@ remove() {
         spinner="jump"
     fi
 
-    if [[ -z $_name ]]; then
+    if [[ -z $distro ]]; then
         parser $arg "offline"
         distro=$name
-    else
-        distro=$_name
     fi
     root_fs_path=$path/$distro
 
