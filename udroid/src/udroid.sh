@@ -67,7 +67,7 @@ install() {
     #   5) execute fixes file
 
     local arg=$1
-
+    TITLE "> INSTALL $arg"
     # parse the arg for suite and varient and get name,link
     parser $1 "online"
 
@@ -248,9 +248,11 @@ login() {
     done
 
     if [[ -z $_name ]]; then
+        TITLE "> LOGIN $arg"
         parser $arg "offline"
         distro=$name
     else
+        TITLE "> LOGIN $_name"
         distro=$_name
     fi
     root_fs_path=$path/$distro
@@ -666,8 +668,10 @@ remove() {
 
     if ! $reset; then
         TITLE "> REMOVE $arg($distro)"
+        spinner="pulse"
     else
         TITLE "> RESET $arg($distro)"
+        spinner="jump"
     fi
 
     if [[ -z $_name ]]; then
@@ -681,7 +685,7 @@ remove() {
     [[ -z $distro ]] && echo "ERROR: distro not specified" && exit 1
     [[ ! -d $root_fs_path ]] && echo "ERROR: distro ($distro) not found or installed" && exit 1
 
-    g_spin "dot" \
+    g_spin "$spinner" \
         "Removing $arg($distro)" \
         bash proot-utils/proot-uninstall-suite.sh "$root_fs_path"
     
