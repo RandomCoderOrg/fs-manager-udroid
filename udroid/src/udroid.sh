@@ -664,7 +664,7 @@ remove() {
         esac
     done
 
-    if ! reset; then
+    if ! $reset; then
         TITLE "> REMOVE $arg($distro)"
     else
         TITLE "> RESET $arg($distro)"
