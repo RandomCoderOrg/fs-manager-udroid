@@ -730,6 +730,8 @@ msg_extract() {
     echo
 }
 ####################
+trap 'echo "exiting gracefully..."; exit 1' HUP INT TERM SIGINT SIGTERM
+####################
 
 if [ $# -eq 0 ]; then
     echo "usage: $0 [install|login|remove]"
