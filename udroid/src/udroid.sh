@@ -34,10 +34,16 @@ fetch_distro_data() {
     # default to online mode
     offline_mode=false
     mode=$1
+    isStrictMode=$2
 
     # if mode is offline, set offline_mode to true
     if (( mode == "offline" )); then
         offline_mode=true
+    fi
+
+    # set isStrictMode to false if not set
+    if [[ -z $isStrictMode ]]; then
+        isStrictMode=false
     fi
 
     # setup URL and path variables
@@ -51,6 +57,9 @@ fetch_distro_data() {
             g_spin dot "Fetching distro data.." curl -L -s -o $_path $URL || {
                 ELOG "[${0}] failed to fetch distro data"
                 mv $_path.old $_path
+                if $isStrictMode; then
+                    DIE "Failed to fetch distro data from: \n $URL"
+                fi
             }
         fi
         distro_data=$_path
@@ -705,6 +714,12 @@ remove() {
     fi
 
 }
+
+update() {
+    TITLE "> UPDATE distro data from remove"
+    fetch_distro_data "online" true
+}
+
 _reset() {
     # TODO
     TITLE "[TODO]"
@@ -763,6 +778,7 @@ fi
 while [ $# -gt 0 ]; do
     case $1 in
         install | --install|-i) shift 1; install $@ ; break ;;
+        update  | --update|-u) shift 1; update $@ ; break ;;
         login   | --login|-l) shift 1; login $@; break ;;
         remove  | --remove | --uninstall ) shift 1 ; remove $@; break;;
         reset   | --reset | --reinstall )  shift 1 ; _reset $@; break;;
