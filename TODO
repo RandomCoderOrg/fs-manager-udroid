@@ -1,0 +1,4 @@
+- add checksum validation for file system
+- implement a way to upgrade udroid scripts
+- [ OPT ] make a deb package for udroid
+
