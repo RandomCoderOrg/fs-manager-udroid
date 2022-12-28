@@ -104,7 +104,6 @@ p_login() {
         --root-id \
         --cwd=/root -L \
         --kernel-release=5.4.0-faked \
-        --sysvipc \
         --kill-on-exit \
         --rootfs=${root_fs_path} \
         -w /root \
