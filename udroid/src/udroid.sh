@@ -578,6 +578,8 @@ parser() {
     LOG "link=$link"
     name=$(cat $distro_data | jq -r ".$suite.$varient.Name")
     LOG "name=$name"
+    shasum=$(cat $distro_data | jq -r ".$suite.$varient.${arch}sha")
+    LOG "shasum=$shasum"
 }
 
 list() {
