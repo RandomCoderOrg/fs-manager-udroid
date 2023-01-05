@@ -22,6 +22,7 @@ export distro_data
 
 DIE() { echo -e "${@}"; exit 1 ;:;}
 GWARN() { echo -e "\e[90m${*}\e[0m";:;}
+WARN() { echo -e "[WARN]: ${*}\e[0m";:;}
 INFO() { echo -e "\e[32m${*}\e[0m";:;}
 TITLE() { echo -e "\e[100m${*}\e[0m";:;}
 
@@ -204,7 +205,7 @@ install() {
         if verify_integrity "$DLCACHE/$name.tar.$ext" "$shasum"; then
             LOG "file integrity check passed"
         else
-            GWARN "file integrity check failed"
+            WARN "file integrity check failed"
             if $no_check_integrity; then
                 GWARN "skipping integrity check"
             else
