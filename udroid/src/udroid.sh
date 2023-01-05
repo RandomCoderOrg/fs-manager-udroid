@@ -137,9 +137,7 @@ install() {
     #   5) execute fixes file
 
     # local arg=$1
-    # TITLE "> INSTALL $arg"
-    # # parse the arg for suite and varient and get name,link
-    # parser $1 "online"
+    TITLE "> INSTALL $arg"
     local no_check_integrity=false
 
     while [[ $# -gt 0 ]]; do
@@ -165,6 +163,9 @@ install() {
         esac
     done
 
+    # parse the arg for suite and varient and get name,link
+    parser $1 "online"
+    
     # final checks
     [[ "$link" == "null" ]] && {
         ELOG "link not found for $suite:$varient"
