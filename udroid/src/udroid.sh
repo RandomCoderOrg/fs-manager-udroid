@@ -73,6 +73,57 @@ fetch_distro_data() {
     fi
 }
 
+## ask() - prompt the user with a message and wait for a Y/N answer
+# 
+# This function will prompt the user with a message and wait for a Y/N answer.
+# It will return 0 if the answer is Y, y, yes or empty. It will return 1 if the
+# answer is N, n, no. If the answer is anything else, it will return 1.
+#
+# Usage:
+# ask "Do you want to continue?"
+#
+# Returns:
+# 0 if the answer is Y, y, yes or empty. It will return 1 if the
+# answer is N, n, no. If the answer is anything else, it will return 1.
+ask() {
+    local msg=$*
+
+    echo -ne "$msg\t[Y/N]: "
+    read -r choice
+
+    case $choice in
+        y|Y|yes) return 0;;
+        n|N|No) return 1;;
+        "") return 0;;
+        *) return 1;;
+    esac
+}
+
+# This function checks the integrity of a file.
+#
+# This function takes the filename and the expected SHA256 sum of the file as parameters.
+# It calculates the SHA256 sum of the file and compares it to the expected SHA256 sum.
+# If the calculated SHA256 sum is the same as the expected SHA256 sum, the file is considered to be intact.
+# If the calculated SHA256 sum is not the same as the expected SHA256 sum, the file is considered to be corrupt.
+# This function returns 0 if the file is intact, 1 if the file is corrupt.
+verify_integrity() {
+    local filename=$1
+    local shasum=$2
+
+    filesha=$(sha256sum $filename)
+    LOG "filesum=$filesha"
+    LOG "shasum=$shasum"
+    
+    if ((filesha != shasum)); then
+        LOG "file integrity check failed"
+        GWARN "file integrity check failed"
+        return 1
+    else
+        LOG "file integrity check passed"
+        return 0
+    fi
+}
+
 install() {
     ###
     # install()
@@ -85,10 +136,34 @@ install() {
     #   4) Extract the filesystem to target path
     #   5) execute fixes file
 
-    local arg=$1
-    TITLE "> INSTALL $arg"
-    # parse the arg for suite and varient and get name,link
-    parser $1 "online"
+    # local arg=$1
+    # TITLE "> INSTALL $arg"
+    # # parse the arg for suite and varient and get name,link
+    # parser $1 "online"
+    local no_check_integrity=false
+
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            --no-check-integrity)
+                no_check_integrity=true
+                shift
+            ;;
+            *) 
+                # [[ -n $_name ]] && {
+                #     ELOG "login() error: name already set to $_name"
+                #     echo "--name supplied $_name"
+                # }
+                
+                if [[ -z $arg ]]; then
+                    arg=$1
+                else
+                    ELOG "unkown option $1"
+                fi
+                shift
+                break
+            ;;
+        esac
+    done
 
     # final checks
     [[ "$link" == "null" ]] && {
@@ -121,6 +196,29 @@ install() {
 
         # create $name directory
         mkdir -p $DEFAULT_FS_INSTALL_DIR/$name
+
+        # verify integrity
+        if verify_integrity "$DLCACHE/$name.tar.$ext" "$shasum"; then
+            LOG "file integrity check passed"
+        else
+            GWARN "file integrity check failed"
+            if $no_check_integrity; then
+                GWARN "skipping integrity check"
+            else
+                if ask "Do you want to retry [ deleteing the file and re-download it? ]"; then
+                    rm "$DLCACHE/$name.tar.$ext"
+                    download "$name.tar.$ext" "$link"
+                    if verify_integrity "$DLCACHE/$name.tar.$ext" "$shasum"; then
+                        LOG "file integrity check passed"
+                    else
+                        GWARN "file integrity check failed"
+                        DIE "Exiting gracefully.."
+                    fi
+                else
+                    DIE "Integrity check failed. Exiting gracefully.."
+                fi
+            fi
+        fi
 
         # call proot extract
         msg_extract "$DEFAULT_FS_INSTALL_DIR/$name"
