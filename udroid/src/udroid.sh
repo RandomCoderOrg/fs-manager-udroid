@@ -110,7 +110,7 @@ verify_integrity() {
     local filename=$1
     local shasum=$2
 
-    filesha=$(sha256sum $filename)
+    filesha=$(sha256sum $filename | cut -d " " -f 1)
     LOG "filesum=$filesha"
     LOG "shasum=$shasum"
     
