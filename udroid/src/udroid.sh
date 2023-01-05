@@ -163,8 +163,11 @@ install() {
         esac
     done
 
+    [[ -z $arg ]] && {
+        ELOG "\$arg not supplied"
+    }
     # parse the arg for suite and varient and get name,link
-    parser $1 "online"
+    parser $arg "online"
     
     # final checks
     [[ "$link" == "null" ]] && {
@@ -824,6 +827,8 @@ update() {
 _reset() {
     # TODO
     TITLE "[TODO]"
+
+    
 }
 ####################
 download() {
