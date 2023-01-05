@@ -114,7 +114,7 @@ verify_integrity() {
     LOG "filesum=$filesha"
     LOG "shasum=$shasum"
     
-    if [ $filesha -eq $shasum ]; then
+    if [[ $filesha -eq $shasum ]]; then
         LOG "file integrity check failed"
         GWARN "file integrity check failed"
         return 1
