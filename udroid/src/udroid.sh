@@ -738,7 +738,7 @@ download() {
         LOG "download(): $name already exists in $path"
         GWARN "$name already exists, continuing with existing file"
     else
-        wget -q --show-progress --progress=bar:force -O ${path}/$name  "$link"  2>&1 || {
+        wget -q --tries=10 --show-progress --progress=bar:force -O ${path}/$name  "$link"  2>&1 || {
             ELOG "failed to download $name"
             echo "failed to download $name"
             exit 1
