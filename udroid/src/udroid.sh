@@ -114,7 +114,7 @@ verify_integrity() {
     LOG "filesum=$filesha"
     LOG "shasum=$shasum"
     
-    if [[ "$filesha" == "$shasum" ]]; then
+    if [[ "$filesha" != "$shasum" ]]; then
         LOG "file integrity check failed"
         return 1
     else
