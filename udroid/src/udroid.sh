@@ -819,7 +819,7 @@ remove() {
 }
 
 update() {
-    TITLE "> UPDATE distro data from remove"
+    TITLE "> UPDATE distro data from remote"
     fetch_distro_data "online" true
 }
 
