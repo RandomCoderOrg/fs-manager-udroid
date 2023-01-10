@@ -1,11 +1,16 @@
 #!/bin/bash
 
 [[ -z $TMPDIR ]] && TMPDIR=/tmp
-ERROR_DUMP_FILE="$TMPDIR/proot-utils.log"
+ERROR_DUMP_FILE="$TMPDIR/udroid.log"
 
 msg() { echo -e "${*} \e[0m" >&2;:;}
 ELOG() { echo "[$(date +%F) | $(date +%R)] Error: ${*}" >> "${ERROR_DUMP_FILE}";:;}
 LOG() { echo "[$(date +%F) | $(date +%R)] MSG:${*}" >> "${ERROR_DUMP_FILE}";:;}
+
+manage_log_size() {
+    log_size=$(du -k $ERROR_DUMP_FILE | awk '{print $1}')
+    [[ $log_size -gt 1024 ]] && rm -f $ERROR_DUMP_FILE
+}
 
 p_extract() {
     # OPTIONS:
@@ -127,3 +132,6 @@ if [ -n "$RUN_STANDALONE" ]; then
         esac
     done
 fi
+
+# Manage log size
+manage_log_size
