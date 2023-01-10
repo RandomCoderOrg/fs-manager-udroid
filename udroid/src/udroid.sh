@@ -207,22 +207,28 @@ install() {
         else
             WARN "file integrity check failed"
             if $no_check_integrity; then
+                INFO  "skipped integrity check .."
                 GWARN "skipping integrity check"
+                LOG   "skipping integrity check for \"$DLCACHE/$name.tar.$ext\""
             else
-                if ask "Do you want to retry [ deleteing the file and re-download it? ]"; then
-                    rm "$DLCACHE/$name.tar.$ext"
-                    download "$name.tar.$ext" "$link"
-                    if verify_integrity "$DLCACHE/$name.tar.$ext" "$shasum"; then
-                        LOG "file integrity check passed"
-                    else
-                        GWARN "file integrity check failed"
-                        DIE "Exiting gracefully.."
-                    fi
-                else
+                     else
+                    # final exit condition
                     DIE "Integrity check failed. Exiting gracefully.."
                 fi
             fi
-        fi
+        fi           if ask "Do you want to retry [ deleteing the file and re-download it? ]"; then
+                    rm "$DLCACHE/$name.tar.$ext"
+                    download "$name.tar.$ext" "$link"
+                    
+                    # recheck integrity after download
+                    if verify_integrity "$DLCACHE/$name.tar.$ext" "$shasum"; then
+                        LOG "file integrity check passed"
+                    else
+                        # exit condition
+                        GWARN "file integrity check failed"
+                        DIE "Exiting gracefully.."
+                    fi
+
 
         # call proot extract
         msg_extract "$DEFAULT_FS_INSTALL_DIR/$name"
