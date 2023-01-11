@@ -825,16 +825,62 @@ remove() {
 
 }
 
-update() {
+update_cache() {
     TITLE "> UPDATE distro data from remote"
     fetch_distro_data "online" true
 }
 
+# To upgrade tool with git
+# by maintaining a local cache
+_upgrade() {
+    local branch=$1
+
+    # place to store repository
+    repo_cache="${HOME}/.fs-manager-udroid"
+    repo_url="https://github.com/RandomCoderOrg/fs-manager-udroid"
+
+    # check if repo exists and clone it if not found
+    if [[ ! -d $repo_cache ]]; then
+        LOG "upgrade(): cloning repo"
+        git clone $repo_url $repo_cache || DIE "failed to upgrade"
+    fi
+
+    # check if branch is specified
+    if [[ -z $branch ]]; then
+        LOG "upgrade(): no branch specified, using master"
+        branch="main"
+    fi
+
+    # if repo is not in $branch checkout to $branch
+    if [[ $(git -C $repo_cache branch --show-current) != "$branch" ]]; then
+        LOG "upgrade(): switching to branch $branch"
+        git -C $repo_cache checkout $branch
+    fi
+
+    # pull latest changes, if conflict occurs, clean and pull again
+    git -C $repo_cache pull || {
+        LOG "upgrade(): conflict occured, cleaning and pulling again"
+        git -C $repo_cache reset --hard
+        git -C $repo_cache  pull
+    }
+
+    # change to repo directory and install it
+    cd $repo_cache || {
+        ELOG "upgrade(): failed to change to $repo_cache"
+        exit 1
+    }
+
+    # install
+    LOG "upgrade(): installing"
+    bash install.sh
+
+    # TODO: look out for commit hashes to see if upgrade is needed
+    
+}
+
 _reset() {
     # TODO
-    TITLE "[TODO]"
-
-    
+    TITLE "[TODO] RESET"
 }
 ####################
 download() {
@@ -890,7 +936,8 @@ fi
 while [ $# -gt 0 ]; do
     case $1 in
         install | --install|-i) shift 1; install $@ ; break ;;
-        update  | --update|-u) shift 1; update $@ ; break ;;
+        upgrade  | --upgrade|-u) shift 1; _upgrade "revamp-v2.5" ; break ;;
+        --update-cache) shift 1; update_cache $@ ; break ;;
         login   | --login|-l) shift 1; login $@; break ;;
         remove  | --remove | --uninstall ) shift 1 ; remove $@; break;;
         reset   | --reset | --reinstall )  shift 1 ; _reset $@; break;;
