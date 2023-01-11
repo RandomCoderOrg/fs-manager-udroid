@@ -1,11 +1,17 @@
 #!/bin/bash
 
 [[ -z $TMPDIR ]] && TMPDIR=/tmp
-ERROR_DUMP_FILE="$TMPDIR/proot-utils.log"
+LOG_FILE="$TMPDIR/udroid.log"
+[[ ! -f $LOG_FILE ]] && touch $LOG_FILE
 
 msg() { echo -e "${*} \e[0m" >&2;:;}
-ELOG() { echo "[$(date +%F) | $(date +%R)] Error: ${*}" >> "${ERROR_DUMP_FILE}";:;}
-LOG() { echo "[$(date +%F) | $(date +%R)] MSG:${*}" >> "${ERROR_DUMP_FILE}";:;}
+ELOG() { echo "[$(date +%F) | $(date +%R)] Error: ${*}" >> "${LOG_FILE}";:;}
+LOG() { echo "[$(date +%F) | $(date +%R)] MSG:${*}" >> "${LOG_FILE}";:;}
+
+manage_log_size() {
+    log_size=$(du -k $LOG_FILE | awk '{print $1}')
+    [[ $log_size -gt 1024 ]] && rm -f $LOG_FILE
+}
 
 p_extract() {
     # OPTIONS:
@@ -35,7 +41,7 @@ p_extract() {
     if ! $NO_PROG; then
         pv $file | proot \
                 --link2symlink \
-                tar --no-same-owner -xvz -C "$path" &> $ERROR_DUMP_FILE
+                tar --no-same-owner -xvz -C "$path" &> $LOG_FILE
     else
         proot \
                 --link2symlink \
@@ -127,3 +133,6 @@ if [ -n "$RUN_STANDALONE" ]; then
         esac
     done
 fi
+
+# Manage log size
+manage_log_size
