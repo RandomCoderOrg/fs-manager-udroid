@@ -41,11 +41,11 @@ p_extract() {
     if ! $NO_PROG; then
         pv $file | proot \
                 --link2symlink \
-                tar --no-same-owner -xvz -C "$path" &> $LOG_FILE
+                tar --no-same-owner -xz -C "$path" &> $LOG_FILE
     else
         proot \
                 --link2symlink \
-                tar --no-same-owner -xvz -C "$path" < $file
+                tar --no-same-owner -xz -C "$path" < $file
     fi
 }
 
