@@ -330,28 +330,28 @@ login() {
             #     use_termux_home=true
             #     ;;
             --isolated)
-                isolated_environment=true
+                isolated_environment=true; shift
                 ;;
             --fix-low-parts)
-                fix_low_ports=true
+                fix_low_ports=true; shift
                 ;;
             --no-shared-tmp)
-                make_host_tmp_shared=false
+                make_host_tmp_shared=false; shift
                 ;;
             --no-link2symlink)
-                no_link2symlink=true
+                no_link2symlink=true; shift
                 ;;
             --no-sysvipc)
-                no_sysvipc=true
+                no_sysvipc=true; shift
                 ;;
             --no-fake-root-id)
-                no_fake_root_id=true
+                no_fake_root_id=true; shift
                 ;;
             --no-cwd-active-directory | --ncwd)
-                no_cwd_active_directory=true
+                no_cwd_active_directory=true; shift
                 ;;
             --no-kill-on-exit)
-                no_kill_on_exit=true
+                no_kill_on_exit=true; shift
                 ;;
             -*)
                 echo "Unknown option: $1"
