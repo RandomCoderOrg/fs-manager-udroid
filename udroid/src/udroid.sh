@@ -493,6 +493,7 @@ login() {
         
         if $make_host_tmp_shared; then
             set -- "--bind=$TERMUX_PREFIX/tmp:/tmp" "$@"
+            set -- "--bind=$TERMUX_PREFIX/dev/shm:/dev/shm" "$@"
         else
             mkdir -p "${root_fs_path}/tmp"
             set -- "--bind=${root_fs_path}/tmp:/dev/shm" "$@"
