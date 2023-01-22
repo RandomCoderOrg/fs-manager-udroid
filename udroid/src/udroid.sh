@@ -955,6 +955,7 @@ fi
 
 while [ $# -gt 0 ]; do
     case $1 in
+        help | --help|-h) shift 1; help_root; break ;;
         install | --install|-i) shift 1; install $@ ; break ;;
         upgrade  | --upgrade|-u) shift 1; _upgrade $@ ; break ;;
         --update-cache) shift 1; update_cache $@ ; break ;;
