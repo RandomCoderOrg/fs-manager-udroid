@@ -146,6 +146,10 @@ install() {
                 no_check_integrity=true
                 shift
             ;;
+            --help | -h) 
+                help_install
+                exit 0
+            ;;
             *) 
                 # [[ -n $_name ]] && {
                 #     ELOG "login() error: name already set to $_name"
@@ -287,6 +291,10 @@ login() {
             --)
              shift
              break
+             ;;
+            --help | -h)
+                help_login
+                exit 0
              ;;
             -p | --path) 
 
@@ -690,10 +698,9 @@ parser() {
     shasum=$(cat $distro_data | jq -r ".$suite.$varient.${arch}sha")
     LOG "shasum=$shasum"
 }
-
+## List
+# list all the avalible suites varients and their status
 list() {
-    ## List
-    # list all the avalible suites varients and their status
     
     export size=false
     export show_installed_only=false
@@ -834,7 +841,19 @@ update_cache() {
 # To upgrade tool with git
 # by maintaining a local cache
 _upgrade() {
-    local branch=$1
+
+    local branch=""
+    
+    while [ $# -gt 0 ]; do
+        case $1 in
+            --branch) branch=$2; shift 2;;
+            --help) help_upgrade; exit 0;;
+            *) shift ;;
+        esac
+    done
+
+    [[ -z $branch ]] && branch="revamp-v2.5"
+    # [[ -z $branch ]] && branch="main"
 
     # place to store repository
     repo_cache="${HOME}/.fs-manager-udroid"
@@ -875,7 +894,7 @@ _upgrade() {
     LOG "upgrade(): installing"
     bash install.sh
 
-    # TODO: look out for commit hashes to see if upgrade is needed
+    # TODO: look out for commit hashes for better upgrade strategy
     
 }
 
@@ -930,19 +949,19 @@ trap 'echo "exiting gracefully..."; exit 1' HUP INT TERM
 ####################
 
 if [ $# -eq 0 ]; then
-    echo "usage: $0 [install|login|remove]"
+    help_root
     exit 1
 fi
 
 while [ $# -gt 0 ]; do
     case $1 in
         install | --install|-i) shift 1; install $@ ; break ;;
-        upgrade  | --upgrade|-u) shift 1; _upgrade "revamp-v2.5" ; break ;;
+        upgrade  | --upgrade|-u) shift 1; _upgrade $@ ; break ;;
         --update-cache) shift 1; update_cache $@ ; break ;;
         login   | --login|-l) shift 1; login $@; break ;;
         remove  | --remove | --uninstall ) shift 1 ; remove $@; break;;
         reset   | --reset | --reinstall )  shift 1 ; _reset $@; break;;
         list    | --list) shift 1; list $@; break ;;
-        *) echo "unkown option [$1]"; break ;;
+        *) echo "unkown option [$1]"; help_root; break ;;
     esac
 done
