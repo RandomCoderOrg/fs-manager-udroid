@@ -480,7 +480,7 @@ login() {
         # (https://gist.github.com/SaicharanKandukuri/20e66e816a8b2c3ea9d3f7657f09f807)
         # [CONDITIONAL]: cap_last_cap fix -> to fix issues with dbus service
         if ! $no_cap_last_cap; then
-            set -- "--bind /dev/null:/proc/sys/kernel/cap_last_cap" "$@"
+            set -- "--bind=/dev/null:/proc/sys/kernel/cap_last_cap" "$@"
         fi
 
         # root-id ( fake 0 id for proot )
