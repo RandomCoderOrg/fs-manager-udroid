@@ -37,17 +37,69 @@ udroid -i impish:mate
 udroid -i focal:xfce4
 ```
 
-### login (`-l`)
+###### help
+
+```cmd
+udroid [ install| --install ] [<options>] [<suite>]:[<varient>]
+installs udroid distros
+options:
+  -h, --help    show this help message and exit
+  --no-verify-integrity  do not verify integrity of filesystem
+
+example:
+  udroid install jammy:raw
+  udroid install --install jammy:raw
+```
+
+### login (`login`)
 
 ```bash
-udroid -l udroid-jammy-raw
+udroid --login jammy:raw
+# or
+udroid login jammy:raw # same as above
+```
+
+###### help
+```cmd
+udroid [ login| --login ] [<options>] <suite>:<varient> <cmd>
+login to a suite
+
+options:
+  -h, --help:         show this help message and exit
+  --user:               Allows the user to specify the login user for the filesystem.
+  --name: Allows        the user to specify a custom name for the filesystem to install
+  --bind or -b:         Allows the user to specify extra mount points for the filesystem.
+  --isolated:           Creates an isolated environment for the filesystem.
+  --fix-low-ports:      Fixes low ports for the filesystem.
+  --no-shared-tmp:      Disables shared tmp for the filesystem.
+  --no-link2symlink:    Disables link2symlink for the filesystem.
+  --no-sysvipc:         Disables sysvipc for the filesystem.
+  --no-fake-root-id:    Disables fake root id for the filesystem.
+  --no-kill-on-exit:    Disables kill on exit for the filesystem.
+
+<cmd>:
+  command to run in the filesystem and exit
 ```
 
 > WIP
 
-### remove (`-r`)
+### remove (`remove`)
 
-> WIP
+```bash
+udroid remove jammy:raw
+```
+
+###### help
+
+```cmd
+udroid [ remove| --remove ] <distro>
+removes udroid distros
+example:
+  udroid remove jammy:raw
+  udroid remove --remove jammy:raw
+```
+
+> Download cache is ignored
 
 ## Contributing
 
