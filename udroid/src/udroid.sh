@@ -279,6 +279,7 @@ login() {
     local no_kill_on_exit=false
     local no_cwd_active_directory=false
     local no_cap_last_cap=false
+    local no_pulseserver=false
     local no_fake_root_id=false
     local fix_low_ports=false
     local make_host_tmp_shared=true # its better to run with shared tmp
@@ -361,6 +362,9 @@ login() {
                 ;;
             --no-cap-last-cap)
                 no_cap_last_cap=true; shift
+                ;;
+            --no-pulseserver)
+                no_pulseserver=true; shift
                 ;;
             --no-kill-on-exit)
                 no_kill_on_exit=true; shift
@@ -601,6 +605,13 @@ login() {
         # [CONDITIONAL]: fix low ports
         if $fix_low_ports; then
             set -- "-p" "$@"
+        fi
+
+        # [CONDITIONAL]: pulseaudio server for audio output (speaker)
+        if ! no_pulseserver; then
+            pulseaudio  --start \
+                        --load="module-native-protocol-tcp auth-ip-acl=127.0.0.1 auth-anonymous=1" \
+                        --exit-idle-time=-1
         fi
 
         exec proot "$@"
