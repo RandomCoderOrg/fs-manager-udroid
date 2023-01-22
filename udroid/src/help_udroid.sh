@@ -22,6 +22,7 @@ help_login() {
     echo "  --no-link2symlink:    Disables link2symlink for the filesystem."
     echo "  --no-sysvipc:         Disables sysvipc for the filesystem."
     echo "  --no-fake-root-id:    Disables fake root id for the filesystem."
+    echo "  --no-cap-last-cap:    Disables cap last cap fix mount for the filesystem.(only per session)"
     # echo "--no-cwd-active-directory | --ncwd (unstable): Disables the current working directory for the active directory for the filesystem."
     echo "  --no-kill-on-exit:    Disables kill on exit for the filesystem."
     echo
