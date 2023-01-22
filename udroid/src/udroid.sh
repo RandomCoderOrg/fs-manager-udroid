@@ -38,7 +38,7 @@ fetch_distro_data() {
     isStrictMode=$2
 
     # if mode is offline, set offline_mode to true
-    if (( mode == "offline" )); then
+    if [[ $mode == "offline" ]]; then
         offline_mode=true
     fi
 
