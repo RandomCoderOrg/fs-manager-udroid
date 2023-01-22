@@ -75,6 +75,7 @@ options:
   --no-link2symlink:    Disables link2symlink for the filesystem.
   --no-sysvipc:         Disables sysvipc for the filesystem.
   --no-fake-root-id:    Disables fake root id for the filesystem.
+  --no-cap-last-cap:    Disables cap last cap fix mount for the filesystem.(only per session)
   --no-kill-on-exit:    Disables kill on exit for the filesystem.
 
 <cmd>:

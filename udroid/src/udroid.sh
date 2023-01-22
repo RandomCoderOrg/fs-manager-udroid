@@ -278,6 +278,7 @@ login() {
     local no_sysvipc=false
     local no_kill_on_exit=false
     local no_cwd_active_directory=false
+    local no_cap_last_cap=false
     local no_fake_root_id=false
     local fix_low_ports=false
     local make_host_tmp_shared=true # its better to run with shared tmp
@@ -357,6 +358,9 @@ login() {
                 ;;
             --no-cwd-active-directory | --ncwd)
                 no_cwd_active_directory=true; shift
+                ;;
+            --no-cap-last-cap)
+                no_cap_last_cap=true; shift
                 ;;
             --no-kill-on-exit)
                 no_kill_on_exit=true; shift
@@ -471,6 +475,12 @@ login() {
         
         if $no_cwd_active_directory; then
             set -- "--cwd=/root" "$@"
+        fi
+
+        # (https://gist.github.com/SaicharanKandukuri/20e66e816a8b2c3ea9d3f7657f09f807)
+        # [CONDITIONAL]: cap_last_cap fix -> to fix issues with dbus service
+        if ! $no_cap_last_cap; then
+            set -- "--bind /dev/null:/proc/sys/kernel/cap_last_cap" "$@"
         fi
 
         # root-id ( fake 0 id for proot )
