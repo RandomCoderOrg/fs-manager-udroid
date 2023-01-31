@@ -739,6 +739,7 @@ list() {
     
     export size=false
     export show_installed_only=false
+    local show_pretty=false
     local path=$DEFAULT_FS_INSTALL_DIR
 
     while [ $# -gt 0 ]; do
@@ -747,6 +748,7 @@ list() {
             --list-installed) show_installed_only=true; shift 1;;
             --path) path=$2; LOG "list(): looking in $path"; shift 2;;
             --help) help_list; exit 0;;
+            --pretty) show_pretty=true; shift 1;;
             *) shift ;;
         esac
     done
@@ -755,60 +757,128 @@ list() {
 
     suites=$(cat $distro_data | jq -r '.suites[]')
 
-    # loop over suites
-    for suite in $suites; do
-        echo "$suite: "
-        varients=$(cat $distro_data | jq -r ".$suite.varients[]")
-        
-        # loop over varients
-        for varient in $varients; do
-            # get name
-            name=$(cat $distro_data | jq -r ".$suite.$varient.Name")
-            supported_arch=$(cat $distro_data | jq -r ".$suite.$varient.arch")
+    if ! $show_pretty; then
+        # loop over suites
+        for suite in $suites; do
+            echo "$suite: "
+            varients=$(cat $distro_data | jq -r ".$suite.varients[]")
 
-            host_arch=$(dpkg --print-architecture)
-            if [[ $host_arch =~ $supported_arch ]]; then
-                    supported=true
-                else
-                    supported=false
-            fi
-            
-            # check if installed
-            if [[ -d $path/$name ]]; then
-                _installed="[installed]"
-            else
-                _installed=""
-            fi
+            # loop over varients
+            for varient in $varients; do
+                # get name
+                name=$(cat $distro_data | jq -r ".$suite.$varient.Name")
+                supported_arch=$(cat $distro_data | jq -r ".$suite.$varient.arch")
 
-            # check size
-            if [[ $size == true ]]; then
+                host_arch=$(dpkg --print-architecture)
+                if [[ $host_arch =~ $supported_arch ]]; then
+                        supported=true
+                    else
+                        supported=false
+                fi
+
+                # check if installed
                 if [[ -d $path/$name ]]; then
-                    _size="[ SIZE: $(du -sh $path/$name | awk '{print $1}') ]"
+                    _installed="[installed]"
+                else
+                    _installed=""
+                fi
+
+                # check size
+                if [[ $size == true ]]; then
+                    if [[ -d $path/$name ]]; then
+                        _size="[ SIZE: $(du -sh $path/$name | awk '{print $1}') ]"
+                    else
+                        _size=""
+                    fi
                 else
                     _size=""
                 fi
-            else
-                _size=""
-            fi
 
-            # set support status
-            if [[ $supported == true ]]; then
-                support_status="\e[1;32m [supported]\e[0m"
-            else
-                support_status="\e[31m [unsupported]\e[0m"
-            fi
-
-            # print out
-            if ! $show_installed_only; then
-                echo -e "\t- $varient $support_status $_installed $_size"
-            else
-                if [[ -d $path/$name ]]; then
-                    echo -e "\t- $varient $support_status $_installed $_size"
+                # set support status
+                if [[ $supported == true ]]; then
+                    support_status="\e[1;32m [supported]\e[0m"
+                else
+                    support_status="\e[31m [unsupported]\e[0m"
                 fi
-            fi
-        done
-    done
 
+                # print out
+                if ! $show_installed_only; then
+                    echo -e "\t- $varient $support_status $_installed $_size"
+                else
+                    if [[ -d $path/$name ]]; then
+                        echo -e "\t- $varient $support_status $_installed $_size"
+                    fi
+                fi
+            done
+        done
+    else
+        tempfile=$(mktemp udroid-list-table-XXXXXX)
+
+        [[ $size ]] && {
+            _size_header=" size |"
+            _size_line="--|" 
+        }|| {
+            _size_header=""
+            _size_line=""
+        }
+
+        # header
+        echo -e "| suites | supported | status |$_size_header" > $tempfile
+        echo -e "|--------|-----------|--------|$_size_line" >> $tempfile
+
+        for suite in $suites; do
+            varients=$(cat $distro_data | jq -r ".$suite.varients[]")
+
+            # loop over varients
+            for varient in $varients; do
+                # get name
+                name=$(cat $distro_data | jq -r ".$suite.$varient.Name")
+                supported_arch=$(cat $distro_data | jq -r ".$suite.$varient.arch")
+
+                host_arch=$(dpkg --print-architecture)
+                if [[ $host_arch =~ $supported_arch ]]; then
+                        supported=true
+                    else
+                        supported=false
+                fi
+
+                # check if installed
+                if [[ -d $path/$name ]]; then
+                    _installed="[installed]"
+                else
+                    _installed=""
+                fi
+
+                # check size
+                if [[ $size == true ]]; then
+                    if [[ -d $path/$name ]]; then
+                        _size="$(du -sh $path/$name | awk '{print $1}')"
+                    else
+                        _size=""
+                    fi
+                else
+                    _size=""
+                fi
+
+                # set support status
+                if [[ $supported == true ]]; then
+                    support_status="[supported]"
+                else
+                    support_status="[unsupported]"
+                fi
+
+                # print out
+                if ! $show_installed_only; then
+                    echo -e echo -e "|$varient|$support_status|$_installed|$_size" >> $tempfile
+                else
+                    if [[ -d $path/$name/bin ]]; then
+                        echo -e "|$varient|$support_status|$_installed|$_size" >> $tempfile
+                    fi
+                fi
+                g_format $tempfile
+            done
+        done
+    fi
 }
 
 remove() {

@@ -60,3 +60,10 @@ function g_spin() {
     $GUM spin -s "$spinner" --title "$title" -- $cmd
     echo -e "[\xE2\x9C\x94] $title"
 }
+
+function g_format () {
+    file=$1
+    [[ -z $file ]] && die "g_format: file not specified"
+    $GUM format < $file
+}
+
