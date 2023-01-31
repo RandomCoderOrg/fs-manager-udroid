@@ -314,10 +314,13 @@ while read -r group_name group_id; do
 done < <(paste <(id -Gn | tr ' ' '\n') <(id -G | tr ' ' '\n'))
 
 PROG_PRINT "setting up android shmem"
-shmem_lib="${PREFIX}/usr/lib/libandroid-shmem.a"
+shmem_lib="${PREFIX}/lib/libandroid-shmem.a"
 if [ -f "${shmem_lib}" ]; then
     PROG_PRINT "copying android shmem library"
-    cp "${shmem_lib}" "${root_fs_path}/usr/lib/"
+    cp "${shmem_lib}" "${root_fs_path}/lib/"
+# else
+#     PROG_PRINT "android shmem library not found"
+
 fi
 
 # ## android GID
