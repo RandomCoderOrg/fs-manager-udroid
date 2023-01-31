@@ -313,16 +313,16 @@ while read -r group_name group_id; do
 	fi
 done < <(paste <(id -Gn | tr ' ' '\n') <(id -G | tr ' ' '\n'))
 
-PROG_PRINT "setting up android shmem"
-shmem_lib="${PREFIX}/lib/libandroid-shmem.a"
-if [ -f "${shmem_lib}" ]; then
-    PROG_PRINT "copying android shmem library"
-    ar x "${shmem_lib}"
-    mv shmem.o "${root_fs_path}/lib"
-# else
-#     PROG_PRINT "android shmem library not found"
+# PROG_PRINT "setting up android shmem"
+# shmem_lib="${PREFIX}/lib/libandroid-shmem.a"
+# if [ -f "${shmem_lib}" ]; then
+#     PROG_PRINT "copying android shmem library"
+#     ar x "${shmem_lib}"
+#     mv shmem.o "${root_fs_path}/lib"
+# # else
+# #     PROG_PRINT "android shmem library not found"
 
-fi
+# fi
 
 # ## android GID
 # # a list of all android groups

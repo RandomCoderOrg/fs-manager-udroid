@@ -3,7 +3,7 @@
 DIE() { echo -e "${@}"; exit 1 ;:;}
 GWARN() { echo -e "\e[90m${*}\e[0m";:;}
 
-apt install -y jq wget proot pv pulseaudio libandroid-shmem-static binutils
+apt install -y jq wget proot pv pulseaudio libandroid-shmem-static
 [[ ! -d udroid/src ]] && {
     echo "udroid/src not found"
     exit 1
