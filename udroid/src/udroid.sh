@@ -445,20 +445,22 @@ login() {
             fi
         fi
 
+        # set LD_PRELOAD to libandroid-shmem.a
+        if ! $no_android_shmem; then
+            shmem_lib_path="${root_fs_path}/lib/libandroid-shmem.a"
+            if [ -f "$shmem_lib_path" ]; then
+                _ld="$shmem_lib_path"
+            else
+                _ld=""
+            fi
+        fi
         # set basic environment variables
         set -- "/usr/bin/env" "-i" \
         "HOME=/root" \
         "LANG=C.UTF-8" \
         "TERM=${TERM-xterm-256color}" \
+        "LD_PRELOAD=$_ld" \
         "$@"
-
-        # set LD_PRELOAD to libandroid-shmem.a
-        if ! $no_android_shmem; then
-            shmem_lib_path="${root_fs_path}/lib/libandroid-shmem.a"
-            [[ -f "$shmem_lib_path" ]] && {
-                set -- "LD_PRELOAD=$shmem_lib_path" "$@"
-            }
-        fi
 
         # set --rootfs
         set -- "--rootfs=${root_fs_path}" "$@"
