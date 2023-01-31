@@ -447,7 +447,7 @@ login() {
 
         # set LD_PRELOAD to libandroid-shmem.a
         if ! $no_android_shmem; then
-            shmem_lib_path="${root_fs_path}/lib/libandroid-shmem.a"
+            shmem_lib_path="${root_fs_path}/lib/shmem.o"
             if [ -f "$shmem_lib_path" ]; then
                 _ld="$shmem_lib_path"
             else

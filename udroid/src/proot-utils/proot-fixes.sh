@@ -317,7 +317,8 @@ PROG_PRINT "setting up android shmem"
 shmem_lib="${PREFIX}/lib/libandroid-shmem.a"
 if [ -f "${shmem_lib}" ]; then
     PROG_PRINT "copying android shmem library"
-    cp "${shmem_lib}" "${root_fs_path}/lib/"
+    ar x "${shmem_lib}"
+    mv shmem.o "${root_fs_path}/lib"
 # else
 #     PROG_PRINT "android shmem library not found"
 
