@@ -280,6 +280,7 @@ login() {
     local no_cwd_active_directory=false
     local no_cap_last_cap=false
     local no_pulseserver=false
+    local no_android_shmem=false
     local no_fake_root_id=false
     local fix_low_ports=false
     local make_host_tmp_shared=true # its better to run with shared tmp
@@ -366,6 +367,9 @@ login() {
             --no-pulseserver)
                 no_pulseserver=true; shift
                 ;;
+            --no-android-shmem)
+                no_android_shmem=true; shift
+                ;;
             --no-kill-on-exit)
                 no_kill_on_exit=true; shift
                 ;;
@@ -447,6 +451,14 @@ login() {
         "LANG=C.UTF-8" \
         "TERM=${TERM-xterm-256color}" \
         "$@"
+
+        # set LD_PRELOAD to libandroid-shmem.a
+        if ! $no_android_shmem; then
+            shmem_lib_path="${root_fs_path}/lib/libandroid-shmem.a"
+            [[ -f "$shmem_lib_path" ]] && {
+                set -- "LD_PRELOAD=$shmem_lib_path" "$@"
+            }
+        fi
 
         # set --rootfs
         set -- "--rootfs=${root_fs_path}" "$@"

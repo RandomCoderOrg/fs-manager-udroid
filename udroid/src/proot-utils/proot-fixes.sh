@@ -313,6 +313,13 @@ while read -r group_name group_id; do
 	fi
 done < <(paste <(id -Gn | tr ' ' '\n') <(id -G | tr ' ' '\n'))
 
+PROG_PRINT "setting up android shmem"
+shmem_lib="${PREFIX}/usr/lib/libandroid-shmem.a"
+if [ -f "${shmem_lib}" ]; then
+    PROG_PRINT "copying android shmem library"
+    cp "${shmem_lib}" "${root_fs_path}/usr/lib/"
+fi
+
 # ## android GID
 # # a list of all android groups
 # AID_GROUPS="aid_ROOT:0
