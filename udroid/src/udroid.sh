@@ -862,17 +862,17 @@ list() {
 
                 # set support status
                 if [[ $supported == true ]]; then
-                    support_status="[supported]"
+                    support_status="Yes"
                 else
-                    support_status="[unsupported]"
+                    support_status="NO"
                 fi
 
                 # print out
                 if ! $show_installed_only; then
-                    echo -e "|$varient|$support_status|$_installed|$_size" >> $tempfile
+                    echo -e "|$suite:$varient|$support_status|$_installed|$_size" >> $tempfile
                 else
                     if [[ -d $path/$name/bin ]]; then
-                        echo -e "|$varient|$support_status|$_installed|$_size" >> $tempfile
+                        echo -e "|$suite:$varient|$support_status|$_installed|$_size" >> $tempfile
                     fi
                 fi
             done
