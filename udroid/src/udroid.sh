@@ -740,11 +740,13 @@ list() {
     export size=false
     export show_installed_only=false
     local show_pretty=false
+    local show_remote_download_size=false
     local path=$DEFAULT_FS_INSTALL_DIR
 
     while [ $# -gt 0 ]; do
         case $1 in
             --size) size=true; shift 1;;
+            --download-size | -ds) show_remote_download_size=true; shift 1;;
             --list-installed) show_installed_only=true; shift 1;;
             --path) path=$2; LOG "list(): looking in $path"; shift 2;;
             --help) help_list; exit 0;;
@@ -822,9 +824,17 @@ list() {
             _size_line=""
         fi
 
+        if $show_remote_download_size; then
+            _r_size_header=" down* size |"
+            _r_size_line="--|" 
+        else
+            _r_size_header=""
+            _r_size_line=""
+        fi
+
         # header
-        echo -e "| suites | supported | status |$_size_header" > $tempfile
-        echo -e "|--------|-----------|--------|$_size_line" >> $tempfile
+        echo -e "| suites | supported | status |$_size_header$_r_size_header" > $tempfile
+        echo -e "|--------|-----------|--------|$_size_line"$_r_size_line >> $tempfile
 
         for suite in $suites; do
             varients=$(cat $distro_data | jq -r ".$suite.varients[]")
@@ -842,6 +852,19 @@ list() {
                         supported=false
                 fi
 
+                if $supported; then
+                    if $show_remote_download_size; then
+                        link=$(cat $distro_data | jq -r ".$suite.$varient.${host_arch}url")
+                        remote_size=$( wget --spider -m -np $link 2>&1 | grep -i Content-Length | awk '{print $2}')
+
+                        if [[ -z $remote_size ]]; then
+                            remote_size="?"
+                        else
+                            remote_size=$(numfmt --to=iec-i --suffix=B --padding=7 $remote_size) # <- By GitHub Copilot
+                        fi
+                    fi
+                fi
+
                 # check if installed
                 if [[ -d $path/$name ]]; then
                     _installed="[installed]"
@@ -852,9 +875,9 @@ list() {
                 # check size
                 if [[ $size == true ]]; then
                     if [[ -d $path/$name ]]; then
-                        _size="$(du -sh $path/$name 2> /dev/null | awk '{print $1}')"
+                        _size="$(du -sh $path/$name 2> /dev/null | awk '{print $1}') |"
                     else
-                        _size=""
+                        _size="|"
                     fi
                 else
                     _size=""
@@ -869,10 +892,10 @@ list() {
 
                 # print out
                 if ! $show_installed_only; then
-                    echo -e "|$suite:$varient|$support_status|$_installed|$_size" >> $tempfile
+                    echo -e "|$suite:$varient|$support_status|$_installed|$_size$remote_size" >> $tempfile
                 else
                     if [[ -d $path/$name/bin ]]; then
-                        echo -e "|$suite:$varient|$support_status|$_installed|$_size" >> $tempfile
+                        echo -e "|$suite:$varient|$support_status|$_installed|$_size$remote_size" >> $tempfile
                     fi
                 fi
             done
