@@ -855,7 +855,7 @@ list() {
                 if $supported; then
                     if $show_remote_download_size; then
                         link=$(cat $distro_data | jq -r ".$suite.$varient.${host_arch}url")
-                        remote_size=$( wget --spider -m -np $link 2>&1 | grep -i Content-Length | awk '{print $2}')
+                        remote_size=$( wget --spider -m -np $link 2>&1 | grep -i Length | awk '{print $2}')
 
                         if [[ -z $remote_size ]]; then
                             remote_size="?"
