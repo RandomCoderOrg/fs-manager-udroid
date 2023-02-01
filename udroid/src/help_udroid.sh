@@ -41,7 +41,8 @@ help_root() {
     echo "  login, --login <suite>:<varient>      login to a distro"
     echo "  upgrade, --upgrade                    upgrade udroid scripts"
     echo "  help, --help                          show this help message and exit"
-    echo "  --update-cache                        update cache from remote"        
+    echo "  --update-cache                        update cache from remote"  
+    echo "  --clear-cache                         clear downloaded cache"      
     echo
 }
 

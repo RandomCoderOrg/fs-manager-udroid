@@ -125,17 +125,6 @@ verify_integrity() {
 }
 
 install() {
-    ###
-    # install()
-    #
-    # stages:
-    #   1) take the arguments supplied ( i.e "arg"->$1 and "path"->$2 )
-    #   2) parse the arg for suite and varient
-    #       2-1) if suite or varient is null (i.e not supplied) the try to prompt by guessing it with avalible arguments
-    #   3) parse the download link from json ( if null exit )
-    #   4) Extract the filesystem to target path
-    #   5) execute fixes file
-
     # local arg=$1
     TITLE "> INSTALL $arg"
     local no_check_integrity=false
@@ -990,6 +979,13 @@ _reset() {
     # TODO
     TITLE "[TODO] RESET"
 }
+
+clear_cache() {
+    TITLE "> CLEAR CACHE"
+    cache_size=$(du -sh -d 0 $DLCACHE | awk '{print $1}')
+    g_spin "line" "Clearing cache" -- rm -rf $DLCACHE/*
+    echo -e "Cache cleared ($cache_size).."
+}
 ####################
 download() {
     local name=$1
@@ -1047,6 +1043,7 @@ while [ $# -gt 0 ]; do
         install | --install|-i) shift 1; install $@ ; break ;;
         upgrade  | --upgrade|-u) shift 1; _upgrade $@ ; break ;;
         --update-cache) shift 1; update_cache $@ ; break ;;
+        --clear-cache) shift 1; clear_cache $@ ; break ;;
         login   | --login|-l) shift 1; login $@; break ;;
         remove  | --remove | --uninstall ) shift 1 ; remove $@; break;;
         reset   | --reset | --reinstall )  shift 1 ; _reset $@; break;;
