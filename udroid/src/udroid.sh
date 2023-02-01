@@ -869,15 +869,15 @@ list() {
 
                 # print out
                 if ! $show_installed_only; then
-                    echo -e echo -e "|$varient|$support_status|$_installed|$_size" >> $tempfile
+                    echo -e "|$varient|$support_status|$_installed|$_size" >> $tempfile
                 else
                     if [[ -d $path/$name/bin ]]; then
                         echo -e "|$varient|$support_status|$_installed|$_size" >> $tempfile
                     fi
                 fi
-                g_format $tempfile
             done
         done
+                g_format $tempfile
     fi
 }
 
