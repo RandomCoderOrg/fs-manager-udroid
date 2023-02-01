@@ -900,6 +900,17 @@ list() {
                 fi
             done
         done
+            # footer
+            {
+            echo "**SIZE**: space occupied by installed distro"
+            echo "**DOWN* SIZE**: download size of suite"
+
+            echo "To install one of suite (ex: **jammy:xfce**), run:"
+            echo "\`\`\`bash"
+            echo "udroid install jammy:xfce"
+            echo "\`\`\`" 
+            } >> $tempfile
+
             g_format $tempfile
     fi
 }
