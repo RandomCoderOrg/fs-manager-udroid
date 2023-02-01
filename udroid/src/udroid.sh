@@ -902,9 +902,11 @@ list() {
         done
             # footer
             {
+            echo ""
+            echo ""
             echo "**SIZE**: space occupied by installed distro"
             echo "**DOWN* SIZE**: download size of suite"
-
+            echo ""
             echo "To install one of suite (ex: **jammy:xfce**), run:"
             echo "\`\`\`bash"
             echo "udroid install jammy:xfce"
