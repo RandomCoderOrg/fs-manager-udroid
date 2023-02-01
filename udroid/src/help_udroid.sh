@@ -48,11 +48,13 @@ help_root() {
 # help_list: show help for list
 help_list() {
     echo "udroid [ list| --list ] [options]"
+    echo "show a table of all available distros/suites"
     echo "options:"
-    echo "  -h, --help    show this help message and exit"
-    echo "  --size        show size of each distro"
-    echo "  --path <path> path to look for distros"
-    echo "  --list-installed  show only installed distros"
+    echo "  -h, --help              show this help message and exit"
+    echo "  --size                  show size of each distro"
+    echo "  --download-size | -ds   show download size of each distro"
+    echo "  --path <path>           path to look for distros"
+    echo "  --list-installed        show only installed distros"
 }
 
 # help_upgrade: show help for upgrade

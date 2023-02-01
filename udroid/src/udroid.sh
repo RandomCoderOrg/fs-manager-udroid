@@ -736,7 +736,7 @@ parser() {
 ## List
 # list all the avalible suites varients and their status
 list() {
-    INFO "list()"
+    TITLE "list()"
     export size=false
     export show_installed_only=false
     local show_remote_download_size=false
@@ -846,7 +846,7 @@ list() {
             fi
         done
     done
-    
+
     # footer
     {
         echo ""
