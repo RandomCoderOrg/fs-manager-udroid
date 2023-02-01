@@ -814,13 +814,13 @@ list() {
     else
         tempfile=$(mktemp udroid-list-table-XXXXXX)
 
-        [[ $size ]] && {
+        if $size; then
             _size_header=" size |"
             _size_line="--|" 
-        }|| {
+        else
             _size_header=""
             _size_line=""
-        }
+        fi
 
         # header
         echo -e "| suites | supported | status |$_size_header" > $tempfile
@@ -852,7 +852,7 @@ list() {
                 # check size
                 if [[ $size == true ]]; then
                     if [[ -d $path/$name ]]; then
-                        _size="$(du -sh $path/$name | awk '{print $1}')"
+                        _size="$(du -sh $path/$name 2> /dev/null | awk '{print $1}')"
                     else
                         _size=""
                     fi
@@ -862,7 +862,7 @@ list() {
 
                 # set support status
                 if [[ $supported == true ]]; then
-                    support_status="Yes"
+                    support_status="YES"
                 else
                     support_status="NO"
                 fi
@@ -877,7 +877,7 @@ list() {
                 fi
             done
         done
-                g_format $tempfile
+            g_format $tempfile
     fi
 }
 
