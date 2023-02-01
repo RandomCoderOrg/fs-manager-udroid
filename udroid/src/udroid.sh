@@ -983,8 +983,20 @@ _reset() {
 clear_cache() {
     TITLE "> CLEAR CACHE"
     cache_size=$(du -sh -d 0 $DLCACHE | awk '{print $1}')
-    g_spin "line" "Clearing cache" -- rm -rf $DLCACHE/*
-    echo -e "Cache cleared ($cache_size).."
+    
+    # check if cache is empty
+    if [[ $cache_size == "0" ]]; then
+        GWARN "cache is already empty"
+        exit 0
+    fi
+
+    # ask for confirmation
+    if ask "Are you sure you want to clear cache?"; then
+        rm -rf $DLCACHE/*
+        echo "$cache_size cache cleared"
+    else
+        GWARN "cache not cleared"
+    fi
 }
 ####################
 download() {
