@@ -52,7 +52,7 @@ help_list() {
     echo "options:"
     echo "  -h, --help              show this help message and exit"
     echo "  --size                  show size of each distro"
-    echo "  --download-size | -ds   show download size of each distro"
+    echo "  --download-size | --ds   show download size of each distro"
     echo "  --path <path>           path to look for distros"
     echo "  --list-installed        show only installed distros"
 }

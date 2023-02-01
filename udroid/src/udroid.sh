@@ -745,7 +745,7 @@ list() {
     while [ $# -gt 0 ]; do
         case $1 in
             --size) size=true; shift 1;;
-            --download-size | -ds) show_remote_download_size=true; shift 1;;
+            --download-size | --ds) show_remote_download_size=true; shift 1;;
             --list-installed) show_installed_only=true; shift 1;;
             --path) path=$2; LOG "list(): looking in $path"; shift 2;;
             --help) help_list; exit 0;;
