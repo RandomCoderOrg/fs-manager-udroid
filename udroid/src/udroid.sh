@@ -29,7 +29,6 @@ TITLE() { echo -e "\e[100m${*}\e[0m";:;}
 # Fetch distro data from the internet and save it to RTCACHE
 # @param mode [online/offline] - online mode will fetch data from the internet, offline will use the cached data
 # @return distro_data [string] - path to the downloaded data
-
 fetch_distro_data() {
 
     # default to online mode
@@ -89,7 +88,7 @@ fetch_distro_data() {
 ask() {
     local msg=$*
 
-    echo -ne "$msg\t[Y/N]: "
+    echo -ne "$msg\t[y/n]: "
     read -r choice
 
     case $choice in
@@ -255,7 +254,7 @@ install() {
 
 login() {
     # [ yoinked & modified ]
-    # Most of the code is taken from proot-utils.sh 
+    # Most of the code is taken from proot-disro
     # PERMALINK : https://github.com/termux/proot-distro/blob/fcee91ca6c7632c09898c9d0a680c8ff72c3357f/proot-distro.sh#L933
     # 
     # @termux/proot-distro (C) GNU V3 License
@@ -980,22 +979,27 @@ _reset() {
     TITLE "[TODO] RESET"
 }
 
+# clear_cache() => clears filesystem cache
+# check for file in cache
+# if found calclulate size
+# ask for confirmation
+# if confirmed, remove files
 clear_cache() {
     TITLE "> CLEAR CACHE"
     cache_size=$(du -sh -d 0 $DLCACHE | awk '{print $1}')
     
-    # check if cache is empty
-    if [[ $cache_size == "0" ]]; then
-        GWARN "cache is already empty"
+   # check for files
+    if [[ -z $(ls -A $DLCACHE) ]]; then
+        GWARN " ?  cache is empty"
         exit 0
     fi
 
     # ask for confirmation
-    if ask "Are you sure you want to clear cache?"; then
-        rm -rf $DLCACHE/*
+    if ask "Do you want to clear cache?"; then
+        rm -rvf $DLCACHE/* >> $LOGFILE
         echo "$cache_size cache cleared"
     else
-        GWARN "cache not cleared"
+        GWARN " ?  cache not cleared"
     fi
 }
 ####################
