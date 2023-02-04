@@ -986,7 +986,7 @@ _reset() {
 # if confirmed, remove files
 clear_cache() {
     TITLE "> CLEAR CACHE"
-    cache_size=$(du -sh -d 0 $DLCACHE | awk '{print $1}')
+    cache_size=$(du -sh $DLCACHE | awk '{print $1}')
     
    # check for files
     if [[ -z $(ls -A $DLCACHE) ]]; then
@@ -996,7 +996,7 @@ clear_cache() {
 
     # ask for confirmation
     if ask "Do you want to clear cache?"; then
-        rm -rvf $DLCACHE/* >> $LOGFILE
+        rm -rvf $DLCACHE/* >> $LOG_FILE
         echo "$cache_size cache cleared"
     else
         GWARN " ?  cache not cleared"
