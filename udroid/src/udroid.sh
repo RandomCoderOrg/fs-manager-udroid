@@ -127,6 +127,8 @@ install() {
     # local arg=$1
     TITLE "> INSTALL $arg"
     local no_check_integrity=false
+    BEST_CURRENT_DISTRO="jammy:xfce4"
+    INSTALL_BEST=false
 
     while [[ $# -gt 0 ]]; do
         case $1 in
@@ -137,6 +139,10 @@ install() {
             --help | -h) 
                 help_install
                 exit 0
+            ;;
+            --set-best-to-install) 
+                INSTALL_BEST=true
+                break
             ;;
             *) 
                 # [[ -n $_name ]] && {
@@ -156,7 +162,12 @@ install() {
     done
 
     [[ -z $arg ]] && {
-        ELOG "\$arg not supplied"
+        LOG "\$arg not supplied"
+        if $INSTALL_BEST; then
+            INFO "--install is deprecated, use distro arg <suite>:<varient> instead"
+            INFO "user ${0} --list to see available distros"
+            arg=$BEST_CURRENT_DISTRO
+        fi
     }
     # parse the arg for suite and varient and get name,link
     parser $arg "online"
@@ -1060,7 +1071,8 @@ fi
 while [ $# -gt 0 ]; do
     case $1 in
         help | --help|-h) shift 1; help_root; break ;;
-        install | --install|-i) shift 1; install $@ ; break ;;
+        install |-i) shift 1; install $@ ; break ;;
+        --install) shift 1; install --set-best-to-install ; break ;;
         upgrade  | --upgrade|-u) shift 1; _upgrade $@ ; break ;;
         --update-cache) shift 1; update_cache $@ ; break ;;
         --clear-cache) shift 1; clear_cache $@ ; break ;;
