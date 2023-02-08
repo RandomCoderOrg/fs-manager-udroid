@@ -909,6 +909,15 @@ remove() {
 
 }
 
+_reset() {
+    if [[ -z $1 ]]; then
+        ELOG "reset(): no distro specified"
+        DIE "no distro specified"
+    fi
+
+    remove --reset $1
+}
+
 update_cache() {
     TITLE "> UPDATE distro data from remote"
     fetch_distro_data "online" true
@@ -972,11 +981,6 @@ _upgrade() {
 
     # TODO: look out for commit hashes for better upgrade strategy
     
-}
-
-_reset() {
-    # TODO
-    TITLE "[TODO] RESET"
 }
 
 # clear_cache() => clears filesystem cache
