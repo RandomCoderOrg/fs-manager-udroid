@@ -35,8 +35,9 @@ help_root() {
     echo "udroid <option> [<options>] [<suite>]:[<varient>]"
     echo
     echo "options:"
-    echo "  install, --install [<options>] <suite>:<varient>  install a distro"
+    echo "  install, -i [<options>] <suite>:<varient>  install a distro"
     echo "  remove, --remove <suite>:<varient>    remove a distro"
+    echo "  reset, --reset <suite>:<varient>      reinstalls a distro"
     echo "  list, --list [options]                list distros"
     echo "  login, --login <suite>:<varient>      login to a distro"
     echo "  upgrade, --upgrade                    upgrade udroid scripts"
