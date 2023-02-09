@@ -1071,12 +1071,12 @@ fi
 while [ $# -gt 0 ]; do
     case $1 in
         help | --help|-h) shift 1; help_root; break ;;
-        install |-i) shift 1; install $@ ; break ;;
+        install |-i| i) shift 1; install $@ ; break ;;
         --install) shift 1; install --set-best-to-install ; break ;;
         upgrade  | --upgrade|-u) shift 1; _upgrade $@ ; break ;;
         --update-cache) shift 1; update_cache $@ ; break ;;
         --clear-cache) shift 1; clear_cache $@ ; break ;;
-        login   | --login|-l) shift 1; login $@; break ;;
+        login   | --login|-l | l) shift 1; login $@; break ;;
         remove  | --remove | --uninstall ) shift 1 ; remove $@; break;;
         reset   | --reset | --reinstall )  shift 1 ; _reset $@; break;;
         list    | --list) shift 1; list $@; break ;;
