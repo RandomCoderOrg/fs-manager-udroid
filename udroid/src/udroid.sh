@@ -948,7 +948,7 @@ _upgrade() {
         esac
     done
 
-    [[ -z $branch ]] && branch="revamp-v2.5"
+    [[ -z $branch ]] && branch="main"
     # [[ -z $branch ]] && branch="main"
 
     # place to store repository
