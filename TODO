@@ -1,0 +1,4 @@
+- make install echo's a little less verbose by default
+- show install size & download size during install ( need to cache sizes in conf )
+- [ OPT ] make a deb package for udroid
+

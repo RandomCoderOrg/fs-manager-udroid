@@ -1,22 +1,26 @@
 #!/usr/bin/env bash
 
-TPREFIX="/data/data/com.termux/files"
-BIN_DIR="${TPREFIX}/usr/bin"
-UDROID_FILE="scripts/udroid/udroid.sh"
+DIE() { echo -e "${@}"; exit 1 ;:;}
+GWARN() { echo -e "\e[90m${*}\e[0m";:;}
 
-echo "setting udroid..."
-
-if [ -f $UDROID_FILE ]; then
-    if [ -f ${BIN_DIR}/udroid.sh ]; then
-        rm -rf "${BIN_DIR}/udroid.sh"
-    fi
-    cp ${UDROID_FILE} ${BIN_DIR}/udroid
-    chmod 775 ${BIN_DIR}/udroid
-else
-    echo "Installation Failed..."
+apt install -y jq wget proot pv pulseaudio libandroid-shmem-static
+[[ ! -d udroid/src ]] && {
+    echo "udroid/src not found"
     exit 1
+}
+
+# Android version warinigs
+android_version_code=$(getprop ro.system.build.version.release)
+if (( $android_version_code >= 12 )); then
+    sleep 1
+    echo
+    GWARN "[Warning]: Android version ${android_version_code} detected"
+    GWARN "You many experience issues like crashing"
+    echo
+    sleep 2
 fi
 
-echo "Done"
-
-exit 0
+cd udroid/src || exit 1
+# Remove old udroid
+rm -rf $(which udroid)
+bash install.sh

@@ -1,0 +1,31 @@
+{
+	"name": "fs-manager-udroid Dev Container v1",
+	"build": {
+		"dockerfile": "Dockerfile",
+		// Update 'VARIANT' to pick an Ubuntu version: hirsute, focal, bionic
+		// Use hirsute or bionic on local arm64/Apple Silicon.
+		"args": { "VARIANT": "jammy" }
+	},
+
+	// Set *default* container specific settings.json values on container create.
+	"settings": {
+		"files.eol": "\n"
+	},
+
+
+	// Add the IDs of extensions you want installed when the container is created.
+	"extensions": [
+		"tabnine.tabnine-vscode",
+		"lizebang.bash-extension-pack",
+		"shakram02.bash-beautify"
+	],
+
+	// Use 'forwardPorts' to make a list of ports inside the container available locally.
+	// "forwardPorts": [],
+
+	// Use 'postCreateCommand' to run commands after the container is created.
+	// "postCreateCommand": "uname -a",
+
+	// Comment out connect as root instead. More info: https://aka.ms/vscode-remote/containers/non-root.
+	"remoteUser": "vscode"
+}

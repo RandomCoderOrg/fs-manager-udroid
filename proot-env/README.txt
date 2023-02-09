@@ -1,1 +1,0 @@
-this files goes into udroid big tarballs

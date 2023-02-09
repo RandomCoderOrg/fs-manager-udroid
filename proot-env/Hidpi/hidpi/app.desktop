@@ -1,8 +1,0 @@
-[Desktop Entry]
-Name=udroid HiDPI Mode
-Exec=udroid-hidpi-mode
-Terminal=false
-Type=Application
-Icon=/usr/share/udroid/hidpi-logo.png
-OnlyShowIn=XFCE
-Keyboards=display;screen;hidpi;udroid;

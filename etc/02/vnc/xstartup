@@ -1,0 +1,9 @@
+#!/bin/bash
+unset SESSION_MANAGER
+unset DBUS_SESSION_BUS_ADDRESS
+export PULSE_SERVER=127.0.0.1
+dbus-launch --exit-with-session startxfce4 &
+
+if command -v plank > /dev/null; then
+  plank &
+fi
