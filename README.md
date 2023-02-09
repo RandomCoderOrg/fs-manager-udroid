@@ -3,17 +3,29 @@
 A tool manage common things with ubuntu-on-android
 & some scripts and linux apps
 
-[![CodeFactor](https://www.codefactor.io/repository/github/randomcoderorg/fs-manager-udroid/badge)](https://www.codefactor.io/repository/github/randomcoderorg/fs-manager-udroid)
-
 ## Manual installation
 
 ```bash
-git clone -b revamp-v2.5 https://github.com/RandomCoderOrg/fs-manager-udroid.git
+git clone https://github.com/RandomCoderOrg/fs-manager-udroid.git
 cd fs-manager-udroid
 bash install.sh
 ```
 
 ## Usage
+
+```cmd
+udroid <option> [<options>] [<suite>]:[<varient>]
+
+options:
+  install, -i [<options>] <suite>:<varient>  install a distro
+  remove, --remove <suite>:<varient>    remove a distro
+  list, --list [options]                list distros
+  login, --login <suite>:<varient>      login to a distro
+  upgrade, --upgrade                    upgrade udroid scripts
+  help, --help                          show this help message and exit
+  --update-cache                        update cache from remote  
+  --clear-cache                         clear downloaded cache      
+```
 
 three main arguments `install`, `login`, `remove`
 
@@ -40,7 +52,7 @@ udroid -i focal:xfce4
 ###### help
 
 ```cmd
-udroid [ install| --install ] [<options>] [<suite>]:[<varient>]
+udroid [ install| -i ] [<options>] [<suite>]:[<varient>]
 installs udroid distros
 options:
   -h, --help    show this help message and exit
@@ -50,6 +62,8 @@ example:
   udroid install jammy:raw
   udroid install --install jammy:raw
 ```
+
+> `--install` with no extra options install best picked distro ( deprecated )
 
 ### login (`login`)
 
@@ -82,8 +96,6 @@ options:
   command to run in the filesystem and exit
 ```
 
-> WIP
-
 ### remove (`remove`)
 
 ```bash
@@ -101,6 +113,7 @@ example:
 ```
 
 > Download cache is ignored
+
 
 ## Contributing
 
