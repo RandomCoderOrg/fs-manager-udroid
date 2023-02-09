@@ -214,7 +214,7 @@ install() {
                 GWARN "skipping integrity check"
                 LOG   "skipping integrity check for \"$DLCACHE/$name.tar.$ext\""
             else
-                if ask "Do you want to retry [ deleteing the file and re-download it? ]"; then
+                if ask "Do you want to re-download ?"; then
                     rm "$DLCACHE/$name.tar.$ext"
                     download "$name.tar.$ext" "$link"
                     
@@ -1047,8 +1047,8 @@ msg_download() {
     grey_color="\e[90m"
     reset_color="\e[0m"
 
-    echo -e "Downloading $name filesystem ${grey_color}($link)${reset_color}"
-    echo -e ":[PATH]= ${grey_color}${path}${reset_color}"
+    echo -e "Downloading $name filesystem \n🌐 ${grey_color}($link)${reset_color}"
+    # echo -e ":[PATH]= ${grey_color}${path}${reset_color}"
 }
 
 msg_extract() {
