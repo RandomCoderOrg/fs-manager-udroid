@@ -21,5 +21,6 @@ if (( $android_version_code >= 12 )); then
 fi
 
 cd udroid/src || exit 1
-
+# Remove old udroid
+rm -rf $(which udroid)
 bash install.sh
