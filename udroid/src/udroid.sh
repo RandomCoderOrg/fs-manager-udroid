@@ -720,7 +720,7 @@ parser() {
     # arch transition
     case $(dpkg --print-architecture) in
         arm64 | aarch64) arch=aarch64 ;;
-        armhf | armv7l | armv8l) arch=armhf ;;
+        arm | armhf | armv7l | armv8l) arch=armhf ;;
         x86_64| amd64) arch=amd64;;
         *) die "unsupported architecture" ;;
     esac
@@ -792,6 +792,7 @@ list() {
             supported_arch=$(cat $distro_data | jq -r ".$suite.$varient.arch")
             host_arch=$(dpkg --print-architecture)
             
+            LOG "list(): host_arch=$host_arch ||| supported_arch=$supported_arch"
             if [[ $host_arch =~ $supported_arch ]]; then
                     supported=true
                 else
