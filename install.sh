@@ -15,7 +15,8 @@ if (( $android_version_code >= 12 )); then
     sleep 1
     echo
     GWARN "[Warning]: Android version ${android_version_code} detected"
-    GWARN "You many experience issues like crashing"
+    GWARN "You may experience issues like crashing"
+    GWARN ""
     echo
     sleep 2
 fi
