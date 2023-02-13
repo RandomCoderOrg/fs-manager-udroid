@@ -320,14 +320,14 @@ login() {
                         ELOG "ERROR: --bind requires a path"
                         DIE "ERROR: --bind requires a path"
                     }
-                    custom_fs_bindings+=("$2")
-                    shift 2
                     if [[ -z $UDROID_MOUNT_SANITY_CHECK ]]; then
-                        [[ ! -d ${1%%:*} ]] && {
-                            LOG  "WARNING: --bind path $1 not found"
-                            GWARN "WARNING: --bind path $1 not found"
+                        [[ ! -d ${2%%:*} ]] && {
+                            LOG  "WARNING: --bind path $2 not found"
+                            GWARN "WARNING: --bind path $2 not found"
                         }
                     fi
+                    custom_fs_bindings+=("$2")
+                    shift 2
                 }
                 ;;
             --user)
