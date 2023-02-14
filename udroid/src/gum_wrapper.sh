@@ -13,8 +13,16 @@ lshout() { echo -e "${_c_blue}-> ${*}${RST}";:;}
 imsg()	 { if [ -n "$UDROID_VERBOSE" ]; then echo -e ": ${*} \e[0m" >&2;fi;:;}
 msg()    { echo -e "${*} \e[0m" >&2;:;}
 
+# arch transition
+case $(dpkg --print-architecture) in
+    arm64 | aarch64) ARCH=aarch64 ;;
+    arm | armhf | armv7l | armv8l) ARCH=armhf ;;
+    x86_64| amd64) ARCH=amd64;;
+    *) die "unsupported architecture" ;;
+esac
+
 # GUM="./gum/usr/bin/gum"
-GUM="./gum/gum-$(dpkg --print-architecture)/usr/bin/gum"
+GUM="./gum/gum-$ARCH/usr/bin/gum"
 
 export GUM_INPUT_CURSOR_FOREGROUND="#F2BE22"
 export GUM_CHOOSE_CURSOR_FOREGROUND="#F2BE22"
