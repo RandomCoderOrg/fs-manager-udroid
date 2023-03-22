@@ -17,6 +17,7 @@ help_login() {
     echo "  --name: Allows        the user to specify a custom name for the filesystem to install"
     echo "  --bind or -b:         Allows the user to specify extra mount points for the filesystem."
     echo "  --isolated:           Creates an isolated environment for the filesystem."
+    echo "  --ashmem-memfd | --memfd     enable support for memfd emulation through ashmem ( experimental )"
     echo "  --fix-low-ports:      Fixes low ports for the filesystem."
     echo "  --no-shared-tmp:      Disables shared tmp for the filesystem."
     echo "  --no-link2symlink:    Disables link2symlink for the filesystem."

@@ -280,6 +280,7 @@ login() {
     local no_cap_last_cap=false
     local no_pulseserver=false
     local no_android_shmem=false
+    local ashmem_memfd=false
     local no_fake_root_id=false
     local fix_low_ports=false
     local make_host_tmp_shared=true # its better to run with shared tmp
@@ -368,6 +369,9 @@ login() {
                 ;;
             --no-android-shmem)
                 no_android_shmem=true; shift
+                ;;
+            --ashmem-memfd | --memfd)
+                 ashmem_memfd=true; shift
                 ;;
             --no-kill-on-exit)
                 no_kill_on_exit=true; shift
@@ -625,6 +629,11 @@ login() {
             pulseaudio  --start \
                         --load="module-native-protocol-tcp auth-ip-acl=127.0.0.1 auth-anonymous=1" \
                         --exit-idle-time=-1
+        fi
+
+        # android shmem memfd
+        if $ashmem_memfd; then
+            set -- "--ashmem-memfd" "$@"
         fi
 
         exec proot "$@"
