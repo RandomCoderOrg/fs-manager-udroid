@@ -84,7 +84,7 @@ options:
   --name: Allows        the user to specify a custom name for the filesystem to install
   --bind or -b:         Allows the user to specify extra mount points for the filesystem.
   --isolated:           Creates an isolated environment for the filesystem.
-
+  --ashmem-memfd | --memfd     enable support for memfd emulation through ashmem ( experimental )
   --fix-low-ports:      Fixes low ports for the filesystem.
   --no-shared-tmp:      Disables shared tmp for the filesystem.
   --no-link2symlink:    Disables link2symlink for the filesystem.
