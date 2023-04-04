@@ -10,6 +10,9 @@ DEFAULT_FS_INSTALL_DIR="${DEFAULT_ROOT}/installed-filesystems"
 DLCACHE="${DEFAULT_ROOT}/dlcache"
 RTCACHE="${RTR}/.cache"
 
+suite="null"
+varient="null"
+
 [[ -d ${RTR} ]] && cd $RTR || exit 1
 [[ ! -f proot-utils/proot-utils.sh ]] && echo "proot-utils.sh not found" && exit 1
 [[ ! -f gum_wrapper.sh ]] && echo "gum_wrapper.sh not found" && exit 1
@@ -127,8 +130,12 @@ install() {
     # local arg=$1
     TITLE "> INSTALL $arg"
     local no_check_integrity=false
-    BEST_CURRENT_DISTRO="jammy:xfce4"
     INSTALL_BEST=false
+    BEST_CURRENT_DISTRO="jammy:xfce4"
+    
+    if [ "$(dpkg --print-architecture)" = "armhf" ]; then
+        BEST_CURRENT_DISTRO="jammy:raw"
+    fi
 
     while [[ $# -gt 0 ]]; do
         case $1 in
@@ -173,14 +180,28 @@ install() {
     parser $arg "online"
     
     # final checks
+    [[ "$link" = "null" && "$arch" = "armhf" ]] && {
+        case "$suite:$varient" in
+            jammy:xfce4 | jammy:gnome)
+                ELOG "link for $suite:$varient is not supported on 'armhf'!"
+                echo "ERROR:"
+                echo "$suite:$varient is not currently not supported"
+                echo "for your device architecture 'armhf'"
+                # echo "Report this issue at https://github.com/RandomCoderOrg/ubuntu-on-android/issues"
+                exit 1
+                ;;
+        esac
+    }
+    
     [[ "$link" == "null" ]] && {
         ELOG "link not found for $suite:$varient"
         echo "ERROR:"
         echo "link not found for $suite:$varient"
         echo "either the suite or varient is not supported or invalid options supplied"
         echo "Report this issue at https://github.com/RandomCoderOrg/ubuntu-on-android/issues"
-        exit 1 
+        exit 1
     }
+    
     if [[ -d $DEFAULT_FS_INSTALL_DIR/$name ]]; then
         ELOG "filesystem already installed"
         echo "filesystem already installed ."
@@ -649,8 +670,8 @@ login() {
 parser() {
     local arg=$1
     local mode=$2
-    local suite=${arg%%:*}
-    local varient=${arg#*:}
+    suite=${arg%%:*}
+    varient=${arg#*:}
 
     LOG "[USER] function args => suite=$suite varient=$varient"
     
