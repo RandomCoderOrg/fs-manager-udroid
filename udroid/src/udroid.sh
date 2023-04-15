@@ -448,8 +448,8 @@ login() {
                     if [ -f "$script" ]; then
                         LOG "login() => run-script defined as '$run_script' at '$script'"
                         chmod +x "$script"
-                        cp "$script" "${root_fs_path}/tmp/"
-                        run_script="/tmp/$(basename "$run_script")"
+                        cp "$script" "${root_fs_path}/"
+                        run_script="/$(basename "$run_script")"
                         set -- "/bin/su" "-l" "$login_user" "-c" "$run_script"
                     else
                         ELOG "ERROR: run-script '$run_script' not found!"
