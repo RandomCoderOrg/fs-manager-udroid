@@ -9,6 +9,7 @@ DEFAULT_ROOT="${TERMUX_PREFIX}/var/lib/udroid"
 DEFAULT_FS_INSTALL_DIR="${DEFAULT_ROOT}/installed-filesystems"
 DLCACHE="${DEFAULT_ROOT}/dlcache"
 RTCACHE="${RTR}/.cache"
+EXEC_PWD="${PWD}"
 
 [[ -d ${RTR} ]] && cd $RTR || exit 1
 [[ ! -f proot-utils/proot-utils.sh ]] && echo "proot-utils.sh not found" && exit 1
@@ -443,10 +444,11 @@ login() {
             if stat "${root_fs_path}/bin/su" >/dev/null 2>&1; then
                 # run_script
                 if [ -n "$run_script" ]; then
-                    if [ -f "$run_script" ]; then
-                        LOG "login() => run-script defined.."
-                        chmod +x "$run_script"
-                        cp "$run_script" "${root_fs_path}/tmp/"
+                    script=$EXEC_PWD/$run_script
+                    if [ -f "$script" ]; then
+                        LOG "login() => run-script defined as '$run_script' at '$script'"
+                        chmod +x "$script"
+                        cp "$script" "${root_fs_path}/tmp/"
                         run_script="/tmp/$(basename "$run_script")"
                         set -- "/bin/su" "-l" "$login_user" "-c" "$run_script"
                     else
