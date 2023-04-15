@@ -426,21 +426,7 @@ login() {
             for i in "$@"; do
                 shell_command_args+=("'$i'")
             done
-
-            # run_script
-            if [ -n "$run_script" ]; then
-                if [ -f "$run_script" ]; then
-                    LOG "login() => run-script defined: ignoring command line arguments"
-                    chmod +x "$run_script"
-                    cp "$run_script" "${root_fs_path}/tmp/"
-                    run_script="/tmp/$(basename "$run_script")"
-                    shell_command_args=("/tmp/$run_script")
-                else
-                    ELOG "ERROR: run-script '$run_script' not found!"
-                    exit 1
-                fi
-            fi
-            
+  
             if stat "${root_fs_path}/bin/su" >/dev/null 2>&1; then
                 set -- "/bin/su" "-l" "$login_user" "-c" "${shell_command_args[*]}"
             else
@@ -455,7 +441,21 @@ login() {
             fi
         else
             if stat "${root_fs_path}/bin/su" >/dev/null 2>&1; then
-                set -- "/bin/su" "-l" "$login_user"
+                # run_script
+                if [ -n "$run_script" ]; then
+                    if [ -f "$run_script" ]; then
+                        LOG "login() => run-script defined.."
+                        chmod +x "$run_script"
+                        cp "$run_script" "${root_fs_path}/tmp/"
+                        run_script="/tmp/$(basename "$run_script")"
+                        set -- "/bin/su" "-l" "$login_user" "-c" "$run_script"
+                    else
+                        ELOG "ERROR: run-script '$run_script' not found!"
+                        exit 1
+                    fi
+                else
+                    set -- "/bin/su" "-l" "$login_user"
+                fi
             else
                 GWARN "Warning: no /bin/su available in rootfs! You may need to install package 'util-linux' or 'shadow' (shadow-utils) or equivalent, depending on distribution."
                 if [ -x "${root_fs_path}/bin/bash" ]; then
