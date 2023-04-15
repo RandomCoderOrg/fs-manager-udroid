@@ -286,6 +286,7 @@ login() {
     local make_host_tmp_shared=true # its better to run with shared tmp
     local root_fs_path=""
     local login_user="root"
+    local run_script=""
     local -a custom_fs_bindings
     local path=$DEFAULT_FS_INSTALL_DIR
 
@@ -376,6 +377,9 @@ login() {
             --no-kill-on-exit)
                 no_kill_on_exit=true; shift
                 ;;
+            --run-script)
+                run_script=$2; shift 2
+                ;;
             -*)
                 echo "Unknown option: $1"
                 exit 1
@@ -422,6 +426,20 @@ login() {
             for i in "$@"; do
                 shell_command_args+=("'$i'")
             done
+
+            # run_script
+            if [ -n "$run_script" ]; then
+                if [ -f "$run_script" ]; then
+                    LOG "login() => run-script defined: ignoring command line arguments"
+                    chmod +x "$run_script"
+                    cp "$run_script" "${root_fs_path}/tmp/"
+                    run_script="/tmp/$(basename "$run_script")"
+                    shell_command_args=("/tmp/$run_script")
+                else
+                    ELOG "ERROR: run-script '$run_script' not found!"
+                    exit 1
+                fi
+            fi
             
             if stat "${root_fs_path}/bin/su" >/dev/null 2>&1; then
                 set -- "/bin/su" "-l" "$login_user" "-c" "${shell_command_args[*]}"
