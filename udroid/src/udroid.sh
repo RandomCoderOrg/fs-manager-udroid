@@ -9,6 +9,7 @@ DEFAULT_ROOT="${TERMUX_PREFIX}/var/lib/udroid"
 DEFAULT_FS_INSTALL_DIR="${DEFAULT_ROOT}/installed-filesystems"
 DLCACHE="${DEFAULT_ROOT}/dlcache"
 RTCACHE="${RTR}/.cache"
+EXEC_PWD="${PWD}"
 
 suite="null"
 varient="null"
@@ -307,6 +308,7 @@ login() {
     local make_host_tmp_shared=true # its better to run with shared tmp
     local root_fs_path=""
     local login_user="root"
+    local run_script=""
     local -a custom_fs_bindings
     local path=$DEFAULT_FS_INSTALL_DIR
 
@@ -397,6 +399,9 @@ login() {
             --no-kill-on-exit)
                 no_kill_on_exit=true; shift
                 ;;
+            --run-script)
+                run_script=$2; shift 2
+                ;;
             -*)
                 echo "Unknown option: $1"
                 exit 1
@@ -443,7 +448,7 @@ login() {
             for i in "$@"; do
                 shell_command_args+=("'$i'")
             done
-            
+  
             if stat "${root_fs_path}/bin/su" >/dev/null 2>&1; then
                 set -- "/bin/su" "-l" "$login_user" "-c" "${shell_command_args[*]}"
             else
@@ -458,7 +463,22 @@ login() {
             fi
         else
             if stat "${root_fs_path}/bin/su" >/dev/null 2>&1; then
-                set -- "/bin/su" "-l" "$login_user"
+                # run_script
+                if [ -n "$run_script" ]; then
+                    script=$EXEC_PWD/$run_script
+                    if [ -f "$script" ]; then
+                        LOG "login() => run-script defined as '$run_script' at '$script'"
+                        chmod +x "$script"
+                        cp "$script" "${root_fs_path}/"
+                        run_script="/$(basename "$run_script")"
+                        set -- "/bin/su" "-l" "$login_user" "-c" "$run_script"
+                    else
+                        ELOG "ERROR: run-script '$run_script' not found!"
+                        exit 1
+                    fi
+                else
+                    set -- "/bin/su" "-l" "$login_user"
+                fi
             else
                 GWARN "Warning: no /bin/su available in rootfs! You may need to install package 'util-linux' or 'shadow' (shadow-utils) or equivalent, depending on distribution."
                 if [ -x "${root_fs_path}/bin/bash" ]; then
