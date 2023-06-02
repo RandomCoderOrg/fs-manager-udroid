@@ -281,9 +281,9 @@ install_custom() {
     while [[ $# -gt 0 ]]; do
         case $1 in
             --file)
-            file=$2; shift ;;
+            file=$2; shift 2 ;;
             --name)
-            name=$2; shift ;;
+            name=$2; shift 2 ;;
             *)
             EDIE "unkown option $1"
             ;;
@@ -298,7 +298,7 @@ install_custom() {
     }
 
     [[ ! -f $file ]] && {
-        EDIE "file $file not found"
+        EDIE "file $file not found - try provide full path of file"
     }
 
     [[ -d $DEFAULT_FS_INSTALL_DIR/$name ]] && {
@@ -989,7 +989,7 @@ list() {
             echo "\`\`\`"
         fi
 
-        echo "" 
+        echo ""
     } >> $tempfile
     
     g_format $tempfile
