@@ -1020,6 +1020,7 @@ remove() {
         case $1 in
             --name) distro=$2; LOG "remove(): --name supplied to $name"; shift 2;;
             --path) path=$2; LOG "remove(): looking in $path"; shift 2;;
+            --custom|--custom-distro|-cd) custom_remove $@ ;;
             --reset) reset=true; shift 1;;
             --help) help_remove; exit 0;;
             *) 
@@ -1065,6 +1066,22 @@ remove() {
         install $arg
     fi
 
+}
+
+custom_remove() {
+    local name=$1
+    local path=${DEFAULT_FS_INSTALL_DIR}
+
+    root_fs_path=$path/$name
+
+    [[ -z $name ]] && EDIE "ERROR: distro name not specified"
+    [[ ! -d $root_fs_path ]] && EDIE "ERROR: distro ($name) not found or installed"
+
+    TITLE "> REMOVE custom-fs $name"
+
+    g_spin "pulse" \
+        "Removing $name" \
+        bash proot-utils/proot-uninstall-suite.sh "$root_fs_path"
 }
 
 _reset() {
