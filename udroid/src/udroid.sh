@@ -974,14 +974,14 @@ list() {
         echo -e "|----------------|$_size_line" >> $tempfile
 
         for custom_fs in $(ls $path | grep -E "^custom-"); do
-            # remove "custom-" from the name only at the begining of the string
-            custom_fs=$(echo $custom_fs | sed -e 's/^custom-//')
             if [[ -d $path/$custom_fs ]]; then
                 if [[ $size == true ]]; then
                     _size="$(du -sh $path/$custom_fs 2> /dev/null | awk '{print $1}') |"
                 else
                     _size=""
                 fi
+                # remove "custom-" from the name only at the begining of the string
+                custom_fs=$(echo $custom_fs | sed -e 's/^custom-//')
                 echo -e "|$custom_fs|$_size" >> $tempfile
             fi
         done
