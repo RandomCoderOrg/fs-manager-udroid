@@ -969,6 +969,7 @@ list() {
         # any folder in the install dir that starts with "custom-" is considered a custom fs
         # there is no need to show support & status for custom fs 
         #
+        echo -e "\n\n" >> $tempfile
         echo -e "| custom-fs name | $_size_header" >> $tempfile
         echo -e "|----------------|$_size_line" >> $tempfile
 
