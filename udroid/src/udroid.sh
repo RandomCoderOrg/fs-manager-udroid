@@ -165,7 +165,7 @@ install() {
                 INSTALL_BEST=true
                 break
             ;;
-            --custom)
+            --custom|--custom-distro|-cd)
                 shift
                 install_custom $@
             ;;
@@ -859,7 +859,7 @@ list() {
     while [ $# -gt 0 ]; do
         case $1 in
             --size) size=true; shift 1;;
-            --show-custom-fs) display_custom_fs=true; shift 1;;
+            --show-custom-fs | --custom| --custom-distro| -cd) display_custom_fs=true; shift 1;;
             --download-size | --ds) show_remote_download_size=true; shift 1;;
             --list-installed) show_installed_only=true; shift 1;;
             --path) path=$2; LOG "list(): looking in $path"; shift 2;;
