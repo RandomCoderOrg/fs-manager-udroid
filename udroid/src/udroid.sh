@@ -27,6 +27,12 @@ WARN() { echo -e "[WARN]: ${*}\e[0m";:;}
 INFO() { echo -e "\e[32m${*}\e[0m";:;}
 TITLE() { echo -e "\e[100m${*}\e[0m";:;}
 
+EDIE() {
+    local log=$*
+    ELOG $log
+    DIE $log
+}
+
 # Fetch distro data from the internet and save it to RTCACHE
 # @param mode [online/offline] - online mode will fetch data from the internet, offline will use the cached data
 # @return distro_data [string] - path to the downloaded data
@@ -144,6 +150,10 @@ install() {
             --set-best-to-install) 
                 INSTALL_BEST=true
                 break
+            ;;
+            --custom)
+                shift
+                install_custom $@
             ;;
             *) 
                 # [[ -n $_name ]] && {
@@ -264,6 +274,54 @@ install() {
 
 }
 
+install_custom() {
+    local file=""
+    local name=""
+
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            --file)
+            file=$2; shift ;;
+            --name)
+            name=$2; shift ;;
+            *)
+            EDIE "unkown option $1"
+            ;;
+        esac
+    done
+
+    [[ -z $file ]] && {
+        EDIE "--file not supplied"
+    }
+    [[ -z $name ]] && {
+        EDIE "--name not supplied"
+    }
+
+    [[ ! -f $file ]] && {
+        EDIE "file $file not found"
+    }
+
+    [[ -d $DEFAULT_FS_INSTALL_DIR/$name ]] && {
+        EDIE "filesystem already installed"
+        # [TODO]: write about reset and remove
+        exit 1
+    }
+
+    TITLE "Installing $name - CUSTOM"
+
+    final_name="custom-$name"
+    # Start Extracting
+    msg_extract "$DEFAULT_FS_INSTALL_DIR/$final_name"
+    p_extract --file "$file" --path "$DEFAULT_FS_INSTALL_DIR/$final_name"
+
+    # apply proot-fixes
+    echo -e "Applying proot fixes"
+    bash proot-utils/proot-fixes.sh "$DEFAULT_FS_INSTALL_DIR/$final_name"
+
+    echo -e "[\xE2\x9C\x94] $name installed."
+    exit 0
+}
+
 login() {
     # [ yoinked & modified ]
     # Most of the code is taken from proot-disro
@@ -288,6 +346,8 @@ login() {
     local root_fs_path=""
     local login_user="root"
     local run_script=""
+    local is_custom_distro=false
+    local custom_distro_name=""
     local -a custom_fs_bindings
     local path=$DEFAULT_FS_INSTALL_DIR
 
@@ -381,6 +441,10 @@ login() {
             --run-script)
                 run_script=$2; shift 2
                 ;;
+            --custom|--custom-distro|-cd)
+                is_custom_distro=true;
+                custom_distro_name=$2; shift 2
+                ;;
             -*)
                 echo "Unknown option: $1"
                 exit 1
@@ -403,9 +467,18 @@ login() {
     done
 
     if [[ -z $_name ]]; then
-        TITLE "> LOGIN $arg"
-        parser $arg "offline"
-        distro=$name
+        if $is_custom_distro; then
+            if [[ -z $custom_distro_name ]]; then
+                EDIE "ERROR: --custom-distro requires a name"
+            else
+                TITLE "> LOGIN $custom_distro_name (custom)"
+                distro="custom-$custom_distro_name"
+            fi
+        else
+            TITLE "> LOGIN $arg"
+            parser $arg "offline"
+            distro=$name
+        fi
     else
         TITLE "> LOGIN $_name"
         distro=$_name
@@ -658,10 +731,7 @@ login() {
 
         exec proot "$@"
     else
-        ELOG "ERROR: $distro not found or installed"
-        echo "ERROR: $distro not found or installed"
-        # echo "use 'install' to install it"
-        exit 1
+        EDIE "ERROR: $distro not found or installed"
     fi
 
 }
@@ -769,10 +839,12 @@ list() {
     export show_installed_only=false
     local show_remote_download_size=false
     local path=$DEFAULT_FS_INSTALL_DIR
+    local display_custom_fs=false
 
     while [ $# -gt 0 ]; do
         case $1 in
             --size) size=true; shift 1;;
+            --show-custom-fs) display_custom_fs=true; shift 1;;
             --download-size | --ds) show_remote_download_size=true; shift 1;;
             --list-installed) show_installed_only=true; shift 1;;
             --path) path=$2; LOG "list(): looking in $path"; shift 2;;
@@ -876,6 +948,27 @@ list() {
         done
     done
 
+    # custom fs header
+    if $display_custom_fs; then
+        #
+        # any folder in the install dir that starts with "custom-" is considered a custom fs
+        # there is no need to show support & status for custom fs 
+        #
+        echo -e "| custom-fs name | $_size_header" >> $tempfile
+        echo -e "|----------------|$_size_line" >> $tempfile
+
+        for custom_fs in $(ls $path | grep -E "^custom-"); do
+            if [[ -d $path/$custom_fs ]]; then
+                if [[ $size == true ]]; then
+                    _size="$(du -sh $path/$custom_fs 2> /dev/null | awk '{print $1}') |"
+                else
+                    _size=""
+                fi
+                echo -e "|$custom_fs|$_size" >> $tempfile
+            fi
+        done
+    fi
+
     # footer
     {
         echo ""
@@ -887,6 +980,15 @@ list() {
         echo "\`\`\`bash"
         echo "udroid install jammy:raw"
         echo "\`\`\`"
+
+        if $display_custom_fs; then
+            echo ""
+            echo "To install a custom fs, run:"
+            echo "\`\`\`bash"
+            echo "udroid install --custom-fs <custom-fs-name>"
+            echo "\`\`\`"
+        fi
+
         echo "" 
     } >> $tempfile
     
