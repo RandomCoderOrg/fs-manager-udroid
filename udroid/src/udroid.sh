@@ -28,9 +28,23 @@ INFO() { echo -e "\e[32m${*}\e[0m";:;}
 TITLE() { echo -e "\e[100m${*}\e[0m";:;}
 
 EDIE() {
-    local log=$*
-    ELOG $log
-    DIE $log
+    local msg=$1
+    local hint=$2
+    local defer_func=$3
+
+    ELOG $msg
+    echo -e "\e[1m${msg}\e[0m"
+    
+    # print hint in grey color
+    [[ -n $hint ]] && GWARN $hint
+
+    # if defer_func is set, print a message and call the function
+    if [[ -n $defer_func ]]; then
+        LOG "Run ${defer_func} to continue"
+        $defer_func || {
+            echo -e "\e[1m${defer_func} failed\e[0m - ignoring"
+        }
+    fi
 }
 
 # Fetch distro data from the internet and save it to RTCACHE
@@ -291,14 +305,14 @@ install_custom() {
     done
 
     [[ -z $file ]] && {
-        EDIE "--file not supplied"
+        EDIE "--file not supplied" "\t requies full path of file\n\t ex: /data/data/..../ubuntu.tar.gz"
     }
     [[ -z $name ]] && {
-        EDIE "--name not supplied"
+        EDIE "--name not supplied" "\t requies name of filesystem\n\t ex: ubuntu"
     }
 
     [[ ! -f $file ]] && {
-        EDIE "file $file not found - try provide full path of file"
+        EDIE "file $file not found" "\t try provide full path of file"
     }
 
     [[ -d $DEFAULT_FS_INSTALL_DIR/$name ]] && {
@@ -307,11 +321,12 @@ install_custom() {
         exit 1
     }
 
-    TITLE "Installing $name - CUSTOM"
+    TITLE "Installing $name - (custom)"
 
     final_name="custom-$name"
     # Start Extracting
     msg_extract "$DEFAULT_FS_INSTALL_DIR/$final_name"
+    mkdir -p $DEFAULT_FS_INSTALL_DIR/$final_name
     p_extract --file "$file" --path "$DEFAULT_FS_INSTALL_DIR/$final_name"
 
     # apply proot-fixes

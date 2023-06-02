@@ -6,6 +6,7 @@
 # 
 
 # help_login: show help for login
+# TODO: document --custom|--custom-distro|-cd
 help_login() {
     echo "udroid [ login| --login ] [<options>] <suite>:<varient> <cmd>"
     echo "login to a suite"
