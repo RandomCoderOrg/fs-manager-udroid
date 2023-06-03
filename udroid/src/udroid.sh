@@ -1087,6 +1087,8 @@ custom_remove() {
     g_spin "pulse" \
         "Removing $name" \
         bash proot-utils/proot-uninstall-suite.sh "$root_fs_path"
+    
+    exit 0
 }
 
 _reset() {
