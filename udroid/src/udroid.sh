@@ -1077,7 +1077,7 @@ custom_remove() {
     local name=$1
     local path=${DEFAULT_FS_INSTALL_DIR}
 
-    root_fs_path=$path/$name
+    root_fs_path=$path/"custom-$name" # custom fs are prefixed with "custom-"
 
     [[ -z $name ]] && EDIE "ERROR: distro name not specified"
     [[ ! -d $root_fs_path ]] && EDIE "ERROR: distro ($name) not found or installed"
