@@ -897,7 +897,7 @@ list() {
             supported_arch=$(cat $distro_data | jq -r ".$suite.$varient.arch")
             
             LOG "list(): suite=$suite ||| varient=$varient ||| arch=$arch ||| supported_arch=$supported_arch"
-            if [[ $supported_arch =~ "\"${arch}\"" ]]; then
+            if [[ $supported_arch =~ $arch ]]; then
                     supported=true
                 else
                     supported=false
