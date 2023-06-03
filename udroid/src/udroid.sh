@@ -202,10 +202,11 @@ install() {
     
     # final checks
     [[ "$link" == "null" ]] && {
-        ELOG "link not found for $suite:$varient"
+        ELOG "link not found for $suite:$varient on $arch"
         echo "ERROR:"
-        echo "link not found for $suite:$varient"
-        echo "either the suite or varient is not supported or invalid options supplied"
+        echo "link not found for $suite:$varient on $arch"
+        echo "either the suite or varient is invalid, is not supported, or invalid options are supplied"
+        # echo "either the suite or varient is not supported or invalid options supplied"
         echo "Report this issue at https://github.com/RandomCoderOrg/ubuntu-on-android/issues"
         exit 1 
     }
@@ -757,8 +758,8 @@ login() {
 parser() {
     local arg=$1
     local mode=$2
-    local suite=${arg%%:*}
-    local varient=${arg#*:}
+    readonly suite=${arg%%:*} # readonly basically makes this public and
+    readonly varient=${arg#*:} # unchangeable outside of this function
 
     LOG "[USER] function args => suite=$suite varient=$varient"
     
@@ -832,14 +833,6 @@ parser() {
     ############### END OF OPTION PARSER ##############
 
     # Finally to get link
-    
-    # arch transition
-    case $(dpkg --print-architecture) in
-        arm64 | aarch64) arch=aarch64 ;;
-        arm | armhf | armv7l | armv8l) arch=armhf ;;
-        x86_64| amd64) arch=amd64;;
-        *) die "unsupported architecture" ;;
-    esac
 
     link=$(cat $distro_data | jq -r ".$suite.$varient.${arch}url")
     LOG "link=$link"
@@ -880,22 +873,16 @@ list() {
     tempfile=$(mktemp udroid-list-table-XXXXXX)
 
     if $size; then
-        _size_header=" size |"
-        _size_line="--|" 
-    else
-        _size_header=""
-        _size_line=""
+        _size_header+=" size |"
+        _size_line+="--|" 
     fi
     
     if $show_remote_download_size; then
-        _r_size_header=" down* size |"
-        _r_size_line="--|" 
-    else
-        _r_size_header=""
-        _r_size_line=""
+        _r_size_header+=" down* size |"
+        _r_size_line+="--|"
     fi
     
-    echo -e "reading data ( This a may take a minute ) ..."
+    echo -e "reading data ( this may take a couple minutes ) ..."
     
     # header
     echo -e "| suites | supported | status |$_size_header$_r_size_header" > $tempfile
@@ -908,10 +895,9 @@ list() {
             # get name
             name=$(cat $distro_data | jq -r ".$suite.$varient.Name")
             supported_arch=$(cat $distro_data | jq -r ".$suite.$varient.arch")
-            host_arch=$(dpkg --print-architecture)
             
-            LOG "list(): host_arch=$host_arch ||| supported_arch=$supported_arch"
-            if [[ $host_arch =~ $supported_arch ]]; then
+            LOG "list(): suite=$suite ||| varient=$varient ||| arch=$arch ||| supported_arch=$supported_arch"
+            if [[ $supported_arch =~ "\"${arch}\"" ]]; then
                     supported=true
                 else
                     supported=false
@@ -919,7 +905,7 @@ list() {
 
             if $supported; then
                 if $show_remote_download_size; then
-                    link=$(cat $distro_data | jq -r ".$suite.$varient.${host_arch}url")
+                    link=$(cat $distro_data | jq -r ".$suite.$varient.${arch}url")
                     remote_size=$( wget --spider -m -np $link 2>&1 | grep -i Length | awk '{print $2}')
                     if [[ -z $remote_size ]]; then
                         remote_size="?"
@@ -1243,6 +1229,15 @@ if [ $# -eq 0 ]; then
     help_root
     exit 1
 fi
+
+# move it to here
+# so it can be used anywhere
+case $(dpkg --print-architecture) in
+    arm64 | aarch64) arch=aarch64 ;;
+    arm | armhf | armv7l | armv8l) arch=armhf ;;
+    x86_64| amd64) arch=amd64;;
+    *) die "unsupported architecture" ;;
+esac
 
 while [ $# -gt 0 ]; do
     case $1 in
