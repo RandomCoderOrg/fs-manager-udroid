@@ -45,6 +45,8 @@ EDIE() {
             echo -e "\e[1m${defer_func} failed\e[0m - ignoring"
         }
     fi
+
+    exit 1
 }
 
 # Fetch distro data from the internet and save it to RTCACHE
@@ -1023,7 +1025,7 @@ remove() {
         case $1 in
             --name) distro=$2; LOG "remove(): --name supplied to $name"; shift 2;;
             --path) path=$2; LOG "remove(): looking in $path"; shift 2;;
-            --custom|--custom-distro|-cd) custom_remove $@ ;;
+            --custom|--custom-distro|-cd) shift; custom_remove $@ ;;
             --reset) reset=true; shift 1;;
             --help) help_remove; exit 0;;
             *) 
