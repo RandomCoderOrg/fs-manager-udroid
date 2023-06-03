@@ -77,6 +77,7 @@ fetch_distro_data() {
     if [[ -f $_path ]]; then
         # if not in offline mode, fetch the data from the internet
         if ! $offline_mode; then
+            mv $_path $_path.old
             g_spin dot "Fetching distro data.." curl -L -s -o $_path $URL || {
                 ELOG "[${0}] failed to fetch distro data"
                 mv $_path.old $_path
@@ -772,7 +773,6 @@ parser() {
     else
         mkdir $RTCACHE 2> /dev/null
         fetch_distro_data $mode
-        distro_data=${RTCACHE}/distro-data.json.cache
     fi
 
     ############### START OF OPTION PARSER ##############
