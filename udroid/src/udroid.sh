@@ -1151,6 +1151,11 @@ _upgrade() {
         git -C $repo_cache  pull
     }
 
+    echo "----"
+    git --no-pager log --oneline HEAD..origin  
+    echo -e "----\n"
+    sleep 1
+
     # change to repo directory and install it
     cd $repo_cache || {
         ELOG "upgrade(): failed to change to $repo_cache"
