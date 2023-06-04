@@ -1094,7 +1094,7 @@ update_cache() {
 # To upgrade tool with git
 # by maintaining a local cache
 _upgrade() {
-
+    TITLE "upgrade()"
     local branch=""
     
     while [ $# -gt 0 ]; do
@@ -1129,6 +1129,17 @@ _upgrade() {
         LOG "upgrade(): switching to branch $branch"
         git -C $repo_cache checkout $branch
     fi
+    
+    new_commits=$(git -C $repo_cache --no-pager log --oneline HEAD..origin)
+    if [[ -z $new_commits ]]; then
+        LOG "upgrade(): already in the lastest version, no need to upgrade"
+        DIE "Already up to date!"
+    fi
+    
+    echo "---- new commits ----"
+    git -C $repo_cache --no-pager log --oneline HEAD..origin # $new_commits is not formatted
+    echo -e "---------------------\n"
+    sleep .5
 
     # pull latest changes, if conflict occurs, clean and pull again
     git -C $repo_cache pull || {
@@ -1136,11 +1147,6 @@ _upgrade() {
         git -C $repo_cache reset --hard
         git -C $repo_cache  pull
     }
-
-    echo "----"
-    git --no-pager log --oneline HEAD..origin  
-    echo -e "----\n"
-    sleep 1
 
     # change to repo directory and install it
     cd $repo_cache || {
