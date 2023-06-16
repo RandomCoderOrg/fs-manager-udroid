@@ -761,8 +761,9 @@ login() {
 parser() {
     local arg=$1
     local mode=$2
-    declare -g suite=${arg%%:*} # declare -g | declare globally
-    declare -g varient=${arg#*:}
+    
+    suite=${arg%%:*}
+    varient=${arg#*:}
     
     LOG "[USER] function args => suite=$suite varient=$varient"
     
