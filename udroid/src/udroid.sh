@@ -1134,6 +1134,7 @@ _upgrade() {
         git -C $repo_cache checkout $branch
     fi
     
+    git -C $repo_cache fetch --all --quiet
     new_commits=$(git -C $repo_cache --no-pager log --oneline HEAD..origin)
     if [[ -z $new_commits ]]; then
         LOG "upgrade(): already in the lastest version, no need to upgrade"
