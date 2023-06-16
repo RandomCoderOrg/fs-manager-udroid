@@ -761,9 +761,9 @@ login() {
 parser() {
     local arg=$1
     local mode=$2
-    readonly suite=${arg%%:*} # readonly basically makes this public and
-    readonly varient=${arg#*:} # unchangeable outside of this function
-
+    declare -g suite=${arg%%:*} # declare -g | declare globally
+    declare -g varient=${arg#*:}
+    
     LOG "[USER] function args => suite=$suite varient=$varient"
     
     # if TEST_MODE is set run scripts in current directory and use test.json for distro_conf
