@@ -72,27 +72,30 @@ fetch_distro_data() {
     # setup URL and path variables
     URL="https://raw.githubusercontent.com/RandomCoderOrg/udroid-download/main/distro-data.json"
     _path="${RTCACHE}/distro-data.json.cache"
+    mkdir -p "$RTCACHE" &> /dev/null # Just in case
 
     # if the cache file exists, check for updates
     if [[ -f $_path ]]; then
         # if not in offline mode, fetch the data from the internet
         if ! $offline_mode; then
             mv $_path $_path.old
-            g_spin dot "Fetching distro data.." curl -L -s -o $_path $URL || {
+            g_spin dot "Fetching distro data.." curl -L -s -o $_path $URL
+            if [[ ! -f "$_path" ]]; then # Check for file existance instead of exit code
                 ELOG "[${0}] failed to fetch distro data"
                 mv $_path.old $_path
                 if $isStrictMode; then
                     DIE "Failed to fetch distro data from: \n $URL"
                 fi
-            }
+            fi
         fi
         distro_data=$_path
     # otherwise, fetch the data from the internet
     else
-        g_spin dot "Fetching distro data.." curl -L -s -o $_path $URL || {
+        g_spin dot "Fetching distro data.." curl -L -s -o $_path $URL
+        if [[ ! -f "$_path" ]]; then # Check for file existance instead of exit code
             ELOG "[${0}] failed to fetch distro data"
             DIE "Failed to fetch distro data from $URL"
-        }
+        fi
         distro_data=$_path
     fi
 }
@@ -758,9 +761,9 @@ login() {
 parser() {
     local arg=$1
     local mode=$2
-    readonly suite=${arg%%:*} # readonly basically makes this public and
-    readonly varient=${arg#*:} # unchangeable outside of this function
-
+    declare -g suite=${arg%%:*} # declare -g | declare globally
+    declare -g varient=${arg#*:}
+    
     LOG "[USER] function args => suite=$suite varient=$varient"
     
     # if TEST_MODE is set run scripts in current directory and use test.json for distro_conf
