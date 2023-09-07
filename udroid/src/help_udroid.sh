@@ -20,6 +20,7 @@ help_login() {
     echo "  --isolated:           Creates an isolated environment for the filesystem."
     echo "  --ashmem-memfd | --memfd     enable support for memfd emulation through ashmem ( experimental )"
     echo "  --fix-low-ports:      Fixes low ports for the filesystem."
+    echo "  --reinstall-fixes:    reinstall proot fixes before login"
     echo "  --no-shared-tmp:      Disables shared tmp for the filesystem."
     echo "  --no-link2symlink:    Disables link2symlink for the filesystem."
     echo "  --no-sysvipc:         Disables sysvipc for the filesystem."

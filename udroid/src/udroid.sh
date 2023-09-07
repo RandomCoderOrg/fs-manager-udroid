@@ -369,6 +369,7 @@ login() {
     local login_user="root"
     local run_script=""
     local is_custom_distro=false
+    local reinstall_fixes=false
     local custom_distro_name=""
     local -a custom_fs_bindings
     local path=$DEFAULT_FS_INSTALL_DIR
@@ -467,6 +468,9 @@ login() {
                 is_custom_distro=true;
                 custom_distro_name=$2; shift 2
                 ;;
+            --reinstall-fixes)
+                reinstall_fixes=true; shift
+                ;;
             -*)
                 echo "Unknown option: $1"
                 exit 1
@@ -510,6 +514,10 @@ login() {
     [[ -z $distro ]] && echo "ERROR: distro not specified" && exit 1
 
     if [ -d $path/$distro ]; then
+        # reinstall fixes
+        if $reinstall_fixes; then
+            bash proot-utils/proot-fixes.sh "$root_fs_path"
+        fi
         # set PROOT_L2S_DIR
         if [ -d "${root_fs_path}/.l2s" ]; then
             export PROOT_L2S_DIR="${root_fs_path}/.l2s"
