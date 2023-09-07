@@ -313,6 +313,10 @@ while read -r group_name group_id; do
 	fi
 done < <(paste <(id -Gn | tr ' ' '\n') <(id -G | tr ' ' '\n'))
 
+# sudo non-roov user privilage fix
+PROG_PRINT "fix sudo permissions"
+chmod u+s ${root_fs_path}/usr/bin/sudo
+
 # PROG_PRINT "setting up android shmem"
 # shmem_lib="${PREFIX}/lib/libandroid-shmem.a"
 # if [ -f "${shmem_lib}" ]; then
