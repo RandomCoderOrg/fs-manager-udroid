@@ -23,6 +23,12 @@ PROG_PRINT() {
 
 fs=${root_fs_path}
 
+# check for <fs>/dev
+[[ ! -d ${fs}/dev ]] && mkdir -p ${fs}/dev
+
+# check for <fs>/sys 
+[[ ! -d ${fs}/sys ]] && mkdir -p ${fs}/sys
+
 # fix permission to write into proc
 [[ ! -d ${fs}/proc ]] && mkdir -p ${fs}/proc
 chmod 700 ${fs}/proc
