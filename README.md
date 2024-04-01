@@ -19,6 +19,7 @@ udroid <option> [<options>] [<suite>]:[<varient>]
 options:
   install, -i [<options>] <suite>:<varient>  install a distro
   remove, --remove <suite>:<varient>    remove a distro
+  reset, --reset <suite>:<varient>      reinstalls a distro
   list, --list [options]                list distros
   login, --login <suite>:<varient>      login to a distro
   upgrade, --upgrade                    upgrade udroid scripts
