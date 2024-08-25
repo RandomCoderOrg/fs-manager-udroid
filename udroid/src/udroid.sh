@@ -234,7 +234,7 @@ install() {
     }
     
     if $enable_always_retry ; then
-        export $enable_always_retry
+        export enable_always_retry
     fi
 
     # if path is set then download fs and extract it to path
