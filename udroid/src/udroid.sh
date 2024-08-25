@@ -154,6 +154,7 @@ install() {
     # local arg=$1
     TITLE "> INSTALL $arg"
     local no_check_integrity=false
+    enable_always_retry=false
     BEST_CURRENT_DISTRO="jammy:xfce4"
     INSTALL_BEST=false
 
@@ -161,6 +162,10 @@ install() {
         case $1 in
             --no-check-integrity)
                 no_check_integrity=true
+                shift
+            ;;
+            --always-retry)
+                enable_always_retry=true
                 shift
             ;;
             --help | -h) 
@@ -223,6 +228,15 @@ install() {
     # file extension
     ext=$(echo $link | awk -F. '{print $NF}')
     
+    # prevent download errors
+    [[ $enable_always_retry == true ]] && [[ $no_check_integrity == true ]] && {
+        DIE "--always-retry should not be used with --no-check-integrity"
+    }
+    
+    if $enable_always_retry ; then
+        export $enable_always_retry
+    fi
+
     # if path is set then download fs and extract it to path
     # cause it make better use of path
     if [[ -z $path ]]; then
@@ -232,9 +246,6 @@ install() {
 
         # Start Extracting
         LOG "Extracting $name.tar.$ext"
-
-        # create $name directory
-        mkdir -p $DEFAULT_FS_INSTALL_DIR/$name
 
         # verify integrity
         if verify_integrity "$DLCACHE/$name.tar.$ext" "$shasum"; then
@@ -265,6 +276,9 @@ install() {
             fi
         fi
 
+        # create $name directory
+        mkdir -p $DEFAULT_FS_INSTALL_DIR/$name
+        
         # call proot extract
         msg_extract "$DEFAULT_FS_INSTALL_DIR/$name"
         p_extract --file "$DLCACHE/$name.tar.$ext" --path "$DEFAULT_FS_INSTALL_DIR/$name"
@@ -1212,11 +1226,20 @@ download() {
         LOG "download(): $name already exists in $path"
         GWARN "$name already exists, continuing with existing file"
     else
-        wget -q --tries=10 --show-progress --progress=bar:force -O ${path}/$name  "$link"  2>&1 || {
-            ELOG "failed to download $name"
-            echo "failed to download $name"
-            exit 1
-        }
+        # retry everytime whenever the host disconnects or being stopped
+        if [[ $enable_always_retry == true ]]; then
+            INFO "Downloading with --always-retry flag on..."
+            INFO "If you want to stop retrying just enter Ctrl+C"
+            while true; do
+                wget -T 15 -c -q --show-progress --progress=bar:force --retry-on-host-error -O ${path}/$name  "$link" && break
+            done
+        else
+            wget -q --tries=10 --show-progress --progress=bar:force -O ${path}/$name  "$link"  2>&1 || {
+                ELOG "failed to download $name"
+                echo "failed to download $name"
+                exit 1
+            }
+        fi
     fi
 }
 
