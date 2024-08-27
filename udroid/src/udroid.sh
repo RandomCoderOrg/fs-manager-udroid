@@ -20,6 +20,7 @@ source gum_wrapper.sh
 source help_udroid.sh
 
 export distro_data
+export enable_always_retry=false
 
 DIE() { echo -e "${@}"; exit 1 ;:;}
 GWARN() { echo -e "\e[90m${*}\e[0m";:;}
@@ -154,7 +155,6 @@ install() {
     # local arg=$1
     TITLE "> INSTALL $arg"
     local no_check_integrity=false
-    enable_always_retry=false
     BEST_CURRENT_DISTRO="jammy:xfce4"
     INSTALL_BEST=false
 
@@ -232,10 +232,6 @@ install() {
     [[ $enable_always_retry == true ]] && [[ $no_check_integrity == true ]] && {
         DIE "--always-retry should not be used with --no-check-integrity"
     }
-    
-    if $enable_always_retry ; then
-        export enable_always_retry
-    fi
 
     # if path is set then download fs and extract it to path
     # cause it make better use of path
@@ -1226,11 +1222,11 @@ download() {
         LOG "download(): $name already exists in $path"
         GWARN "$name already exists, continuing with existing file"
     else
-        # retry everytime whenever the host disconnects or being stopped
-        if [[ $enable_always_retry == true ]]; then
+        # retry everytime whenever the host disconnects or being stopped in case $enable_always_retry is set to true
+        if $enable_always_retry; then
             INFO "Downloading with --always-retry flag on..."
             INFO "If you want to stop retrying just enter Ctrl+C"
-            while true; do
+            while $enable_always_retry; do
                 wget -T 15 -c -q --show-progress --progress=bar:force --retry-on-host-error -O ${path}/$name  "$link" && break
             done
         else
