@@ -63,7 +63,7 @@ help_list() {
     echo "  --list-installed        show only installed distros"
 }
 
-# help_upgrade: show help for upgrade
+# help_install: show help for install
 help_install() {
     echo "udroid [ install| --install ] [<options>] [<suite>]:[<varient>]"
     echo "installs udroid distros"
@@ -71,6 +71,7 @@ help_install() {
     echo "  -cd, --custom-distro <options>  install a custom distro"
     echo "  -h, --help    show this help message and exit"
     echo "  --no-verify-integrity  do not verify integrity of filesystem"
+    echo "  --always-retry         try downloading whenever download stops or disconnected (beta)"
     echo
     echo "custom distro options:"
     echo "  --file <file>  full path to filesystem tarball"
@@ -81,7 +82,7 @@ help_install() {
     echo "  udroid install --install jammy:raw"
 }
 
-# help_upgrade: show help for upgrade
+# help_remove: show help for remove
 help_remove() {
     echo "udroid [ remove| --remove ] <distro>"
     echo "removes udroid distros"

@@ -20,6 +20,7 @@ source gum_wrapper.sh
 source help_udroid.sh
 
 export distro_data
+export enable_always_retry=false
 
 DIE() { echo -e "${@}"; exit 1 ;:;}
 GWARN() { echo -e "\e[90m${*}\e[0m";:;}
@@ -163,6 +164,10 @@ install() {
                 no_check_integrity=true
                 shift
             ;;
+            --always-retry)
+                enable_always_retry=true
+                shift
+            ;;
             --help | -h) 
                 help_install
                 exit 0
@@ -223,6 +228,11 @@ install() {
     # file extension
     ext=$(echo $link | awk -F. '{print $NF}')
     
+    # prevent download errors
+    [[ $enable_always_retry == true ]] && [[ $no_check_integrity == true ]] && {
+        DIE "--always-retry should not be used with --no-check-integrity"
+    }
+
     # if path is set then download fs and extract it to path
     # cause it make better use of path
     if [[ -z $path ]]; then
@@ -232,9 +242,6 @@ install() {
 
         # Start Extracting
         LOG "Extracting $name.tar.$ext"
-
-        # create $name directory
-        mkdir -p $DEFAULT_FS_INSTALL_DIR/$name
 
         # verify integrity
         if verify_integrity "$DLCACHE/$name.tar.$ext" "$shasum"; then
@@ -265,6 +272,9 @@ install() {
             fi
         fi
 
+        # create $name directory
+        mkdir -p $DEFAULT_FS_INSTALL_DIR/$name
+        
         # call proot extract
         msg_extract "$DEFAULT_FS_INSTALL_DIR/$name"
         p_extract --file "$DLCACHE/$name.tar.$ext" --path "$DEFAULT_FS_INSTALL_DIR/$name"
@@ -1212,11 +1222,20 @@ download() {
         LOG "download(): $name already exists in $path"
         GWARN "$name already exists, continuing with existing file"
     else
-        wget -q --tries=10 --show-progress --progress=bar:force -O ${path}/$name  "$link"  2>&1 || {
-            ELOG "failed to download $name"
-            echo "failed to download $name"
-            exit 1
-        }
+        # retry everytime whenever the host disconnects or being stopped in case $enable_always_retry is set to true
+        if $enable_always_retry; then
+            INFO "Downloading with --always-retry flag on..."
+            INFO "If you want to stop retrying just enter Ctrl+C"
+            while $enable_always_retry; do
+                wget -T 15 -c -q --show-progress --progress=bar:force --retry-on-host-error -O ${path}/$name  "$link" && break
+            done
+        else
+            wget -q --tries=10 --show-progress --progress=bar:force -O ${path}/$name  "$link"  2>&1 || {
+                ELOG "failed to download $name"
+                echo "failed to download $name"
+                exit 1
+            }
+        fi
     fi
 }
 
