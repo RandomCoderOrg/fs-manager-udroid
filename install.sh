@@ -23,6 +23,16 @@ if (( $android_version_code >= 12 )); then
     sleep 2
 fi
 
+# Termux Playstore version warnings
+if [[ $TERMUX_VERSION =~ ^"googleplay" ]]; then
+    sleep 1
+    echo
+    GWARN "[Warning]: Termux Playstore version detected"
+    GWARN "You may experience issues like crashing or commands not working"
+    echo
+    sleep 2
+fi
+
 cd udroid/src || exit 1
 # Remove old udroid
 rm -rf $(which udroid)
