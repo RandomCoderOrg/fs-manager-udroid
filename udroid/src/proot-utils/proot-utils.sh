@@ -118,8 +118,9 @@ p_login() {
             PATH=/usr/local/sbin:/usr/local/bin:/bin:/usr/bin:/sbin:/usr/sbin \
             TERM=$TERM \
             LANG=C.UTF-8 \
-            /bin/su -l $container_user \
-            $cmd_string
+            /bin/su \
+            -l $container_user \
+            -c "$cmd_string"
 
 }
 
