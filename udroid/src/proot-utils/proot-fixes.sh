@@ -323,6 +323,10 @@ done < <(paste <(id -Gn | tr ' ' '\n') <(id -G | tr ' ' '\n'))
 PROG_PRINT "fix sudo permissions"
 chmod u+s ${root_fs_path}/usr/bin/sudo
 
+# remove .zcom* files inside /root which created during built
+PROG_PRINT "remove excess files"
+rm -rf ${root_fs_path}/root/.zcom*
+
 # PROG_PRINT "setting up android shmem"
 # shmem_lib="${PREFIX}/lib/libandroid-shmem.a"
 # if [ -f "${shmem_lib}" ]; then
