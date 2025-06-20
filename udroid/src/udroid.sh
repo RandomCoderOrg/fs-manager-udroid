@@ -26,7 +26,7 @@ DIE() { echo -e "${@}"; exit 1 ;:;}
 GWARN() { echo -e "\e[90m${*}\e[0m";:;}
 WARN() { echo -e "[WARN]: ${*}\e[0m";:;}
 INFO() { echo -e "\e[32m${*}\e[0m";:;}
-TITLE() { echo -e "\e[100m${*}\e[0m";:;}
+TITLE() { g_style "${*}" --padding "0 1" --background "#696969" --foreground "#FFFFFF" --bold --align center;:;}
 
 EDIE() {
     local msg=$1
@@ -80,7 +80,7 @@ fetch_distro_data() {
         # if not in offline mode, fetch the data from the internet
         if ! $offline_mode; then
             mv $_path $_path.old
-            g_spin dot "Fetching distro data.." curl -L -s -o $_path $URL
+            g_spin "moon" "Fetching distro data.." curl -L -s -o $_path $URL
             if [[ ! -f "$_path" ]]; then # Check for file existance instead of exit code
                 ELOG "[${0}] failed to fetch distro data"
                 mv $_path.old $_path
@@ -92,7 +92,7 @@ fetch_distro_data() {
         distro_data=$_path
     # otherwise, fetch the data from the internet
     else
-        g_spin dot "Fetching distro data.." curl -L -s -o $_path $URL
+        g_spin "moon" "Fetching distro data.." curl -L -s -o $_path $URL
         if [[ ! -f "$_path" ]]; then # Check for file existance instead of exit code
             ELOG "[${0}] failed to fetch distro data"
             DIE "Failed to fetch distro data from $URL"
@@ -114,17 +114,9 @@ fetch_distro_data() {
 # 0 if the answer is Y, y, yes or empty. It will return 1 if the
 # answer is N, n, no. If the answer is anything else, it will return 1.
 ask() {
-    local msg=$*
-
-    echo -ne "$msg\t[y/n]: "
-    read -r choice
-
-    case $choice in
-        y|Y|yes) return 0;;
-        n|N|No) return 1;;
-        "") return 0;;
-        *) return 1;;
-    esac
+    local msg="${*}" # Ensure all arguments are captured as the message
+    g_confirm "$msg"
+    return $? # Return the exit status of g_confirm
 }
 
 # This function checks the integrity of a file.
@@ -279,8 +271,7 @@ install() {
         msg_extract "$DEFAULT_FS_INSTALL_DIR/$name"
         p_extract --file "$DLCACHE/$name.tar.$ext" --path "$DEFAULT_FS_INSTALL_DIR/$name"
 
-        echo -e "Applying proot fixes"
-        bash proot-utils/proot-fixes.sh "$DEFAULT_FS_INSTALL_DIR/$name"
+        g_spin "moon" "Applying proot fixes..." bash proot-utils/proot-fixes.sh "$DEFAULT_FS_INSTALL_DIR/$name"
     else
         msg_download $name "$path/$name.tar.$ext" "$link"
         download "$name.tar.$ext" "$link" "$path"
@@ -297,11 +288,10 @@ install() {
         p_extract --file "$path/$name.tar.$ext" --path "$path/$name"
 
         # apply proot-fixes
-        echo -e "Applying proot fixes"
-        bash proot-utils/proot-fixes.sh "$path/$name"
+        g_spin "moon" "Applying proot fixes..." bash proot-utils/proot-fixes.sh "$path/$name"
     fi
 
-    echo -e "[\xE2\x9C\x94] $name installed."
+    g_style "[\xE2\x9C\x94] $name installed." --foreground "green" --bold
 
 }
 
@@ -321,9 +311,12 @@ install_custom() {
         esac
     done
 
-    [[ -z $file ]] && {
-        EDIE "--file not supplied" "\t requies full path of file\n\t ex: /data/data/..../ubuntu.tar.gz"
-    }
+    if [[ -z $file ]]; then
+        file=$(g_file "$EXEC_PWD") # Start in current dir
+        if [[ -z $file ]]; then
+            EDIE "--file not supplied" "	Please specify the path to the tarball or select one using the browser."
+        fi
+    fi
     [[ -z $name ]] && {
         EDIE "--name not supplied" "\t requies name of filesystem\n\t ex: ubuntu"
     }
@@ -347,10 +340,9 @@ install_custom() {
     p_extract --file "$file" --path "$DEFAULT_FS_INSTALL_DIR/$final_name"
 
     # apply proot-fixes
-    echo -e "Applying proot fixes"
-    bash proot-utils/proot-fixes.sh "$DEFAULT_FS_INSTALL_DIR/$final_name"
+    g_spin "moon" "Applying proot fixes..." bash proot-utils/proot-fixes.sh "$DEFAULT_FS_INSTALL_DIR/$final_name"
 
-    echo -e "[\xE2\x9C\x94] $name installed."
+    g_style "[\xE2\x9C\x94] $final_name installed." --foreground "green" --bold
     exit 0
 }
 
@@ -892,135 +884,118 @@ list() {
     fi
     
     suites=$(cat $distro_data | jq -r '.suites[]')
-    tempfile=$(mktemp udroid-list-table-XXXXXX)
+
+    headers="Suite:Varient,Supported,Status"
+    data_rows=""
 
     if $size; then
-        _size_header+=" size |"
-        _size_line+="--|" 
+        headers+=",Inst. Size"
     fi
     
     if $show_remote_download_size; then
-        _r_size_header+=" down* size |"
-        _r_size_line+="--|"
+        headers+=",DL Size"
+        INFO "Reading remote data (this may take a moment)..."
     fi
-    
-    echo -e "reading data ( this may take a couple minutes ) ..."
-    
-    # header
-    echo -e "| suites | supported | status |$_size_header$_r_size_header" > $tempfile
-    echo -e "|--------|-----------|--------|$_size_line"$_r_size_line >> $tempfile
-    
+
     for suite in $suites; do
         varients=$(cat $distro_data | jq -r ".$suite.varients[]")
-        # loop over varients
         for varient in $varients; do
-            # get name
             name=$(cat $distro_data | jq -r ".$suite.$varient.Name")
             supported_arch=$(cat $distro_data | jq -r ".$suite.$varient.arch")
             
             LOG "list(): suite=$suite ||| varient=$varient ||| arch=$arch ||| supported_arch=$supported_arch"
+
+            support_status="NO"
             if [[ $supported_arch =~ $arch ]]; then
-                    supported=true
-                else
-                    supported=false
+                support_status="YES"
             fi
 
-            if $supported; then
-                if $show_remote_download_size; then
+            _installed=""
+            if [[ -d "$path/$name" ]]; then
+                _installed="[installed]"
+            fi
+            
+            if $show_installed_only && [[ -z "$_installed" ]]; then
+                continue # Skip if not installed and only installed are requested
+            fi
+
+            row="$suite:$varient,$support_status,$_installed"
+
+            if $size; then
+                _size_val="-"
+                if [[ -d "$path/$name" ]]; then
+                    _size_val=$(du -sh "$path/$name" 2> /dev/null | awk '{print $1}')
+                fi
+                row+=",$_size_val"
+            fi
+            
+            if $show_remote_download_size; then
+                remote_size_val="-"
+                if [[ "$support_status" == "YES" ]]; then
                     link=$(cat $distro_data | jq -r ".$suite.$varient.${arch}url")
-                    remote_size=$( wget --spider -m -np $link 2>&1 | grep -i Length | awk '{print $2}')
-                    if [[ -z $remote_size ]]; then
-                        remote_size="?"
+                    # Check if link is not null or empty
+                    if [[ -n "$link" && "$link" != "null" ]]; then
+                        # Attempt to get size, timeout after 5s for unresponsive links
+                        remote_size_bytes=$(curl -s --head -L --max-time 5 "$link" | grep -i content-length | awk '{print $2}' | tr -d '\r')
+                        if [[ -n "$remote_size_bytes" && "$remote_size_bytes" -gt 0 ]]; then
+                            remote_size_val=$(numfmt --to=iec-i --suffix=B --padding=7 "$remote_size_bytes")
+                        else
+                            remote_size_val="N/A" # Indicate not available if check fails or size is 0
+                        fi
                     else
-                        remote_size=$(numfmt --to=iec-i --suffix=B --padding=7 $remote_size) # <- By GitHub Copilot
+                        remote_size_val="N/A" # No link, so no size
                     fi
                 fi
+                row+=",$remote_size_val"
             fi
 
-            # check if installed
-            if [[ -d $path/$name ]]; then
-                _installed="[installed]"
-            else
-                _installed=""
-            fi
-            
-            # check size
-            if [[ $size == true ]]; then
-                if [[ -d $path/$name ]]; then
-                    _size="$(du -sh $path/$name 2> /dev/null | awk '{print $1}') |"
-                else
-                    _size="|"
-                fi
-            else
-                _size=""
-            fi
-            
-            # set support status
-            if [[ $supported == true ]]; then
-                support_status="YES"
-            else
-                support_status="NO"
-            fi
-            
-            # print out
-            if ! $show_installed_only; then
-                echo -e "|$suite:$varient|$support_status|$_installed|$_size$remote_size" >> $tempfile
-            else
-                if [[ -d $path/$name/bin ]]; then
-                    echo -e "|$suite:$varient|$support_status|$_installed|$_size$remote_size" >> $tempfile
-                fi
-            fi
+            data_rows+=$(printf '%s\n' "$row")
         done
     done
 
-    # custom fs header
+    g_table "$headers" "$data_rows"
+
+    footer_text="**SIZE**: Space occupied by installed distro
+**DOWN SIZE**: Download size of suite (approximate)
+
+To install a suite (ex: **jammy:raw**), run:
+\`\`\`bash
+udroid install jammy:raw
+\`\`\`"
+
     if $display_custom_fs; then
-        #
-        # any folder in the install dir that starts with "custom-" is considered a custom fs
-        # there is no need to show support & status for custom fs 
-        #
-        echo -e "\n\n" >> $tempfile
-        echo -e "| custom-fs name | $_size_header" >> $tempfile
-        echo -e "|----------------|$_size_line" >> $tempfile
+        custom_fs_headers="Custom FS Name"
+        [[ $size == true ]] && custom_fs_headers+=",Inst. Size"
+        custom_fs_data_rows=""
 
-        for custom_fs in $(ls $path | grep -E "^custom-"); do
-            if [[ -d $path/$custom_fs ]]; then
-                if [[ $size == true ]]; then
-                    _size="$(du -sh $path/$custom_fs 2> /dev/null | awk '{print $1}') |"
-                else
-                    _size=""
+        # Ensure path exists before attempting to list
+        if [[ -d "$path" ]]; then
+            for custom_fs_loop_var in $(ls "$path" | grep -E "^custom-"); do
+                if [[ -d "$path/$custom_fs_loop_var" ]]; then
+                    _custom_fs_name_display=$(echo "$custom_fs_loop_var" | sed -e 's/^custom-//')
+                    _custom_fs_row="'$_custom_fs_name_display'" # Start row with name
+                    if [[ $size == true ]]; then
+                        _custom_size_val="-"
+                        _custom_size_val_raw=$(du -sh "$path/$custom_fs_loop_var" 2> /dev/null | awk '{print $1}')
+                        [[ -n "$_custom_size_val_raw" ]] && _custom_size_val=$_custom_size_val_raw
+                        _custom_fs_row+=",'$_custom_size_val'"
+                    fi
+                    custom_fs_data_rows+=$(printf '%s\n' "$_custom_fs_row")
                 fi
-                # remove "custom-" from the name only at the begining of the string
-                custom_fs=$(echo $custom_fs | sed -e 's/^custom-//')
-                echo -e "|$custom_fs|$_size" >> $tempfile
-            fi
-        done
-    fi
-
-    # footer
-    {
-        echo ""
-        echo ""
-        echo "**SIZE**:      space occupied by installed distro"
-        echo "**DOWN SIZE**: download size of suite"
-        echo ""
-        echo "To install a suite (ex: **jammy:raw**), run:"
-        echo "\`\`\`bash"
-        echo "udroid install jammy:raw"
-        echo "\`\`\`"
-
-        if $display_custom_fs; then
-            echo ""
-            echo "To install a custom fs, run:"
-            echo "\`\`\`bash"
-            echo "udroid install --custom-fs <custom-fs-name>"
-            echo "\`\`\`"
+            done
+        else
+            LOG "list(): Custom FS path '$path' does not exist."
         fi
 
-        echo ""
-    } >> $tempfile
-    
-    g_format $tempfile
+        if [[ -n "$custom_fs_data_rows" ]]; then
+            echo
+            g_style "Custom Installed Filesystems" --bold --padding "1 0" --align center
+            g_table "$custom_fs_headers" "$custom_fs_data_rows"
+        fi
+        footer_text+="\n\nTo install a custom fs (tarball), run:\n\`\`\`bash\nudroid install --custom --name <your-fs-name> --file <path-to-tarball>\n\`\`\`"
+    fi
+    echo
+    g_format "$footer_text" -t markdown
 }
 
 remove() {
@@ -1070,7 +1045,7 @@ remove() {
     [[ -z $distro ]] && echo "ERROR: distro not specified" && exit 1
     [[ ! -d $root_fs_path ]] && echo "ERROR: distro ($distro) not found or installed" && exit 1
 
-    g_spin "$spinner" \
+    g_spin "moon" \
         "Removing $arg($distro)" \
         bash proot-utils/proot-uninstall-suite.sh "$root_fs_path"
     
@@ -1092,7 +1067,7 @@ custom_remove() {
 
     TITLE "> REMOVE custom-fs $name"
 
-    g_spin "pulse" \
+    g_spin "moon" \
         "Removing $name" \
         bash proot-utils/proot-uninstall-suite.sh "$root_fs_path"
     
@@ -1156,12 +1131,10 @@ _upgrade() {
     new_commits=$(git -C $repo_cache --no-pager log --oneline HEAD..origin)
     if [[ -z $new_commits ]]; then
         LOG "upgrade(): already in the lastest version, no need to upgrade"
-        DIE "Already up to date!"
+        g_style "Already up to date!" --foreground "green" --bold; exit 0
     fi
     
-    echo "---- new commits ----"
-    git -C $repo_cache --no-pager log --oneline HEAD..origin # $new_commits is not formatted
-    echo -e "---------------------\n"
+    g_style "$new_commits" --border normal --padding "0 1" --title "New Commits"
     sleep .5
 
     # pull latest changes, if conflict occurs, clean and pull again
@@ -1179,7 +1152,7 @@ _upgrade() {
 
     # install
     LOG "upgrade(): installing"
-    bash install.sh
+    g_spin "moon" "Installing upgrade..." bash install.sh
 
     # TODO: look out for commit hashes for better upgrade strategy
     
@@ -1196,16 +1169,16 @@ clear_cache() {
     
    # check for files
     if [[ -z $(ls -A $DLCACHE) ]]; then
-        GWARN " ?  cache is empty"
+        g_style "Cache is empty." --foreground "yellow"
         exit 0
     fi
 
     # ask for confirmation
-    if ask "Do you want to clear cache?"; then
+    if ask "Do you want to clear cache ($cache_size)?"; then
         rm -rvf $DLCACHE/* >> $LOG_FILE
-        echo "$cache_size cache cleared"
+        g_style "$cache_size cache cleared" --foreground "green" --bold
     else
-        GWARN " ?  cache not cleared"
+        g_style "Cache not cleared." --foreground "yellow"
     fi
 }
 ####################

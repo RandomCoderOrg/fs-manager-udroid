@@ -60,18 +60,97 @@ function g_confirm() {
     return $($GUM confirm "$msg")
 }
 
+# g_spin "spinner_type" "Title for the spinner" "command_to_run"
+# Example: g_spin "moon" "Processing..." "sleep 5"
 function g_spin() {
-    spinner=$1; shift
-    title=$1; shift
-    cmd=$*
+    local spinner_type="$1"
+    local title="$2"
+    local cmd="${*:3}" # All arguments from the 3rd one
 
-    $GUM spin -s "$spinner" --title "$title" -- $cmd
-    echo -e "[\xE2\x9C\x94] $title"
+    if [ -z "$spinner_type" ] || [ -z "$title" ] || [ -z "$cmd" ]; then
+        warn "g_spin: Spinner type, title, and command must be provided."
+        return 1
+    fi
+
+    $GUM spin -s "$spinner_type" --title "$title" -- $cmd
+    # Assuming the command outputs its own success/failure,
+    # or we rely on set -e.
+    # The original check mark echo might be misleading if $cmd fails.
+    # For now, keeping it simple and not adding complex error handling here.
+    # If cmd fails, gum spin will show the error.
+    # If a visual confirmation of success for g_spin itself is needed,
+    # we can add it back, perhaps conditionally.
+    # echo -e "[\xE2\x9C\x94] $title" # Re-evaluate if this is needed
 }
 
+# g_format "string to format" -t template
+# g_format "/path/to/file" -t markdown
 function g_format () {
-    file=$1
-    [[ -z $file ]] && die "g_format: file not specified"
-    $GUM format < $file
+    local source_content="$1"
+    shift
+
+    if [ -z "$source_content" ]; then
+        die "g_format: Source content (string or file path) not specified."
+    fi
+
+    if [ -f "$source_content" ]; then
+        $GUM format "$@" < "$source_content"
+    else
+        echo "$source_content" | $GUM format "$@"
+    fi
+}
+
+# g_table "Header1,Header2" "Row1Col1,Row1Col2\nRow2Col1,Row2Col2"
+function g_table() {
+    local headers="$1"
+    local data="$2"
+
+    if [ -z "$headers" ] || [ -z "$data" ]; then
+        warn "g_table: Headers and data must be provided."
+        return 1
+    fi
+
+    # Prepend headers to data
+    local csv_data="$headers\n$data"
+
+    echo -e "$csv_data" | $GUM table
+}
+
+# g_style "Text to style" --foreground "#FFF" --border double
+function g_style() {
+    local text_to_style="$1"
+    shift
+
+    if [ -z "$text_to_style" ]; then
+        warn "g_style: Text to style must be provided."
+        return 1
+    fi
+
+    echo "$text_to_style" | $GUM style "$@"
+}
+
+# g_log "info" "User logged in" user_id 123
+function g_log() {
+    local level="$1"
+    shift
+
+    if [ -z "$level" ]; then
+        warn "g_log: Log level must be provided."
+        return 1
+    fi
+
+    $GUM log --structured --level "$level" "$@" --time-format "2006-01-02T15:04:05Z07:00"
+}
+
+# selected_file=$(g_file "/path/to/dir")
+# selected_file=$(g_file)
+function g_file() {
+    local start_path="$1"
+
+    if [ -n "$start_path" ]; then
+        $GUM file "$start_path"
+    else
+        $GUM file
+    fi
 }
 
