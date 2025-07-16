@@ -22,6 +22,11 @@ function create_dir() {
     g_spin minidot "Creating directory \"$1\"..." mkdir -p $1    
 }
 
+# test if gum can function properly
+g_spin minidot "testing gum..." sleep 3 | [[ $? -ne 0 ]] && {
+    die "running gum failed"
+}
+
 create_dir 0 $INSTALL_DIR
 create_dir 1 $DEFAULT_ROOT
 create_dir 1 $DEFAULT_FS_INSTALL_DIR

@@ -42,6 +42,7 @@ help_root() {
     echo "  remove, --remove <suite>:<varient>    remove a distro"
     echo "  reset, --reset <suite>:<varient>      reinstalls a distro"
     echo "  list, --list [options]                list distros"
+    echo "  build, --build [options]              build a raw distro using fs-cook"
     echo "  login, --login <suite>:<varient>      login to a distro"
     echo "  upgrade, --upgrade                    upgrade udroid scripts"
     echo "  help, --help                          show this help message and exit"
@@ -71,7 +72,7 @@ help_install() {
     echo "  -cd, --custom-distro <options>  install a custom distro"
     echo "  -h, --help    show this help message and exit"
     echo "  --no-verify-integrity  do not verify integrity of filesystem"
-    echo "  --always-retry         try downloading whenever download stops or disconnected (beta)"
+    echo "  --latest      install the latest release of rootfs (forcefully)"
     echo
     echo "custom distro options:"
     echo "  --file <file>  full path to filesystem tarball"
@@ -92,4 +93,32 @@ help_remove() {
     echo "example:"
     echo "  udroid remove jammy:raw"
     echo "  udroid remove --remove jammy:raw"
+}
+
+# help_upgrade: show help for upgrade
+help_upgrade() {
+    echo "udroid [ upgrade| --upgrade ] [<options>]"
+    echo "upgrades udroid scripts to the latest version"
+    echo "options:"
+    echo "  --branch <branch>  upgrade to a specific branch (default: main)"
+    echo "  -h, --help    show this help message and exit"
+    echo "example:"
+    echo "  udroid upgrade --branch <branch>"
+    echo "  udroid upgrade --upgrade"
+}
+
+# help_build: show help for build
+help_build() {
+    echo "udroid [ build| --build ] [<options>] <suite>"
+    echo "builds a raw distro using fs-cook"
+    echo "options:"
+    echo "  -h, --help             show this help message and exit"
+    echo "  -l, --list             list avaliable distros for building"
+    echo "  --not-upgrade          do not upgrade packages after building distro"
+    echo "  --build-default        build the default raw distro (jammy)"
+    echo "  --setup-user <username>    setup a user when building distro, use with --password"
+    echo "  --password <password>      set the password of the user "
+    echo "example:"
+    echo "  udroid build jammy"
+    echo "  udroid build --build jammy"
 }

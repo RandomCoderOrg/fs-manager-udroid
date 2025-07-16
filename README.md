@@ -21,6 +21,7 @@ options:
   remove, --remove <suite>:<varient>    remove a distro
   reset, --reset <suite>:<varient>      reinstalls a distro
   list, --list [options]                list distros
+  build, --build [options]              build a raw distro using fs-cook
   login, --login <suite>:<varient>      login to a distro
   upgrade, --upgrade                    upgrade udroid scripts
   help, --help                          show this help message and exit
@@ -41,9 +42,8 @@ install argument takes a strings of two words seperated by `:` left side is suit
 More Avalible examples
 
 ```bash
-udroid -i impish:raw
-udroid -i impish:xfce
-udroid -i impish:mate
+udroid -i jammy:xfce
+udroid -i jammy:mate
 ```
 
 ```bash
@@ -116,6 +116,27 @@ example:
 
 > Download cache is ignored
 
+### build (`build`)
+
+# Experimental feature !!
+
+```cmd
+udroid [ build| --build ] [<options>] <suite>
+builds a raw distro using fs-cook
+
+options:
+  -h, --help             show this help message and exit
+  -l, --list             list avaliable distros for building
+  --not-upgrade          do not upgrade packages after building distro
+  --set-best-to-build    build the default raw distro (jammy)
+  --setup-user <username>    setup a user when building distro, use with --password
+  --password <password>      set the password of the user
+example:
+  udroid build jammy
+  udroid build --build jammy
+```
+
+> Still in development!
 
 ## Contributing
 

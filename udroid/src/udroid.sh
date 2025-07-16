@@ -20,7 +20,6 @@ source gum_wrapper.sh
 source help_udroid.sh
 
 export distro_data
-export enable_always_retry=false
 
 DIE() { echo -e "${@}"; exit 1 ;:;}
 GWARN() { echo -e "\e[90m${*}\e[0m";:;}
@@ -35,7 +34,7 @@ EDIE() {
 
     ELOG $msg
     echo -e "\e[1m${msg}\e[0m"
-    
+
     # print hint in grey color
     [[ -n $hint ]] && GWARN $hint
 
@@ -102,7 +101,7 @@ fetch_distro_data() {
 }
 
 ## ask() - prompt the user with a message and wait for a Y/N answer
-# 
+#
 # This function will prompt the user with a message and wait for a Y/N answer.
 # It will return 0 if the answer is Y, y, yes or empty. It will return 1 if the
 # answer is N, n, no. If the answer is anything else, it will return 1.
@@ -141,7 +140,7 @@ verify_integrity() {
     filesha=$(sha256sum $filename | cut -d " " -f 1)
     LOG "filesum=$filesha"
     LOG "shasum=$shasum"
-    
+
     if [[ "$filesha" != "$shasum" ]]; then
         LOG "file integrity check failed"
         return 1
@@ -157,6 +156,7 @@ install() {
     local no_check_integrity=false
     BEST_CURRENT_DISTRO="jammy:xfce4"
     INSTALL_BEST=false
+    LATEST=false
 
     while [[ $# -gt 0 ]]; do
         case $1 in
@@ -164,15 +164,11 @@ install() {
                 no_check_integrity=true
                 shift
             ;;
-            --always-retry)
-                enable_always_retry=true
-                shift
-            ;;
-            --help | -h) 
+            --help | -h)
                 help_install
                 exit 0
             ;;
-            --set-best-to-install) 
+            --set-best-to-install)
                 INSTALL_BEST=true
                 break
             ;;
@@ -180,12 +176,16 @@ install() {
                 shift
                 install_custom $@
             ;;
-            *) 
+            --latest)
+                shift
+                LATEST=true
+            ;;
+            *)
                 # [[ -n $_name ]] && {
                 #     ELOG "login() error: name already set to $_name"
                 #     echo "--name supplied $_name"
                 # }
-                
+
                 if [[ -z $arg ]]; then
                     arg=$1
                 else
@@ -207,7 +207,7 @@ install() {
     }
     # parse the arg for suite and varient and get name,link
     parser $arg "online"
-    
+
     # final checks
     [[ "$link" == "null" ]] && {
         ELOG "link not found for $suite:$varient on $arch"
@@ -216,7 +216,7 @@ install() {
         echo "either the suite or varient is invalid, is not supported, or invalid options are supplied"
         # echo "either the suite or varient is not supported or invalid options supplied"
         echo "Report this issue at https://github.com/RandomCoderOrg/ubuntu-on-android/issues"
-        exit 1 
+        exit 1
     }
     if [[ -d $DEFAULT_FS_INSTALL_DIR/$name ]]; then
         ELOG "filesystem already installed"
@@ -227,11 +227,6 @@ install() {
 
     # file extension
     ext=$(echo $link | awk -F. '{print $NF}')
-    
-    # prevent download errors
-    [[ $enable_always_retry == true ]] && [[ $no_check_integrity == true ]] && {
-        DIE "--always-retry should not be used with --no-check-integrity"
-    }
 
     # if path is set then download fs and extract it to path
     # cause it make better use of path
@@ -242,6 +237,9 @@ install() {
 
         # Start Extracting
         LOG "Extracting $name.tar.$ext"
+
+        # create $name directory
+        mkdir -p $DEFAULT_FS_INSTALL_DIR/$name
 
         # verify integrity
         if verify_integrity "$DLCACHE/$name.tar.$ext" "$shasum"; then
@@ -256,7 +254,7 @@ install() {
                 if ask "Do you want to re-download ?"; then
                     rm "$DLCACHE/$name.tar.$ext"
                     download "$name.tar.$ext" "$link"
-                    
+
                     # recheck integrity after download
                     if verify_integrity "$DLCACHE/$name.tar.$ext" "$shasum"; then
                         LOG "file integrity check passed"
@@ -272,15 +270,18 @@ install() {
             fi
         fi
 
-        # create $name directory
-        mkdir -p $DEFAULT_FS_INSTALL_DIR/$name
-        
         # call proot extract
         msg_extract "$DEFAULT_FS_INSTALL_DIR/$name"
         p_extract --file "$DLCACHE/$name.tar.$ext" --path "$DEFAULT_FS_INSTALL_DIR/$name"
 
         echo -e "Applying proot fixes"
         bash proot-utils/proot-fixes.sh "$DEFAULT_FS_INSTALL_DIR/$name"
+
+        # apply specific proot-fixes
+        if [[ -f "$path/$name/postinstall" ]]; then
+            echo -e "Apply custom proot fixes"
+            p_login --path "$path/$name" -- "bash /postinstall && rm -rf /postinstall"
+        fi
     else
         msg_download $name "$path/$name.tar.$ext" "$link"
         download "$name.tar.$ext" "$link" "$path"
@@ -299,8 +300,18 @@ install() {
         # apply proot-fixes
         echo -e "Applying proot fixes"
         bash proot-utils/proot-fixes.sh "$path/$name"
+        
+        # apply specific proot-fixes
+        if [[ -f "$path/$name/postinstall" ]]; then
+            echo -e "Apply custom proot fixes"
+            p_login --path "$path/$name" -- "bash /postinstall && rm -rf /postinstall"
+        fi
     fi
 
+    if $LATEST; then
+        # remove the cache to prevent wrong cache being used
+        rm -rvf $DLCACHE/"$name.tar.$ext"
+    fi
     echo -e "[\xE2\x9C\x94] $name installed."
 
 }
@@ -358,7 +369,7 @@ login() {
     # [ yoinked & modified ]
     # Most of the code is taken from proot-disro
     # PERMALINK : https://github.com/termux/proot-distro/blob/fcee91ca6c7632c09898c9d0a680c8ff72c3357f/proot-distro.sh#L933
-    # 
+    #
     # @termux/proot-distro (C) GNU V3 License
     unset LD_PRELOAD
 
@@ -394,7 +405,7 @@ login() {
                 help_login
                 exit 0
              ;;
-            -p | --path) 
+            -p | --path)
 
                 # Custom paths are set either to point a new directory instead of default
                 # this is not-recommended cause managing installed filesystems becomes harder when they are outside of DEFAULT directories
@@ -485,12 +496,12 @@ login() {
                 echo "Unknown option: $1"
                 exit 1
                 ;;
-            *) 
+            *)
                 [[ -n $_name ]] && {
                     ELOG "login() error: name already set to $_name"
                     echo "--name supplied $_name"
                 }
-                
+
                 if [[ -z $arg ]]; then
                     arg=$1
                 else
@@ -540,7 +551,7 @@ login() {
             for i in "$@"; do
                 shell_command_args+=("'$i'")
             done
-  
+
             if stat "${root_fs_path}/bin/su" >/dev/null 2>&1; then
                 set -- "/bin/su" "-l" "$login_user" "-c" "${shell_command_args[*]}"
             else
@@ -618,7 +629,7 @@ login() {
 
         # set fake kernel version string
         set -- "--kernel-release=5.4.2-proot-facked" "$@"
-        
+
         # Fix lstat
         set -- "-L" "$@"
 
@@ -626,7 +637,7 @@ login() {
         if ! $no_cwd_active_directory && ! $isolated_environment; then
             set -- "--cwd=$PWD" "$@"
         fi
-        
+
         if $no_cwd_active_directory; then
             set -- "--cwd=/root" "$@"
         fi
@@ -662,7 +673,7 @@ login() {
         set -- "--bind=/proc/self/fd/1:/dev/stdout" "$@"
         set -- "--bind=/proc/self/fd/2:/dev/stderr" "$@"
         set -- "--bind=/sys" "$@"
-        
+
         if $make_host_tmp_shared; then
             set -- "--bind=$TERMUX_PREFIX/tmp:/tmp" "$@"
             set -- "--bind=${root_fs_path}/dev/shm:/dev/shm" "$@"
@@ -701,7 +712,7 @@ login() {
             set -- "--bind=${root_fs_path}/proc/.vmstat:/proc/vmstat" "$@"
         fi
 
-        
+
         # [CONDITIONAL]: set binds for local storage
         if ! $isolated_environment; then
             set -- "--bind=/data/dalvik-cache" "$@"
@@ -710,7 +721,7 @@ login() {
                 set -- "--bind=/data/data/$TERMUX_APP_PACKAGE/files/apps" "$@"
             fi
             set -- "--bind=$TERMUX_HOME" "$@"
-    
+
             # Setup bind mounting for shared storage.
             # We want to use the primary shared storage mount point there
             # with avoiding secondary and legacy mount points. As Android
@@ -726,7 +737,7 @@ login() {
                 # No access to shared storage.
                 :
             fi
-    
+
             # /storage also optional bind mounting.
             # If we can't access it, don't provide this directory
             # in proot environment.
@@ -779,12 +790,12 @@ login() {
 parser() {
     local arg=$1
     local mode=$2
-    
+
     suite=${arg%%:*}
     varient=${arg#*:}
-    
+
     LOG "[USER] function args => suite=$suite varient=$varient"
-    
+
     # if TEST_MODE is set run scripts in current directory and use test.json for distro_conf
     if [[ -n $TEST_MODE ]]; then
         LOG "[TEST] test mode enabled"
@@ -827,7 +838,7 @@ parser() {
             done
         fi
     }
-    
+
     # Check if somehow suite and varient are same ( which is not the case )
     if [[ "$suite" == "$varient" ]]; then
         [[ -n "$suite" ]] && [[ -n "$varient" ]] && {
@@ -855,12 +866,28 @@ parser() {
     ############### END OF OPTION PARSER ##############
 
     # Finally to get link
-
     link=$(cat $distro_data | jq -r ".$suite.$varient.${arch}url")
-    LOG "link=$link"
     name=$(cat $distro_data | jq -r ".$suite.$varient.Name")
-    LOG "name=$name"
     shasum=$(cat $distro_data | jq -r ".$suite.$varient.${arch}sha")
+
+    # Change to latest release if needed
+    if $LATEST ; then
+        current_release=$(echo $link | awk -F '/' '{print $(NF-1)}') # should be something like V3R50
+        LOG "fetching latest release"
+        latest_release=$(curl -s -I https://github.com/RandomCoderOrg/udroid-download/releases/latest | grep location | awk -F '/' '/^location/ {print  substr($NF, 1, length($NF)-1)}')
+        latest_link=$(echo $link | sed "s/$current_release/$latest_release/g")
+        if curl --output /dev/null --silent --head --fail $latest_link; then
+            LOG "Changing to latest release"
+            link=$latest_link
+            shasum=$(curl -s https://github.com/RandomCoderOrg/udroid-download/releases/tag/$latest_release | grep $(echo $latest_link | awk -F '/' '{print $NF}') | cut -d "/" -d "." -d " " -f 1 | head -n 1)
+        else
+            LOG "No exists latest release"
+            LOG "Using current release"
+        fi
+    fi
+
+    LOG "link=$link"
+    LOG "name=$name"
     LOG "shasum=$shasum"
 }
 ## List
@@ -890,26 +917,26 @@ list() {
     else
         fetch_distro_data "online"
     fi
-    
+
     suites=$(cat $distro_data | jq -r '.suites[]')
     tempfile=$(mktemp udroid-list-table-XXXXXX)
 
     if $size; then
         _size_header+=" size |"
-        _size_line+="--|" 
+        _size_line+="--|"
     fi
-    
+
     if $show_remote_download_size; then
         _r_size_header+=" down* size |"
         _r_size_line+="--|"
     fi
-    
+
     echo -e "reading data ( this may take a couple minutes ) ..."
-    
+
     # header
     echo -e "| suites | supported | status |$_size_header$_r_size_header" > $tempfile
     echo -e "|--------|-----------|--------|$_size_line"$_r_size_line >> $tempfile
-    
+
     for suite in $suites; do
         varients=$(cat $distro_data | jq -r ".$suite.varients[]")
         # loop over varients
@@ -917,7 +944,7 @@ list() {
             # get name
             name=$(cat $distro_data | jq -r ".$suite.$varient.Name")
             supported_arch=$(cat $distro_data | jq -r ".$suite.$varient.arch")
-            
+
             LOG "list(): suite=$suite ||| varient=$varient ||| arch=$arch ||| supported_arch=$supported_arch"
             if [[ $supported_arch =~ $arch ]]; then
                     supported=true
@@ -943,7 +970,7 @@ list() {
             else
                 _installed=""
             fi
-            
+
             # check size
             if [[ $size == true ]]; then
                 if [[ -d $path/$name ]]; then
@@ -954,14 +981,14 @@ list() {
             else
                 _size=""
             fi
-            
+
             # set support status
             if [[ $supported == true ]]; then
                 support_status="YES"
             else
                 support_status="NO"
             fi
-            
+
             # print out
             if ! $show_installed_only; then
                 echo -e "|$suite:$varient|$support_status|$_installed|$_size$remote_size" >> $tempfile
@@ -977,7 +1004,7 @@ list() {
     if $display_custom_fs; then
         #
         # any folder in the install dir that starts with "custom-" is considered a custom fs
-        # there is no need to show support & status for custom fs 
+        # there is no need to show support & status for custom fs
         #
         echo -e "\n\n" >> $tempfile
         echo -e "| custom-fs name | $_size_header" >> $tempfile
@@ -1019,8 +1046,242 @@ list() {
 
         echo ""
     } >> $tempfile
-    
+
     g_format $tempfile
+
+}
+## List build
+# list all the avalible suites varients for building
+list_build() {
+    TITLE "list_build()"
+    local size=false
+    local path=$DEFAULT_FS_INSTALL_DIR
+
+    while [ $# -gt 0 ]; do
+        case $1 in
+            --size) size=true; break;;
+            *) shift ;;
+        esac
+    done
+
+    if ! $show_remote_download_size; then
+        fetch_distro_data "offline"
+    else
+        fetch_distro_data "online"
+    fi
+
+    suites=$(cat $distro_data | jq -r '.suites[]')
+    tempfile=$(mktemp udroid-list-build-table-XXXXXX)
+
+    if $size; then
+        _size_header+=" size |"
+        _size_line+="--|"
+    fi
+
+    echo -e "reading data ( this may take a couple minutes ) ..."
+    # header
+    echo -e "| suites | status |$_size_header$_r_size_header" > $tempfile
+    echo -e "|--------|--------|$_size_line"$_r_size_line >> $tempfile
+
+    for suite in $suites; do
+        name=custom-$suite-build
+        LOG "list(): suite=$suite |||"
+        # check if installed
+        if [[ -d $path/$name ]]; then
+            _builded="[builded]"
+        else
+           _builded=""
+        fi
+
+        # check size
+        if $size; then
+            if [[ -d $path/$name ]]; then
+                _size="$(du -sh $path/$name 2> /dev/null | awk '{print $1}') |"
+            else
+                _size="|"
+            fi
+        else
+            _size=""
+        fi
+        echo -e "|$suite|$_builded|$_size" >> $tempfile
+    done
+
+    g_format $tempfile
+    echo
+}
+
+# Build
+#build raw distro on android using fs-cook and debootstrap
+build() {
+    TITLE "> BUILD $arg"
+    local BEST_CURRENT_DISTRO="jammy"
+    local BUILD_DEFAULT=false
+    local arg_exists=false
+    local setup_user=false
+    local upgrade_pkg=true
+    local root_fs_path=""
+
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            --help | -h)
+                help_build
+                exit 0
+            ;;
+            --list | -l)
+                list_build $@
+                exit 0
+            ;;
+            --build)
+                shift
+            ;;
+            --not-upgrade)
+                upgrade_pkg=false
+                shift
+            ;;
+            --build-default)
+                BUILD_DEFAULT=true
+                upgrade_pkg=false
+                setup_user=false
+                break
+            ;;
+            --setup-user)
+                [[ $# -ge 2 ]] && [[ -n $2 ]] && {
+                    setup_user=true
+                    user="$2"
+                    shift 2
+                }
+            ;;
+            --password)
+                [[ $# -ge 2 ]] && [[ -n $2 ]] && {
+                    setup_user=true
+                    pass="$2"
+                    shift 2
+                }
+            ;;
+            *)
+                if [[ $# -gt 1 ]]; then
+                    EDIE "unknown option $1"
+                else
+                    arg=$1
+                fi
+                break
+            ;;
+        esac
+    done
+
+    [[ -z $arg ]] && {
+        LOG "\$arg not supplied"
+        if $BUILD_DEFAULT; then
+            INFO "defaulting suite to jammy..."
+            arg=$BEST_CURRENT_DISTRO
+        else
+            echo "suite not supplied ..."
+            EDIE "Use 'udroid build --list' to see available distros"
+        fi
+    }
+
+    # install debootstrap
+    if ! command -v debootstrap >/dev/null 2>&1; then
+        echo "install debootstrap..."
+        ( apt update && apt install debootstrap -y ) &>/dev/null || {
+            DIE "failed to install debootstrap \ninstall it with \n apt install debootstrap"
+        }
+    fi
+
+    # clone fs-cook 
+    fscook_dir=${RTR}/fs-cook
+    [[ ! -d $fscook_dir ]] && {
+        INFO "cloning fs-cook..."
+        git clone https://github.com/RandomCoderOrg/fs-cook "${fscook_dir}" || {
+            EDIE "Cannot clone directory, exiting..."
+        }
+    }
+
+    # check updates
+    git -C $fscook_dir pull || {
+        LOG "fs-cook upgrade(): conflict occured, cleaning and pulling again"
+        git -C $fscook_dir reset --hard
+        git -C $fscook_dir  pull
+    }
+
+    # check arg exists
+    fetch_distro_data "online"
+    suites=$(cat $distro_data | jq -r '.suites[]')
+
+    for suite in $suites; do
+        if [[ $suite =~ $arg ]]; then
+            arg_exists=true
+        fi
+    done
+
+    if ! $arg_exists; then
+        echo "suite $arg not found ...."
+        EDIE "Use 'udroid build --list' to see available distros"
+    fi
+
+    name=$arg-build
+    final_name="custom-$name"
+    root_fs_path="$DEFAULT_FS_INSTALL_DIR/$final_name"
+
+    if $setup_user; then
+        [[ -z $user ]] && {
+            EDIE "--setup-user not supplied" "\t requies a username\n\t "
+        }
+        [[ -z $pass ]] && {
+            EDIE "--password not supplied" "\t requies a password for user\n\t ex: ubuntu"
+        }
+    fi
+
+    [[ -d ${root_fs_path} ]] && {
+        echo "filesystem already installed"
+        echo "remove the filesystem before your installation"
+        EDIE " udroid remove -cd $name"
+        exit 1
+    }
+
+    case $arch in
+        aarch64) termux_arch="arm64" ;;
+        armhf) termux_arch="armhf" ;;
+        amd64) termux_arch="amd64" ;;
+        *) DIE "Unsupported architecture..." ;;
+    esac
+
+    TITLE "Building $name "
+
+    # overwrite build script with chosen values
+    cp ${RTR}/proot-utils/proot-build.sh ${RTR}/
+    sed -i "s/SUITE=.*/&$arg/g" ${RTR}/proot-build.sh
+    sed -i "s/build_arch=.*/&$termux_arch/g" ${RTR}/proot-build.sh
+    sed -i "s/setup_user=.*/&$setup_user/g" ${RTR}/proot-build.sh
+    if $setup_user; then
+        sed -i "s/FS_USER=.*/&$user/g"  ${RTR}/proot-build.sh
+        sed -i "s/FS_PASS=.*/&$pass/g"  ${RTR}/proot-build.sh
+    fi
+
+    bash ${RTR}/proot-build.sh
+
+    [[ -d ${root_fs_path}/debootstrap ]] && DIE "Exit as error occured during build..."
+
+    # apply proot-fixes
+    echo -e "Applying proot fixes"
+    bash ${RTR}/proot-utils/proot-fixes.sh "${root_fs_path}"
+
+    if $upgrade_pkg; then
+        echo -e "Upgrading packages"
+        p_login --path "${root_fs_path}" -- "apt-get update && apt-get -y upgrade && apt-get -y full-upgrade"
+    fi
+
+    p_login --path "${root_fs_path}" -- "dpkg-reconfigure tzdata && dpkg-reconfigure keyboard-configuration"
+    
+    # end message
+    echo -e "[\xE2\x9C\x94] $name builded."
+    echo -e "Login to distro with "
+    if $setup_user; then
+        EDIE " udroid login -cd $name --user $user"
+    else
+        EDIE " udroid login -cd $name"
+    fi
+    exit 0
 }
 
 remove() {
@@ -1036,19 +1297,19 @@ remove() {
             --custom|--custom-distro|-cd) shift; custom_remove $@ ;;
             --reset) reset=true; shift 1;;
             --help) help_remove; exit 0;;
-            *) 
+            *)
                 [[ -n $distro ]] && {
                     ELOG "remove() error: name already set to $distro"
                     echo "--name supplied $distro"
                 }
-                
+
                 if [[ -z $arg ]]; then
                     arg=$1
                 else
                     ELOG "unkown option $1"
                 fi
                 shift
-                break 
+                break
             ;;
         esac
     done
@@ -1073,7 +1334,7 @@ remove() {
     g_spin "$spinner" \
         "Removing $arg($distro)" \
         bash proot-utils/proot-uninstall-suite.sh "$root_fs_path"
-    
+
     if [[ $reset == true ]]; then
         unset path
         install $arg
@@ -1095,7 +1356,7 @@ custom_remove() {
     g_spin "pulse" \
         "Removing $name" \
         bash proot-utils/proot-uninstall-suite.sh "$root_fs_path"
-    
+
     exit 0
 }
 
@@ -1118,14 +1379,31 @@ update_cache() {
 _upgrade() {
     TITLE "upgrade()"
     local branch=""
-    
+    local backup=false
+
     while [ $# -gt 0 ]; do
         case $1 in
             --branch) branch=$2; shift 2;;
+            --backup) backup=true; shift ;;
             --help) help_upgrade; exit 0;;
             *) shift ;;
         esac
     done
+
+    if [[ -d "${HOME}/.udroid" ]]; then
+        if ask "old configuration detected, restore previous ones?"; then
+            cp -r ${HOME}/.udroid ${PREFIX}/etc/udroid
+            DIE "Restore finish!"
+        else
+            echo "keep on upgrade..."
+        fi
+    fi
+
+    # backup old configurations
+    if $backup ; then
+        echo "Backup current configurations..."
+        cp -r ${PREFIX}/etc/udroid ${HOME}/.udroid
+    fi
 
     [[ -z $branch ]] && branch="main"
     # [[ -z $branch ]] && branch="main"
@@ -1151,14 +1429,14 @@ _upgrade() {
         LOG "upgrade(): switching to branch $branch"
         git -C $repo_cache checkout $branch
     fi
-    
+
     git -C $repo_cache fetch --all --quiet
     new_commits=$(git -C $repo_cache --no-pager log --oneline HEAD..origin)
     if [[ -z $new_commits ]]; then
         LOG "upgrade(): already in the lastest version, no need to upgrade"
         DIE "Already up to date!"
     fi
-    
+
     echo "---- new commits ----"
     git -C $repo_cache --no-pager log --oneline HEAD..origin # $new_commits is not formatted
     echo -e "---------------------\n"
@@ -1182,7 +1460,7 @@ _upgrade() {
     bash install.sh
 
     # TODO: look out for commit hashes for better upgrade strategy
-    
+
 }
 
 # clear_cache() => clears filesystem cache
@@ -1193,7 +1471,7 @@ _upgrade() {
 clear_cache() {
     TITLE "> CLEAR CACHE"
     cache_size=$(du -sh $DLCACHE | awk '{print $1}')
-    
+
    # check for files
     if [[ -z $(ls -A $DLCACHE) ]]; then
         GWARN " ?  cache is empty"
@@ -1222,20 +1500,11 @@ download() {
         LOG "download(): $name already exists in $path"
         GWARN "$name already exists, continuing with existing file"
     else
-        # retry everytime whenever the host disconnects or being stopped in case $enable_always_retry is set to true
-        if $enable_always_retry; then
-            INFO "Downloading with --always-retry flag on..."
-            INFO "If you want to stop retrying just enter Ctrl+C"
-            while $enable_always_retry; do
-                wget -T 15 -c -q --show-progress --progress=bar:force --retry-on-host-error -O ${path}/$name  "$link" && break
-            done
-        else
-            wget -q --tries=10 --show-progress --progress=bar:force -O ${path}/$name  "$link"  2>&1 || {
-                ELOG "failed to download $name"
-                echo "failed to download $name"
-                exit 1
-            }
-        fi
+        wget -q --tries=10 --show-progress --progress=bar:force -O ${path}/$name  "$link"  2>&1 || {
+            ELOG "failed to download $name"
+            echo "failed to download $name"
+            exit 1
+        }
     fi
 }
 
@@ -1286,6 +1555,7 @@ while [ $# -gt 0 ]; do
         --update-cache) shift 1; update_cache $@ ; break ;;
         --clear-cache) shift 1; clear_cache $@ ; break ;;
         login   | --login|-l | l) shift 1; login $@; break ;;
+        build   | --build ) shift 1 ; build $@; break;;
         remove  | --remove | --uninstall ) shift 1 ; remove $@; break;;
         reset   | --reset | --reinstall )  shift 1 ; _reset $@; break;;
         list    | --list) shift 1; list $@; break ;;
