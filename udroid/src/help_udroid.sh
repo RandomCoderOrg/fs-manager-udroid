@@ -101,6 +101,7 @@ help_upgrade() {
     echo "upgrades udroid scripts to the latest version"
     echo "options:"
     echo "  --branch <branch>  upgrade to a specific branch (default: main)"
+    echo "  --backup           create a backup of the current udroid scripts before upgrading"
     echo "  -h, --help    show this help message and exit"
     echo "example:"
     echo "  udroid upgrade --branch <branch>"

@@ -628,7 +628,7 @@ login() {
         fi
 
         # set fake kernel version string
-        set -- "--kernel-release=5.4.2-proot-facked" "$@"
+        set -- "--kernel-release=5.4.2-proot-faked" "$@"
 
         # Fix lstat
         set -- "-L" "$@"
@@ -1249,6 +1249,7 @@ build() {
     TITLE "Building $name "
 
     # overwrite build script with chosen values
+    [[ -f ${RTR}/proot-build.sh ]] && rm ${RTR}/proot-build.sh
     cp ${RTR}/proot-utils/proot-build.sh ${RTR}/
     sed -i "s/SUITE=.*/&$arg/g" ${RTR}/proot-build.sh
     sed -i "s/build_arch=.*/&$termux_arch/g" ${RTR}/proot-build.sh
@@ -1258,8 +1259,11 @@ build() {
         sed -i "s/FS_PASS=.*/&$pass/g"  ${RTR}/proot-build.sh
     fi
 
+    # Start building
     bash ${RTR}/proot-build.sh
+    rm -f ${RTR}/proot-build.sh
 
+    # if debootstrap directory exists, the build failed
     [[ -d ${root_fs_path}/debootstrap ]] && DIE "Exit as error occured during build..."
 
     # apply proot-fixes
@@ -1406,7 +1410,6 @@ _upgrade() {
     fi
 
     [[ -z $branch ]] && branch="main"
-    # [[ -z $branch ]] && branch="main"
 
     # place to store repository
     repo_cache="${HOME}/.fs-manager-udroid"

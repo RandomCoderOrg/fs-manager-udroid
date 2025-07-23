@@ -122,7 +122,7 @@ example:
 
 ```cmd
 udroid [ build| --build ] [<options>] <suite>
-builds a raw distro using fs-cook
+builds a raw ubuntu distro using fs-cook
 
 options:
   -h, --help             show this help message and exit
