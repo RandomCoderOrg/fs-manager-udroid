@@ -3,6 +3,12 @@
 DIE() { echo -e "${@}"; exit 1 ;:;}
 GWARN() { echo -e "\e[90m${*}\e[0m";:;}
 
+# Check for termux playstore version:
+if [[ "$TERMUX_VERSION" == "googleplay"* ]]; then
+  GWARN "Termux Play Store version detected."
+  DIE "The Play Store version is unsupported.\nPlease reinstall Termux from F-Droid: https://f-droid.org/packages/com.termux/"
+fi
+
 apt install -y jq wget proot pv pulseaudio libandroid-shmem-static which
 [[ ! -d udroid/src ]] && {
     echo "udroid/src not found"
