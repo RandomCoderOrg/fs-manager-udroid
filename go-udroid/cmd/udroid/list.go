@@ -24,7 +24,7 @@ func newListCmd(a *app) *cobra.Command {
 	f := &listFlags{}
 	cmd := &cobra.Command{
 		Use:     "list",
-		Aliases: []string{"ls"},
+		Aliases: []string{"ls", "images"},
 		Short:   "list distros and their install status",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			mf, err := loadManifest(cmd.Context(), a, manifest.ModeOffline, false)
