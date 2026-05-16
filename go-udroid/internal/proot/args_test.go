@@ -120,6 +120,22 @@ func TestBuildArgs_ShellFallback(t *testing.T) {
 	}
 }
 
+// TestBuildArgs_FakeProcSkippedWhenHostReadable: on a host where
+// /proc/loadavg is readable (every linux + macOS dev box), the fake
+// /proc bind for it must not be emitted. Bash udroid skips them under
+// the same condition; stacking the fake on a working /proc bind throws
+// proot off and was the cause of /bin/su misexec on first port.
+func TestBuildArgs_FakeProcSkippedWhenHostReadable(t *testing.T) {
+	if _, err := os.Stat("/proc/loadavg"); err != nil {
+		t.Skip("host has no /proc/loadavg — test would be vacuous")
+	}
+	o := DefaultOptions("/x")
+	got := strings.Join(BuildArgs(o), " ")
+	if strings.Contains(got, "proc/.loadavg:/proc/loadavg") {
+		t.Errorf("fake /proc/loadavg bind should be skipped when host /proc/loadavg is readable; got:\n%s", got)
+	}
+}
+
 func mustMkdir(t *testing.T, p string) {
 	t.Helper()
 	if err := os.MkdirAll(p, 0o755); err != nil {

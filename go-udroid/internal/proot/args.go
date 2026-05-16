@@ -8,105 +8,47 @@ import (
 // BuildArgs is a pure transform from typed Options to the argv that gets
 // handed to exec.Command("proot", ...).
 //
-// Order of args matters to proot in some cases (notably the trailing
-// program + its argv comes last); see comments at each section.
+// The argv layout mirrors bash udroid's final order verbatim so we don't
+// trip on any subtle proot ordering behaviour: termux/android binds first,
+// conditional fake /proc binds, custom binds, shared-tmp + core /proc + /sys,
+// /dev binds, then the session flags, --rootfs=, and finally the launcher.
 //
-// Determinism: same Options always produces the same argv. No env reads,
-// no time, no random ordering, which keeps the output testable.
+// Determinism: same Options always produces the same argv. The only
+// non-deterministic inputs are os.Stat probes for paths that may or may
+// not exist on the host (e.g. /apex, /vendor), which is intentional —
+// the bash version probes the same way.
 func BuildArgs(o Options) []string {
-	var a []string
+	a := make([]string, 0, 48)
 
-	// --- session-scoped flags --------------------------------------------------
-	if o.FixLowPorts {
-		a = append(a, "-p")
-	}
-	if o.AshmemMemfd {
-		a = append(a, "--ashmem-memfd")
-	}
-	if o.KillOnExit {
-		a = append(a, "--kill-on-exit")
-	}
-	if o.Link2Symlink {
-		a = append(a, "--link2symlink")
-	}
-	if o.SysVIPC {
-		a = append(a, "--sysvipc")
-	}
-	if o.FakeRootID {
-		a = append(a, "--root-id")
-	}
-	if o.KernelRelease != "" {
-		a = append(a, "--kernel-release="+o.KernelRelease)
-	}
-	if o.FollowSymlinks {
-		a = append(a, "-L")
-	}
-	// --cwd: an explicit value wins; otherwise inherit HostPWD unless
-	// Isolated (which forces a clean /root). Matches bash udroid which
-	// always passes --cwd=$PWD unless --isolated/--no-cwd-active-directory.
-	switch {
-	case o.CWD != "":
-		a = append(a, "--cwd="+o.CWD)
-	case o.Isolated:
-		a = append(a, "--cwd=/root")
-	case o.HostPWD != "":
-		a = append(a, "--cwd="+o.HostPWD)
-	}
-
-	// --- core mounts -----------------------------------------------------------
-	if o.CoreMounts {
-		a = append(a,
-			"--bind=/dev",
-			"--bind=/dev/urandom:/dev/random",
-			"--bind=/proc",
-			"--bind=/proc/self/fd:/dev/fd",
-			"--bind=/proc/self/fd/0:/dev/stdin",
-			"--bind=/proc/self/fd/1:/dev/stdout",
-			"--bind=/proc/self/fd/2:/dev/stderr",
-			"--bind=/sys",
-		)
-	}
-
-	if o.CapLastCapFix {
-		a = append(a, "--bind=/dev/null:/proc/sys/kernel/cap_last_cap")
-	}
-
-	if o.SharedTmp && o.HostPrefix != "" {
-		a = append(a,
-			"--bind="+o.HostPrefix+"/tmp:/tmp",
-			"--bind="+o.RootFS+"/dev/shm:/dev/shm",
-		)
-	} else {
-		a = append(a, "--bind="+o.RootFS+"/tmp:/dev/shm")
-	}
-
-	// --- fake /proc/* (used when the host blocks reading those files) ---------
-	if o.FakeProcFiles {
-		for _, rel := range []string{"loadavg", "stat", "uptime", "version", "vmstat"} {
-			a = append(a, "--bind="+filepath.Join(o.RootFS, "proc", "."+rel)+":/proc/"+rel)
-		}
-	}
-
-	// --- user binds (after core so they can override) ------------------------
-	for _, b := range o.Binds {
-		a = append(a, b.String())
-	}
-
-	// --- termux + android paths -----------------------------------------------
+	// --- termux + android paths (must precede /proc bind below so a later
+	//     --bind=/proc takes precedence on overlap) ---------------------------
 	if o.TermuxMounts && !o.Isolated {
 		pkg := o.AndroidPackage
 		if pkg == "" {
 			pkg = "com.termux"
 		}
-		a = append(a,
-			"--bind=/data/dalvik-cache",
-			"--bind=/data/data/"+pkg+"/cache",
-		)
-		if _, err := os.Stat("/data/data/" + pkg + "/files/apps"); err == nil {
-			a = append(a, "--bind=/data/data/"+pkg+"/files/apps")
+		for _, f := range []string{"/property_contexts", "/plat_property_contexts"} {
+			if _, err := os.Stat(f); err == nil {
+				a = append(a, "--bind="+f)
+			}
 		}
-		if o.HostHome != "" {
-			a = append(a, "--bind="+o.HostHome)
+		if _, err := os.Stat("/vendor"); err == nil {
+			a = append(a, "--bind=/vendor")
+		}
+		if _, err := os.Stat("/system"); err == nil {
+			a = append(a, "--bind=/system")
+		}
+		if o.HostPrefix != "" {
+			a = append(a, "--bind="+o.HostPrefix)
+		}
+		if _, err := os.Stat("/linkerconfig/ld.config.txt"); err == nil {
+			a = append(a, "--bind=/linkerconfig/ld.config.txt")
+		}
+		if _, err := os.Stat("/apex"); err == nil {
+			a = append(a, "--bind=/apex")
+		}
+		if _, err := os.Stat("/storage"); err == nil {
+			a = append(a, "--bind=/storage")
 		}
 		// shared storage probes — pick the first that resolves
 		for _, candidate := range []struct{ src, dst string }{
@@ -119,37 +61,114 @@ func BuildArgs(o Options) []string {
 				break
 			}
 		}
-		if _, err := os.Stat("/storage"); err == nil {
-			a = append(a, "--bind=/storage")
+		if o.HostHome != "" {
+			a = append(a, "--bind="+o.HostHome)
 		}
-		if _, err := os.Stat("/apex"); err == nil {
-			a = append(a, "--bind=/apex")
+		if _, err := os.Stat("/data/data/" + pkg + "/files/apps"); err == nil {
+			a = append(a, "--bind=/data/data/"+pkg+"/files/apps")
 		}
-		if _, err := os.Stat("/linkerconfig/ld.config.txt"); err == nil {
-			a = append(a, "--bind=/linkerconfig/ld.config.txt")
-		}
-		if o.HostPrefix != "" {
-			a = append(a, "--bind="+o.HostPrefix)
-		}
-		if _, err := os.Stat("/system"); err == nil {
-			a = append(a, "--bind=/system")
-		}
-		if _, err := os.Stat("/vendor"); err == nil {
-			a = append(a, "--bind=/vendor")
-		}
-		for _, f := range []string{"/plat_property_contexts", "/property_contexts"} {
-			if _, err := os.Stat(f); err == nil {
-				a = append(a, "--bind="+f)
+		a = append(a,
+			"--bind=/data/data/"+pkg+"/cache",
+			"--bind=/data/dalvik-cache",
+		)
+	}
+
+	// --- fake /proc/* binds: only when host's real /proc/<name> is
+	// unreadable. Adding them on top of an already-bound /proc confuses
+	// proot's overlay handling — matching bash here is load-bearing.
+	if o.FakeProcFiles {
+		for _, rel := range []string{"loadavg", "stat", "uptime", "version", "vmstat"} {
+			if !hostProcReadable("/proc/" + rel) {
+				a = append(a, "--bind="+filepath.Join(o.RootFS, "proc", "."+rel)+":/proc/"+rel)
 			}
 		}
 	}
 
-	// --- rootfs (must come after binds) --------------------------------------
+	// --- user binds + per-fs binds --------------------------------------------
+	for _, b := range o.Binds {
+		a = append(a, b.String())
+	}
+
+	// --- shared tmp / shm -----------------------------------------------------
+	if o.SharedTmp && o.HostPrefix != "" {
+		a = append(a,
+			"--bind="+o.RootFS+"/dev/shm:/dev/shm",
+			"--bind="+o.HostPrefix+"/tmp:/tmp",
+		)
+	} else {
+		a = append(a, "--bind="+o.RootFS+"/tmp:/dev/shm")
+	}
+
+	// --- core mounts ----------------------------------------------------------
+	if o.CoreMounts {
+		a = append(a,
+			"--bind=/sys",
+			"--bind=/proc/self/fd/2:/dev/stderr",
+			"--bind=/proc/self/fd/1:/dev/stdout",
+			"--bind=/proc/self/fd/0:/dev/stdin",
+			"--bind=/proc/self/fd:/dev/fd",
+			"--bind=/proc",
+			"--bind=/dev/urandom:/dev/random",
+			"--bind=/dev",
+		)
+	}
+
+	// --- session toggles + flags ----------------------------------------------
+	if o.FakeRootID {
+		a = append(a, "--root-id")
+	}
+	if o.CapLastCapFix {
+		a = append(a, "--bind=/dev/null:/proc/sys/kernel/cap_last_cap")
+	}
+	switch {
+	case o.CWD != "":
+		a = append(a, "--cwd="+o.CWD)
+	case o.Isolated:
+		a = append(a, "--cwd=/root")
+	case o.HostPWD != "":
+		a = append(a, "--cwd="+o.HostPWD)
+	}
+	if o.FollowSymlinks {
+		a = append(a, "-L")
+	}
+	if o.KernelRelease != "" {
+		a = append(a, "--kernel-release="+o.KernelRelease)
+	}
+	if o.SysVIPC {
+		a = append(a, "--sysvipc")
+	}
+	if o.Link2Symlink {
+		a = append(a, "--link2symlink")
+	}
+	if o.KillOnExit {
+		a = append(a, "--kill-on-exit")
+	}
+	if o.FixLowPorts {
+		a = append(a, "-p")
+	}
+	if o.AshmemMemfd {
+		a = append(a, "--ashmem-memfd")
+	}
+
+	// --- rootfs (must come immediately before the launcher) ------------------
 	a = append(a, "--rootfs="+o.RootFS)
 
 	// --- shell launcher -------------------------------------------------------
 	a = append(a, buildLauncher(o)...)
 	return a
+}
+
+// hostProcReadable returns true when the kernel can satisfy a read of path.
+// Used to decide whether a fake /proc/<name> bind is needed.
+func hostProcReadable(path string) bool {
+	f, err := os.Open(path)
+	if err != nil {
+		return false
+	}
+	defer f.Close()
+	buf := make([]byte, 1)
+	_, err = f.Read(buf)
+	return err == nil
 }
 
 // buildLauncher returns the trailing `/usr/bin/env -i HOME=... su -l user -c "..."`
@@ -171,7 +190,6 @@ func buildLauncher(o Options) []string {
 
 	shell, useSu := pickShell(o.RootFS)
 
-	// run-script overrides Command
 	if o.RunScript != "" {
 		script := "/" + filepath.Base(o.RunScript)
 		if useSu {
