@@ -37,7 +37,14 @@ type Options struct {
 
 // Setup builds the logger, installs it as the slog default, and returns a
 // close function the caller should defer to flush the file.
+//
+// If Level is empty and Verbose is true, Level is promoted to "debug" so
+// `--verbose` alone produces useful diagnostic output without the user
+// having to remember a second flag.
 func Setup(opts Options) (*slog.Logger, func() error, error) {
+	if opts.Level == "" && opts.Verbose {
+		opts.Level = "debug"
+	}
 	level, err := parseLevel(opts.Level)
 	if err != nil {
 		return nil, nil, err

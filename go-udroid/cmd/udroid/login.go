@@ -34,6 +34,7 @@ func newLoginCmd(a *app) *cobra.Command {
 		noCapLastCap    bool
 		reinstallFixes  bool
 		noPulseServer   bool
+		dryRun          bool
 		runScript       string
 	)
 	cmd := &cobra.Command{
@@ -139,6 +140,13 @@ func newLoginCmd(a *app) *cobra.Command {
 			}
 
 			a.ui.Title("> LOGIN " + distroName)
+			if dryRun {
+				argv := append([]string{"proot"}, proot.BuildArgs(opts)...)
+				for _, s := range argv {
+					fmt.Fprintln(a.ui.Out(), s)
+				}
+				return nil
+			}
 			return proot.Login(opts)
 		},
 	}
@@ -159,6 +167,7 @@ func newLoginCmd(a *app) *cobra.Command {
 	f.BoolVar(&noCapLastCap, "no-cap-last-cap", false, "disable cap_last_cap fix mount")
 	f.BoolVar(&reinstallFixes, "reinstall-fixes", false, "re-apply proot-fixes before login")
 	f.BoolVar(&noPulseServer, "no-pulseserver", false, "skip starting host pulseaudio")
+	f.BoolVar(&dryRun, "dry-run", false, "print the proot argv (one per line) and exit without executing")
 	f.StringVar(&runScript, "run-script", "", "host-side script to run inside the rootfs")
 	return cmd
 }
