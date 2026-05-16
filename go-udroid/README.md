@@ -118,6 +118,31 @@ udroid login --profile dev jammy:raw
 
 CLI flags always win over profile values, profile values win over `defaults`.
 
+**Full profile schema.** Every key below is optional. Boolean fields are
+pointers internally so omitting them means "inherit"; setting them to
+`true` or `false` is what flips the toggle. Strings/lists fall back to the
+zero value when absent.
+
+| Field            | Type           | Effect when set |
+|------------------|----------------|-----------------|
+| `user`           | string         | login user inside the rootfs (default `root`) |
+| `binds`          | list of string | extra `--bind` entries; each is `src` or `src:dst` |
+| `command`        | list of string | run this once instead of an interactive shell |
+| `run_script`     | string         | host-side script copied into rootfs and exec'd |
+| `isolated`       | bool           | skip termux/storage/host-cwd mounts |
+| `link2symlink`   | bool           | proot `--link2symlink` (default `true`) |
+| `sysvipc`        | bool           | proot `--sysvipc` (default `true`) |
+| `kill_on_exit`   | bool           | proot `--kill-on-exit` (default `true`) |
+| `fake_root_id`   | bool           | proot `--root-id` (default `true`) |
+| `cap_last_cap_fix` | bool         | bind-mask `/proc/sys/kernel/cap_last_cap` (default `true`) |
+| `shared_tmp`     | bool           | bind termux `$PREFIX/tmp` to `/tmp` (default `true`) |
+| `fix_low_ports`  | bool           | proot `-p`, allow ports < 1024 |
+| `ashmem_memfd`   | bool           | proot `--ashmem-memfd` (experimental) |
+| `pulse_server`   | bool           | start host pulseaudio with TCP loopback (default `true`) |
+
+The same schema applies to the top-level `defaults:` block — it is just a
+profile that always runs.
+
 ## Layout
 
 ```

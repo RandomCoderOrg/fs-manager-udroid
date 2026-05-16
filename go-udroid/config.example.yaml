@@ -21,6 +21,8 @@ defaults:
 
 # Named profiles — invoke with `udroid login --profile dev jammy:raw`.
 # Any field omitted is inherited from `defaults` or the built-in proot defaults.
+# Bool fields use Go-style pointers internally, so leaving a key off is
+# different from setting it to false: omitted = inherit, false = force off.
 profiles:
   dev:
     user: dev
@@ -39,3 +41,23 @@ profiles:
     user: root
     pulse_server: true     # default true; set false to skip the host daemon
     fix_low_ports: true
+
+  # `everything` shows every supported key with its default value. Use it as
+  # a template — copy + delete what you don't need rather than leaving
+  # explicit values in (omitted keys inherit; that's usually what you want).
+  everything:
+    user: root
+    binds:
+      - /sdcard:/sdcard
+    command: []            # non-empty replaces the interactive shell
+    run_script: ""         # host path; copied into rootfs and exec'd
+    isolated: false
+    link2symlink: true     # proot --link2symlink
+    sysvipc: true          # proot --sysvipc
+    kill_on_exit: true     # proot --kill-on-exit
+    fake_root_id: true     # proot --root-id
+    cap_last_cap_fix: true # bind /dev/null over /proc/sys/kernel/cap_last_cap
+    shared_tmp: true       # bind $PREFIX/tmp to /tmp
+    fix_low_ports: false   # proot -p
+    ashmem_memfd: false    # proot --ashmem-memfd (experimental)
+    pulse_server: true     # start host pulseaudio with TCP loopback
