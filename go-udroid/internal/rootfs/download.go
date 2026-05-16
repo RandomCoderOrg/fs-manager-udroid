@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -38,6 +39,9 @@ func Download(ctx context.Context, url, dest string, retryForever bool, pr Progr
 		pr = nopProgress{}
 	}
 	if _, err := os.Stat(dest); err == nil {
+		slog.Debug("download skipped; file already present",
+			slog.String("dest", dest),
+		)
 		return nil
 	}
 	if err := os.MkdirAll(filepath.Dir(dest), 0o755); err != nil {
@@ -45,17 +49,26 @@ func Download(ctx context.Context, url, dest string, retryForever bool, pr Progr
 	}
 
 	for attempt := 1; ; attempt++ {
+		slog.Debug("download attempt",
+			slog.Int("attempt", attempt),
+			slog.String("url", url),
+			slog.String("dest", dest),
+		)
 		err := downloadOnce(ctx, url, dest, pr)
 		if err == nil {
+			slog.Info("download complete", slog.String("dest", dest))
 			return nil
 		}
 		if !retryForever {
 			return fmt.Errorf("download attempt %d: %w", attempt, err)
 		}
+		slog.Warn("download failed; retrying",
+			slog.Int("attempt", attempt),
+			slog.Any("err", err),
+		)
 		if ctx.Err() != nil {
 			return ctx.Err()
 		}
-		// brief backoff before retry
 		select {
 		case <-ctx.Done():
 			return ctx.Err()

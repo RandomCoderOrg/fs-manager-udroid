@@ -51,6 +51,21 @@ Resolution order (highest priority first):
 4. `$XDG_CONFIG_HOME/udroid/config.yaml` then `~/.config/udroid/config.yaml`
 5. Built-in defaults
 
+### Logging
+
+Diagnostic events are written to `$TMPDIR/udroid.log` (configurable). The
+log is structured via `log/slog`; pick `text` or `json` formatting.
+
+| flag | config key | default |
+|---|---|---|
+| `--log-level` | `log.level`  | `info` |
+| `--log-file`  | `log.file`   | `$TMPDIR/udroid.log` |
+| `--log-format`| `log.format` | `text` |
+| `--verbose`/`-v` | — | mirror log output to stderr |
+
+Set `--log-level=debug --verbose` while diagnosing an issue to see every
+event on stderr in real time.
+
 ### Profiles
 
 Save a named bundle of login flags and recall them by name:

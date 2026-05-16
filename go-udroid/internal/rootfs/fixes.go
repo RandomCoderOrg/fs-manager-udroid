@@ -6,6 +6,7 @@ package rootfs
 import (
 	_ "embed"
 	"fmt"
+	"log/slog"
 	"os"
 	"os/user"
 	"path/filepath"
@@ -66,6 +67,7 @@ type AndroidGroup struct {
 // callers should only invoke this once per install (or use --reinstall-fixes
 // after manually editing /etc/profile).
 func ApplyFixes(rootFS string, opts FixesOptions) error {
+	slog.Info("applying proot fixes", slog.String("rootfs", rootFS))
 	st, err := os.Stat(rootFS)
 	if err != nil {
 		return fmt.Errorf("rootfs %q: %w", rootFS, err)

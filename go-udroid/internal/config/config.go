@@ -26,6 +26,15 @@ type Config struct {
 	Paths       PathsOverride           `mapstructure:"paths"`
 	Profiles    map[string]LoginProfile `mapstructure:"profiles"`
 	Defaults    LoginProfile            `mapstructure:"defaults"`
+	Log         LogConfig               `mapstructure:"log"`
+}
+
+// LogConfig configures the slog-backed logger. All fields are optional;
+// CLI flags override anything set here.
+type LogConfig struct {
+	Level  string `mapstructure:"level"`  // debug|info|warn|error
+	File   string `mapstructure:"file"`   // path; empty = $TMPDIR/udroid.log
+	Format string `mapstructure:"format"` // text|json
 }
 
 // PathsOverride lets users redirect any of the canonical directories.

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log/slog"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -36,24 +37,35 @@ func Login(o Options) error {
 	if err != nil {
 		return fmt.Errorf("proot not found in PATH: %w", err)
 	}
+	slog.Info("proot login exec",
+		slog.String("rootfs", o.RootFS),
+		slog.String("user", o.LoginUser),
+		slog.Int("argc", len(args)),
+	)
+	slog.Debug("proot argv", slog.Any("args", args))
 	// Use exec(2) replacement to drop the Go process — proot becomes pid.
 	return syscall.Exec(bin, args, os.Environ())
 }
 
 // startPulseAudio kicks off the host's pulseaudio daemon with TCP loopback
 // enabled so audio inside the container reaches Android's mixer. Best
-// effort — failures (missing binary, already running, etc.) are silent so
-// non-audio installs aren't bothered.
+// effort — failures (missing binary, already running, etc.) are logged at
+// debug level so non-audio installs aren't bothered.
 func startPulseAudio() {
 	bin, err := exec.LookPath("pulseaudio")
 	if err != nil {
+		slog.Debug("pulseaudio not found; skipping", slog.Any("err", err))
 		return
 	}
-	_ = exec.Command(bin,
+	if err := exec.Command(bin,
 		"--start",
 		`--load=module-native-protocol-tcp auth-ip-acl=127.0.0.1 auth-anonymous=1`,
 		"--exit-idle-time=-1",
-	).Run()
+	).Run(); err != nil {
+		slog.Debug("pulseaudio start failed", slog.Any("err", err))
+		return
+	}
+	slog.Debug("pulseaudio started")
 }
 
 // stageRunScript copies a host script into the rootfs root so the inner
@@ -91,16 +103,22 @@ func ExtractTarball(ctx context.Context, tarball, dest string) error {
 	if err != nil {
 		return fmt.Errorf("proot not found in PATH: %w", err)
 	}
-	// proot --link2symlink tar --no-same-owner -xpf <tarball> -C <dest>
+	slog.Info("extracting tarball",
+		slog.String("src", tarball),
+		slog.String("dest", dest),
+	)
 	cmd := exec.CommandContext(ctx, bin,
 		"--link2symlink",
 		"tar", "--no-same-owner", "-xpf", tarball, "-C", dest,
 	)
-	// Don't leak parent LD_PRELOAD into proot/tar.
 	cmd.Env = filterEnv(os.Environ(), "LD_PRELOAD")
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	return cmd.Run()
+	if err := cmd.Run(); err != nil {
+		slog.Error("extraction failed", slog.Any("err", err))
+		return err
+	}
+	return nil
 }
 
 func filterEnv(env []string, drop ...string) []string {

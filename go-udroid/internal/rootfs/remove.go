@@ -3,6 +3,7 @@ package rootfs
 import (
 	"fmt"
 	"io/fs"
+	"log/slog"
 	"os"
 	"path/filepath"
 )
@@ -14,6 +15,7 @@ func Remove(path string) error {
 	if _, err := os.Stat(path); err != nil {
 		return fmt.Errorf("rootfs %q: %w", path, err)
 	}
+	slog.Info("removing rootfs", slog.String("path", path))
 	_ = filepath.WalkDir(path, func(p string, _ fs.DirEntry, err error) error {
 		if err != nil {
 			return nil
@@ -21,7 +23,11 @@ func Remove(path string) error {
 		_ = os.Chmod(p, 0o700)
 		return nil
 	})
-	return os.RemoveAll(path)
+	if err := os.RemoveAll(path); err != nil {
+		slog.Error("rootfs remove failed", slog.String("path", path), slog.Any("err", err))
+		return err
+	}
+	return nil
 }
 
 // Size returns the recursive on-disk size in bytes.

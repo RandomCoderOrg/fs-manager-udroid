@@ -3,6 +3,11 @@
 
 manifest_url: https://raw.githubusercontent.com/RandomCoderOrg/udroid-download/main/distro-data.json
 
+log:
+  level: info             # debug | info | warn | error
+  # file: /data/data/com.termux/files/usr/var/log/udroid.log  # default: $TMPDIR/udroid.log
+  format: text            # text | json
+
 paths:
   # Uncomment to redirect the directories udroid manages. Useful for testing
   # on a regular Linux host where the termux $PREFIX doesn't exist.

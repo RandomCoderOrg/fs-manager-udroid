@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -58,10 +59,16 @@ func (f *Fetcher) Load(ctx context.Context, mode Mode, strict bool) (*Manifest, 
 			if strict || !cached {
 				return nil, err
 			}
-			// silently fall back to cache
+			slog.Warn("manifest fetch failed; using cached copy",
+				slog.String("url", f.URL),
+				slog.Any("err", err),
+			)
 		}
 	case !cached:
 		// offline + no cache — fall through to a single fetch.
+		slog.Info("offline mode but no manifest cached; fetching anyway",
+			slog.String("cache", f.CachePath),
+		)
 		if err := f.refresh(ctx); err != nil {
 			return nil, fmt.Errorf("no cached manifest and fetch failed: %w", err)
 		}
@@ -72,6 +79,7 @@ func (f *Fetcher) Load(ctx context.Context, mode Mode, strict bool) (*Manifest, 
 // refresh downloads into a temp file then renames atomically so a failed
 // download never replaces a working cache.
 func (f *Fetcher) refresh(ctx context.Context) error {
+	slog.Debug("manifest refresh begin", slog.String("url", f.URL))
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, f.URL, nil)
 	if err != nil {
 		return err
@@ -98,5 +106,9 @@ func (f *Fetcher) refresh(ctx context.Context) error {
 		os.Remove(tmpName)
 		return err
 	}
-	return os.Rename(tmpName, f.CachePath)
+	if err := os.Rename(tmpName, f.CachePath); err != nil {
+		return err
+	}
+	slog.Debug("manifest refresh ok", slog.String("path", f.CachePath))
+	return nil
 }
