@@ -23,20 +23,54 @@ CGO_ENABLED=0 GOOS=linux GOARCH=arm64 \
 
 ## Usage
 
-The CLI surface mirrors the bash version. Run `udroid help` for the full list.
+The CLI surface covers everything the bash version offered plus a small set
+of docker-shaped verbs (`pull`, `exec`, `images`, `inspect`, `info`,
+`search`, `rmi`) for users coming from that ecosystem. Run `udroid help` for
+the full list.
+
+### Browse
 
 ```bash
+udroid list                                 # installed + available
+udroid list --size                          # include on-disk size
+udroid list --installed                     # only installed
+udroid images                               # alias for `list`
+udroid search jammy                         # substring match on suite/variant/friendly name
+udroid info                                 # paths, manifest URL, install/cache totals
+udroid info --json                          # same data, machine-readable
+udroid inspect ubuntu-jammy                 # JSON: size, mtime, applied fixes, manifest match
+```
+
+### Install / cache lifecycle
+
+```bash
+udroid pull jammy:raw                       # download tarball into cache, no install
 udroid install jammy:raw                    # download + extract + apply fixes
-udroid login jammy:raw                      # interactive shell
-udroid login --profile dev jammy:raw        # use a saved login profile
-udroid login jammy:raw -- echo hello        # one-shot command
-udroid login --custom my-rootfs             # log into a custom install
-udroid list --size                          # tabulate installed/available
+udroid install --file ./my.tar.xz --name x  # install a local tarball as "custom-x"
 udroid remove jammy:raw                     # uninstall
 udroid reset  jammy:raw                     # remove + reinstall
+udroid rmi jammy:raw                        # drop a single cached tarball
 udroid cache update                         # refresh distro manifest
-udroid cache clear                          # drop downloaded tarballs
+udroid cache clear                          # drop all cached tarballs
 ```
+
+### Run
+
+```bash
+udroid login jammy:raw                      # interactive shell
+udroid login --profile dev jammy:raw        # use a saved login profile
+udroid login jammy:raw -- echo hello        # one-shot command via `--`
+udroid login --custom my-rootfs             # log into a custom install
+udroid login --dry-run jammy:raw            # print proot argv and exit
+
+udroid exec ubuntu-jammy ls -la /tmp        # one-shot, no `--` needed
+udroid exec -u alice ubuntu-jammy env       # run as a specific user
+```
+
+**`exec` flag handling:** flags for udroid (e.g. `-u`) must come **before**
+the rootfs name. Everything after the name — including dash-prefixed tokens
+like `-la` or `--foo` — is forwarded verbatim to the inner command. Matches
+`docker exec` behaviour.
 
 ## Configuration
 
