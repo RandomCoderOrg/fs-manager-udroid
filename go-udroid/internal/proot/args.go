@@ -1,6 +1,8 @@
 package proot
 
 import (
+	"errors"
+	"io"
 	"os"
 	"path/filepath"
 )
@@ -47,7 +49,12 @@ func BuildArgs(o Options) []string {
 		if _, err := os.Stat("/apex"); err == nil {
 			a = append(a, "--bind=/apex")
 		}
-		if _, err := os.Stat("/storage"); err == nil {
+		// bash udroid probes /storage with `ls -1U /storage`, which fails
+		// when the directory exists but isn't readable (Android selinux
+		// often forbids reads even when the path stats). os.Stat would
+		// add the bind unconditionally; readableDir matches bash and
+		// avoids a stray --bind that bash never emits.
+		if readableDir("/storage") {
 			a = append(a, "--bind=/storage")
 		}
 		// shared storage probes — pick the first that resolves
@@ -156,6 +163,18 @@ func BuildArgs(o Options) []string {
 	// --- shell launcher -------------------------------------------------------
 	a = append(a, buildLauncher(o)...)
 	return a
+}
+
+// readableDir returns true when path is a directory and the caller can
+// actually enumerate it. Mirrors bash udroid's `ls -1U` probe.
+func readableDir(path string) bool {
+	f, err := os.Open(path)
+	if err != nil {
+		return false
+	}
+	defer f.Close()
+	_, err = f.Readdirnames(1)
+	return err == nil || errors.Is(err, io.EOF)
 }
 
 // hostProcReadable returns true when the kernel can satisfy a read of path.

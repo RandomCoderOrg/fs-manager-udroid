@@ -43,8 +43,16 @@ func Login(o Options) error {
 		slog.Int("argc", len(args)),
 	)
 	slog.Debug("proot argv", slog.Any("args", args))
-	// Use exec(2) replacement to drop the Go process — proot becomes pid.
-	return syscall.Exec(bin, args, os.Environ())
+	// Strip Termux's LD_PRELOAD before handing control to proot. Termux
+	// sets LD_PRELOAD to a host-side shim (libtermux-exec.so) which has
+	// no equivalent inside the rootfs; if it leaks through, the dynamic
+	// loader inside the rootfs fails to load it, the kernel ends up
+	// returning ENOEXEC for the target binary, and execvp's "interpret
+	// as shell script" fallback hits dash with raw ELF bytes — surfaces
+	// as `/bin/su: 1: Syntax error: ")" unexpected`. Matches bash udroid
+	// which runs `unset LD_PRELOAD` at the top of login().
+	env := filterEnv(os.Environ(), "LD_PRELOAD")
+	return syscall.Exec(bin, args, env)
 }
 
 // startPulseAudio kicks off the host's pulseaudio daemon with TCP loopback
