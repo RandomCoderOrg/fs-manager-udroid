@@ -1,0 +1,63 @@
+# udroid config — drop at ~/.config/udroid/config.yaml or point UDROID_CONFIG at it.
+# Every key is optional; missing values fall back to the built-in defaults.
+
+manifest_url: https://raw.githubusercontent.com/RandomCoderOrg/udroid-download/main/distro-data.json
+
+log:
+  level: info             # debug | info | warn | error
+  # file: /data/data/com.termux/files/usr/var/log/udroid.log  # default: $TMPDIR/udroid.log
+  format: text            # text | json
+
+paths:
+  # Uncomment to redirect the directories udroid manages. Useful for testing
+  # on a regular Linux host where the termux $PREFIX doesn't exist.
+  # prefix: /home/me/udroid-prefix
+  # root: /home/me/udroid-prefix/var/lib/udroid
+
+# `defaults` apply to every `login` call unless a profile or CLI flag overrides.
+defaults:
+  user: root
+  shared_tmp: true
+
+# Named profiles — invoke with `udroid login --profile dev jammy:raw`.
+# Any field omitted is inherited from `defaults` or the built-in proot defaults.
+# Bool fields use Go-style pointers internally, so leaving a key off is
+# different from setting it to false: omitted = inherit, false = force off.
+profiles:
+  dev:
+    user: dev
+    binds:
+      - /sdcard/projects:/workspace
+    isolated: false
+    shared_tmp: true
+
+  ci:
+    user: root
+    isolated: true
+    kill_on_exit: true
+    shared_tmp: false
+
+  audio:
+    user: root
+    pulse_server: true     # default true; set false to skip the host daemon
+    fix_low_ports: true
+
+  # `everything` shows every supported key with its default value. Use it as
+  # a template — copy + delete what you don't need rather than leaving
+  # explicit values in (omitted keys inherit; that's usually what you want).
+  everything:
+    user: root
+    binds:
+      - /sdcard:/sdcard
+    command: []            # non-empty replaces the interactive shell
+    run_script: ""         # host path; copied into rootfs and exec'd
+    isolated: false
+    link2symlink: true     # proot --link2symlink
+    sysvipc: true          # proot --sysvipc
+    kill_on_exit: true     # proot --kill-on-exit
+    fake_root_id: true     # proot --root-id
+    cap_last_cap_fix: true # bind /dev/null over /proc/sys/kernel/cap_last_cap
+    shared_tmp: true       # bind $PREFIX/tmp to /tmp
+    fix_low_ports: false   # proot -p
+    ashmem_memfd: false    # proot --ashmem-memfd (experimental)
+    pulse_server: true     # start host pulseaudio with TCP loopback

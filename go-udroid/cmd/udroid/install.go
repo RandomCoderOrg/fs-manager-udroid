@@ -1,0 +1,179 @@
+package main
+
+import (
+	"context"
+	"fmt"
+	"os"
+	"path/filepath"
+
+	"github.com/spf13/cobra"
+
+	"github.com/RandomCoderOrg/fs-manager-udroid/go-udroid/internal/manifest"
+	"github.com/RandomCoderOrg/fs-manager-udroid/go-udroid/internal/proot"
+	"github.com/RandomCoderOrg/fs-manager-udroid/go-udroid/internal/rootfs"
+)
+
+func newInstallCmd(a *app) *cobra.Command {
+	var (
+		noVerify    bool
+		alwaysRetry bool
+		customFile  string
+		customName  string
+	)
+	cmd := &cobra.Command{
+		Use:     "install <suite>:<variant>",
+		Aliases: []string{"i"},
+		Short:   "install a distro",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			ctx := cmd.Context()
+			if customFile != "" || customName != "" {
+				return runCustomInstall(ctx, a, customFile, customName)
+			}
+			if len(args) == 0 {
+				return fmt.Errorf("install: <suite>:<variant> required")
+			}
+			ref, err := manifest.ParseRef(args[0])
+			if err != nil {
+				return err
+			}
+			return runInstall(ctx, a, ref, noVerify, alwaysRetry)
+		},
+	}
+	cmd.Flags().BoolVar(&noVerify, "no-verify-integrity", false, "skip sha256 verification")
+	cmd.Flags().BoolVar(&alwaysRetry, "always-retry", false, "retry download until success or Ctrl-C")
+	cmd.Flags().StringVar(&customFile, "file", "", "(custom) path to local tarball")
+	cmd.Flags().StringVar(&customName, "name", "", "(custom) name for the installed rootfs")
+	return cmd
+}
+
+// runInstall is the install pipeline reading top-to-bottom: resolve the
+// manifest entry, fetch+verify the tarball, extract under proot, apply
+// the fakes/profile fixes. Each step is a named helper.
+func runInstall(ctx context.Context, a *app, ref manifest.Ref, noVerify, alwaysRetry bool) error {
+	a.ui.Title("> INSTALL " + ref.String())
+	if alwaysRetry && noVerify {
+		return fmt.Errorf("--always-retry is incompatible with --no-verify-integrity")
+	}
+
+	variant, err := resolveInstallVariant(ctx, a, ref)
+	if err != nil {
+		return err
+	}
+	destDir := filepath.Join(a.paths.InstalledFsDir, variant.Name)
+	if _, err := os.Stat(destDir); err == nil {
+		return fmt.Errorf("filesystem %q already installed at %s", variant.Name, destDir)
+	}
+
+	tarPath, err := fetchTarball(ctx, a, variant, noVerify, alwaysRetry)
+	if err != nil {
+		return err
+	}
+	if err := extractAndFix(ctx, a, tarPath, destDir); err != nil {
+		return err
+	}
+	a.ui.Info("✔ " + variant.Name + " installed")
+	return nil
+}
+
+// resolveInstallVariant fetches/refreshes the manifest, fills in any
+// missing suite/variant via prompts, and looks up the per-arch entry.
+func resolveInstallVariant(ctx context.Context, a *app, ref manifest.Ref) (*manifest.Variant, error) {
+	mf, err := loadManifest(ctx, a, manifest.ModeOnline, false)
+	if err != nil {
+		return nil, err
+	}
+	ref, err = resolveRef(a, mf, ref)
+	if err != nil {
+		return nil, err
+	}
+	v, err := mf.Variant(ref.Suite, ref.Variant, a.arch)
+	if err != nil {
+		return nil, err
+	}
+	if v.URL == "" {
+		return nil, fmt.Errorf("no download URL for %s on %s — variant not supported", ref, a.arch)
+	}
+	return v, nil
+}
+
+// fetchTarball downloads the variant tarball into the cache and verifies
+// its sha256. On a checksum mismatch it offers a single re-download with
+// a fresh verify; persistent failure aborts the install.
+func fetchTarball(ctx context.Context, a *app, v *manifest.Variant, noVerify, alwaysRetry bool) (string, error) {
+	ext := filepath.Ext(v.URL)
+	tarPath := filepath.Join(a.paths.DownloadCache, v.Name+".tar"+ext)
+
+	a.ui.Info(fmt.Sprintf("downloading %s ...", v.Name))
+	if err := rootfs.Download(ctx, v.URL, tarPath, alwaysRetry, a.ui.Progress("download "+v.Name)); err != nil {
+		return "", err
+	}
+	if noVerify {
+		return tarPath, nil
+	}
+	if err := verifyOrRedownload(ctx, a, v, tarPath, alwaysRetry); err != nil {
+		return "", err
+	}
+	return tarPath, nil
+}
+
+// verifyOrRedownload runs the sha256 check and, on mismatch, prompts the
+// user to delete the cached tarball and try once more. A second failure
+// is fatal so we don't loop forever on a bad upstream.
+func verifyOrRedownload(ctx context.Context, a *app, v *manifest.Variant, tarPath string, alwaysRetry bool) error {
+	err := a.ui.Spinner("verifying sha256", func() error {
+		return rootfs.VerifySHA256(tarPath, v.SHASum)
+	})
+	if err == nil {
+		return nil
+	}
+	ok, _ := a.ui.Confirm("integrity check failed. re-download?", true)
+	if !ok {
+		return err
+	}
+	_ = os.Remove(tarPath)
+	if err := rootfs.Download(ctx, v.URL, tarPath, alwaysRetry, a.ui.Progress("re-download "+v.Name)); err != nil {
+		return err
+	}
+	return rootfs.VerifySHA256(tarPath, v.SHASum)
+}
+
+// extractAndFix creates the install dir, unpacks the tarball via proot,
+// then writes the fake /proc files, /etc/hosts, env profile, and android
+// aid_* groups so the rootfs is usable.
+func extractAndFix(ctx context.Context, a *app, tarPath, destDir string) error {
+	if err := os.MkdirAll(destDir, 0o755); err != nil {
+		return err
+	}
+	a.ui.Info("extracting to " + destDir)
+	if err := proot.ExtractTarball(ctx, tarPath, destDir); err != nil {
+		return err
+	}
+	a.ui.Info("applying proot fixes")
+	groups, _ := rootfs.HostAndroidGroups()
+	return rootfs.ApplyFixes(destDir, rootfs.FixesOptions{
+		TermuxPrefix:  a.paths.Prefix,
+		AndroidGroups: groups,
+	})
+}
+
+// runCustomInstall installs an arbitrary local tarball as a "custom-"
+// prefixed rootfs. Skips the manifest lookup and integrity check — the
+// user is responsible for the source.
+func runCustomInstall(ctx context.Context, a *app, file, name string) error {
+	if file == "" || name == "" {
+		return fmt.Errorf("custom install requires both --file and --name")
+	}
+	if _, err := os.Stat(file); err != nil {
+		return fmt.Errorf("tarball %q: %w", file, err)
+	}
+	dest := filepath.Join(a.paths.InstalledFsDir, "custom-"+name)
+	if _, err := os.Stat(dest); err == nil {
+		return fmt.Errorf("custom filesystem %q already installed", name)
+	}
+	a.ui.Title("> INSTALL custom-" + name)
+	if err := extractAndFix(ctx, a, file, dest); err != nil {
+		return err
+	}
+	a.ui.Info("✔ custom-" + name + " installed")
+	return nil
+}
