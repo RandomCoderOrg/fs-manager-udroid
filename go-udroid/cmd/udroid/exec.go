@@ -16,12 +16,17 @@ import (
 // newExecCmd runs a one-shot command inside an installed rootfs. It is
 // the docker-shaped form of `login <name> -- <cmd>` — same machinery, no
 // flag surface, fewer keystrokes.
+//
+// Flag handling: SetInterspersed(false) stops flag parsing as soon as the
+// first positional (<name>) is seen, so anything after that — including
+// dash-prefixed tokens like `-la` or `--foo` — is forwarded verbatim to
+// the inner command. Matches `docker exec` UX; `udroid exec -u user name
+// ls -la /tmp` works without a `--` separator.
 func newExecCmd(a *app) *cobra.Command {
 	var loginUser string
 	cmd := &cobra.Command{
-		Use:                "exec <name> <cmd> [args...]",
-		Short:              "run a command inside an installed rootfs",
-		DisableFlagParsing: false,
+		Use:   "exec [flags] <name> <cmd> [args...]",
+		Short: "run a command inside an installed rootfs",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) < 2 {
 				return fmt.Errorf("exec: <name> and <cmd> are required")
@@ -40,6 +45,7 @@ func newExecCmd(a *app) *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVarP(&loginUser, "user", "u", "", "user inside the rootfs (default root)")
+	cmd.Flags().SetInterspersed(false)
 	return cmd
 }
 
