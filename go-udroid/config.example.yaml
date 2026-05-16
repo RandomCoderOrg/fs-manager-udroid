@@ -1,0 +1,36 @@
+# udroid config — drop at ~/.config/udroid/config.yaml or point UDROID_CONFIG at it.
+# Every key is optional; missing values fall back to the built-in defaults.
+
+manifest_url: https://raw.githubusercontent.com/RandomCoderOrg/udroid-download/main/distro-data.json
+
+paths:
+  # Uncomment to redirect the directories udroid manages. Useful for testing
+  # on a regular Linux host where the termux $PREFIX doesn't exist.
+  # prefix: /home/me/udroid-prefix
+  # root: /home/me/udroid-prefix/var/lib/udroid
+
+# `defaults` apply to every `login` call unless a profile or CLI flag overrides.
+defaults:
+  user: root
+  shared_tmp: true
+
+# Named profiles — invoke with `udroid login --profile dev jammy:raw`.
+# Any field omitted is inherited from `defaults` or the built-in proot defaults.
+profiles:
+  dev:
+    user: dev
+    binds:
+      - /sdcard/projects:/workspace
+    isolated: false
+    shared_tmp: true
+
+  ci:
+    user: root
+    isolated: true
+    kill_on_exit: true
+    shared_tmp: false
+
+  audio:
+    user: root
+    pulse_server: true     # default true; set false to skip the host daemon
+    fix_low_ports: true
