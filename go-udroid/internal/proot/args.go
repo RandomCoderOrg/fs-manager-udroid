@@ -41,8 +41,16 @@ func BuildArgs(o Options) []string {
 	if o.FollowSymlinks {
 		a = append(a, "-L")
 	}
-	if o.CWD != "" {
+	// --cwd: an explicit value wins; otherwise inherit HostPWD unless
+	// Isolated (which forces a clean /root). Matches bash udroid which
+	// always passes --cwd=$PWD unless --isolated/--no-cwd-active-directory.
+	switch {
+	case o.CWD != "":
 		a = append(a, "--cwd="+o.CWD)
+	case o.Isolated:
+		a = append(a, "--cwd=/root")
+	case o.HostPWD != "":
+		a = append(a, "--cwd="+o.HostPWD)
 	}
 
 	// --- core mounts -----------------------------------------------------------
@@ -146,6 +154,10 @@ func BuildArgs(o Options) []string {
 
 // buildLauncher returns the trailing `/usr/bin/env -i HOME=... su -l user -c "..."`
 // piece. Split out so unit tests can exercise it without the bind stew above.
+//
+// Shell selection mirrors bash udroid: prefer /bin/su (with -l), fall back
+// to /bin/bash, then /bin/sh. The probe is done against the host-side
+// rootfs path so we never hand proot a launcher it can't exec.
 func buildLauncher(o Options) []string {
 	term := os.Getenv("TERM")
 	if term == "" {
@@ -157,15 +169,50 @@ func buildLauncher(o Options) []string {
 	}
 	env := []string{"/usr/bin/env", "-i", "HOME=/root", "LANG=C.UTF-8", "TERM=" + term}
 
+	shell, useSu := pickShell(o.RootFS)
+
 	// run-script overrides Command
 	if o.RunScript != "" {
-		return append(env, "/bin/su", "-l", user, "-c", "/"+filepath.Base(o.RunScript))
+		script := "/" + filepath.Base(o.RunScript)
+		if useSu {
+			return append(env, shell, "-l", user, "-c", script)
+		}
+		return append(env, shell, "-l", "-c", script)
 	}
 	if len(o.Command) > 0 {
 		joined := shellJoin(o.Command)
-		return append(env, "/bin/su", "-l", user, "-c", joined)
+		if useSu {
+			return append(env, shell, "-l", user, "-c", joined)
+		}
+		return append(env, shell, "-l", "-c", joined)
 	}
-	return append(env, "/bin/su", "-l", user)
+	if useSu {
+		return append(env, shell, "-l", user)
+	}
+	return append(env, shell, "-l")
+}
+
+// pickShell returns the launcher binary to exec and whether to invoke it
+// in su-style (passing the target user as a positional arg). Probes are
+// done against the host-side rootfs path before proot chroots.
+func pickShell(rootFS string) (path string, isSu bool) {
+	if rootFS != "" {
+		if fileExecutable(filepath.Join(rootFS, "bin/su")) {
+			return "/bin/su", true
+		}
+		if fileExecutable(filepath.Join(rootFS, "bin/bash")) {
+			return "/bin/bash", false
+		}
+	}
+	return "/bin/sh", false
+}
+
+func fileExecutable(path string) bool {
+	st, err := os.Stat(path)
+	if err != nil {
+		return false
+	}
+	return !st.IsDir() && st.Mode()&0o111 != 0
 }
 
 // shellJoin quotes each token so the resulting string is safe to hand to

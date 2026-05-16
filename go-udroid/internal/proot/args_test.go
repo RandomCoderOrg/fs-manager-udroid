@@ -1,6 +1,7 @@
 package proot
 
 import (
+	"os"
 	"strings"
 	"testing"
 )
@@ -91,5 +92,44 @@ func TestBuildArgs_IsolatedSkipsTermuxBinds(t *testing.T) {
 	got := strings.Join(BuildArgs(o), " ")
 	if strings.Contains(got, "/home/u") {
 		t.Errorf("isolated should not mount HostHome, got:\n%s", got)
+	}
+}
+
+// TestBuildArgs_ShellFallback verifies the launcher falls back to
+// /bin/bash and then /bin/sh when /bin/su is absent inside the rootfs.
+// Catches regressions where a rootfs without su would fail outright.
+func TestBuildArgs_ShellFallback(t *testing.T) {
+	dir := t.TempDir()
+	mustMkdir(t, dir+"/bin")
+	// no su, no bash → /bin/sh
+	args := BuildArgs(DefaultOptions(dir))
+	if got := args[len(args)-2]; got != "/bin/sh" {
+		t.Errorf("expected /bin/sh fallback, got %q (full: %v)", got, args[len(args)-3:])
+	}
+	// add bash → /bin/bash
+	mustWriteExec(t, dir+"/bin/bash")
+	args = BuildArgs(DefaultOptions(dir))
+	if got := args[len(args)-2]; got != "/bin/bash" {
+		t.Errorf("expected /bin/bash with no su, got %q", got)
+	}
+	// add su → /bin/su (with user arg)
+	mustWriteExec(t, dir+"/bin/su")
+	args = BuildArgs(DefaultOptions(dir))
+	if got := args[len(args)-3]; got != "/bin/su" {
+		t.Errorf("expected /bin/su when present, got %q", got)
+	}
+}
+
+func mustMkdir(t *testing.T, p string) {
+	t.Helper()
+	if err := os.MkdirAll(p, 0o755); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func mustWriteExec(t *testing.T, p string) {
+	t.Helper()
+	if err := os.WriteFile(p, []byte("#!/bin/sh\n"), 0o755); err != nil {
+		t.Fatal(err)
 	}
 }
