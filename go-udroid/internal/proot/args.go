@@ -7,133 +7,167 @@ import (
 	"path/filepath"
 )
 
-// BuildArgs is a pure transform from typed Options to the argv that gets
-// handed to exec.Command("proot", ...).
+// BuildArgs is a pure transform from typed Options to the argv handed to
+// `exec.Command("proot", ...)`.
 //
-// The argv layout mirrors bash udroid's final order verbatim so we don't
-// trip on any subtle proot ordering behaviour: termux/android binds first,
-// conditional fake /proc binds, custom binds, shared-tmp + core /proc + /sys,
-// /dev binds, then the session flags, --rootfs=, and finally the launcher.
-//
-// Determinism: same Options always produces the same argv. The only
-// non-deterministic inputs are os.Stat probes for paths that may or may
-// not exist on the host (e.g. /apex, /vendor), which is intentional —
-// the bash version probes the same way.
+// The function is intentionally a list of phase calls. Each phase appends
+// a contiguous slice of args and has a single concern. Order matches bash
+// udroid's final argv: termux/android binds, fake /proc binds, user binds,
+// shared-tmp/shm, core /sys + /proc + /dev, session flags, --rootfs=,
+// launcher. Matching bash here is load-bearing — proot's overlay handling
+// is sensitive to where /proc gets bound relative to the fake /proc/<file>
+// binds.
 func BuildArgs(o Options) []string {
 	a := make([]string, 0, 48)
-
-	// --- termux + android paths (must precede /proc bind below so a later
-	//     --bind=/proc takes precedence on overlap) ---------------------------
-	if o.TermuxMounts && !o.Isolated {
-		pkg := o.AndroidPackage
-		if pkg == "" {
-			pkg = "com.termux"
-		}
-		for _, f := range []string{"/property_contexts", "/plat_property_contexts"} {
-			if _, err := os.Stat(f); err == nil {
-				a = append(a, "--bind="+f)
-			}
-		}
-		if _, err := os.Stat("/vendor"); err == nil {
-			a = append(a, "--bind=/vendor")
-		}
-		if _, err := os.Stat("/system"); err == nil {
-			a = append(a, "--bind=/system")
-		}
-		if o.HostPrefix != "" {
-			a = append(a, "--bind="+o.HostPrefix)
-		}
-		if _, err := os.Stat("/linkerconfig/ld.config.txt"); err == nil {
-			a = append(a, "--bind=/linkerconfig/ld.config.txt")
-		}
-		if _, err := os.Stat("/apex"); err == nil {
-			a = append(a, "--bind=/apex")
-		}
-		// bash udroid probes /storage with `ls -1U /storage`, which fails
-		// when the directory exists but isn't readable (Android selinux
-		// often forbids reads even when the path stats). os.Stat would
-		// add the bind unconditionally; readableDir matches bash and
-		// avoids a stray --bind that bash never emits.
-		if readableDir("/storage") {
-			a = append(a, "--bind=/storage")
-		}
-		// shared storage probes — pick the first that resolves
-		for _, candidate := range []struct{ src, dst string }{
-			{"/storage/self/primary", "/sdcard"},
-			{"/storage/emulated/0", "/sdcard"},
-			{"/sdcard", "/sdcard"},
-		} {
-			if _, err := os.Stat(candidate.src); err == nil {
-				a = append(a, "--bind="+candidate.src+":"+candidate.dst)
-				break
-			}
-		}
-		if o.HostHome != "" {
-			a = append(a, "--bind="+o.HostHome)
-		}
-		if _, err := os.Stat("/data/data/" + pkg + "/files/apps"); err == nil {
-			a = append(a, "--bind=/data/data/"+pkg+"/files/apps")
-		}
-		a = append(a,
-			"--bind=/data/data/"+pkg+"/cache",
-			"--bind=/data/dalvik-cache",
-		)
-	}
-
-	// --- fake /proc/* binds: only when host's real /proc/<name> is
-	// unreadable. Adding them on top of an already-bound /proc confuses
-	// proot's overlay handling — matching bash here is load-bearing.
-	if o.FakeProcFiles {
-		for _, rel := range []string{"loadavg", "stat", "uptime", "version", "vmstat"} {
-			if !hostProcReadable("/proc/" + rel) {
-				a = append(a, "--bind="+filepath.Join(o.RootFS, "proc", "."+rel)+":/proc/"+rel)
-			}
-		}
-	}
-
-	// --- user binds + per-fs binds --------------------------------------------
+	a = append(a, termuxBinds(o)...)
+	a = append(a, fakeProcBinds(o)...)
 	for _, b := range o.Binds {
 		a = append(a, b.String())
 	}
+	a = append(a, sharedTmpBinds(o)...)
+	a = append(a, coreBinds(o)...)
+	a = append(a, sessionFlags(o)...)
+	a = append(a, "--rootfs="+o.RootFS)
+	a = append(a, buildLauncher(o)...)
+	return a
+}
 
-	// --- shared tmp / shm -----------------------------------------------------
+// termuxBinds emits the host-side android paths the rootfs needs to see:
+// /vendor, /system, $TERMUX_PREFIX, ld.config, /apex, /storage*, $HOME,
+// termux app cache, and the dalvik cache. Skipped entirely when Isolated.
+//
+// Probes mirror bash udroid: stat for files, "ls -1U" semantics for
+// directories that may exist-but-not-be-readable under selinux (e.g.
+// /storage on locked-down devices).
+func termuxBinds(o Options) []string {
+	if !o.TermuxMounts || o.Isolated {
+		return nil
+	}
+	pkg := o.AndroidPackage
+	if pkg == "" {
+		pkg = "com.termux"
+	}
+	var a []string
+	for _, f := range []string{"/property_contexts", "/plat_property_contexts"} {
+		if fileExists(f) {
+			a = append(a, "--bind="+f)
+		}
+	}
+	if fileExists("/vendor") {
+		a = append(a, "--bind=/vendor")
+	}
+	if fileExists("/system") {
+		a = append(a, "--bind=/system")
+	}
+	if o.HostPrefix != "" {
+		a = append(a, "--bind="+o.HostPrefix)
+	}
+	if fileExists("/linkerconfig/ld.config.txt") {
+		a = append(a, "--bind=/linkerconfig/ld.config.txt")
+	}
+	if fileExists("/apex") {
+		a = append(a, "--bind=/apex")
+	}
+	if readableDir("/storage") {
+		a = append(a, "--bind=/storage")
+	}
+	if bind := pickSharedStorage(); bind != "" {
+		a = append(a, bind)
+	}
+	if o.HostHome != "" {
+		a = append(a, "--bind="+o.HostHome)
+	}
+	if fileExists("/data/data/" + pkg + "/files/apps") {
+		a = append(a, "--bind=/data/data/"+pkg+"/files/apps")
+	}
+	a = append(a,
+		"--bind=/data/data/"+pkg+"/cache",
+		"--bind=/data/dalvik-cache",
+	)
+	return a
+}
+
+// pickSharedStorage returns the first readable shared-storage path mapped
+// to /sdcard inside the rootfs. Android exposes the same content under
+// several mount points; whichever resolves first wins.
+func pickSharedStorage() string {
+	candidates := []struct{ src, dst string }{
+		{"/storage/self/primary", "/sdcard"},
+		{"/storage/emulated/0", "/sdcard"},
+		{"/sdcard", "/sdcard"},
+	}
+	for _, c := range candidates {
+		if fileExists(c.src) {
+			return "--bind=" + c.src + ":" + c.dst
+		}
+	}
+	return ""
+}
+
+// fakeProcBinds shadows kernel-provided /proc files with the static
+// snapshots written by rootfs.ApplyFixes. Only emitted for files the host
+// kernel won't let us read at runtime — bash udroid does the same, and
+// stacking these on top of a working /proc/<name> confuses proot.
+func fakeProcBinds(o Options) []string {
+	if !o.FakeProcFiles {
+		return nil
+	}
+	names := []string{"loadavg", "stat", "uptime", "version", "vmstat"}
+	var a []string
+	for _, name := range names {
+		if hostProcReadable("/proc/" + name) {
+			continue
+		}
+		src := filepath.Join(o.RootFS, "proc", "."+name)
+		a = append(a, "--bind="+src+":/proc/"+name)
+	}
+	return a
+}
+
+// sharedTmpBinds bridges termux $PREFIX/tmp into /tmp and gives the rootfs
+// a writable /dev/shm. When SharedTmp is off we fall back to reusing the
+// rootfs's own /tmp as /dev/shm.
+func sharedTmpBinds(o Options) []string {
 	if o.SharedTmp && o.HostPrefix != "" {
-		a = append(a,
-			"--bind="+o.RootFS+"/dev/shm:/dev/shm",
-			"--bind="+o.HostPrefix+"/tmp:/tmp",
-		)
-	} else {
-		a = append(a, "--bind="+o.RootFS+"/tmp:/dev/shm")
+		return []string{
+			"--bind=" + o.RootFS + "/dev/shm:/dev/shm",
+			"--bind=" + o.HostPrefix + "/tmp:/tmp",
+		}
 	}
+	return []string{"--bind=" + o.RootFS + "/tmp:/dev/shm"}
+}
 
-	// --- core mounts ----------------------------------------------------------
-	if o.CoreMounts {
-		a = append(a,
-			"--bind=/sys",
-			"--bind=/proc/self/fd/2:/dev/stderr",
-			"--bind=/proc/self/fd/1:/dev/stdout",
-			"--bind=/proc/self/fd/0:/dev/stdin",
-			"--bind=/proc/self/fd:/dev/fd",
-			"--bind=/proc",
-			"--bind=/dev/urandom:/dev/random",
-			"--bind=/dev",
-		)
+// coreBinds wires up the always-needed kernel surfaces: /sys, the three
+// std-fd-as-device tricks, /proc, /dev/random, /dev.
+func coreBinds(o Options) []string {
+	if !o.CoreMounts {
+		return nil
 	}
+	return []string{
+		"--bind=/sys",
+		"--bind=/proc/self/fd/2:/dev/stderr",
+		"--bind=/proc/self/fd/1:/dev/stdout",
+		"--bind=/proc/self/fd/0:/dev/stdin",
+		"--bind=/proc/self/fd:/dev/fd",
+		"--bind=/proc",
+		"--bind=/dev/urandom:/dev/random",
+		"--bind=/dev",
+	}
+}
 
-	// --- session toggles + flags ----------------------------------------------
+// sessionFlags emits the proot session toggles in bash's order:
+// --root-id, cap_last_cap shim, --cwd, -L, kernel release, sysvipc,
+// link2symlink, kill-on-exit, fix-low-ports, ashmem-memfd.
+func sessionFlags(o Options) []string {
+	var a []string
 	if o.FakeRootID {
 		a = append(a, "--root-id")
 	}
 	if o.CapLastCapFix {
 		a = append(a, "--bind=/dev/null:/proc/sys/kernel/cap_last_cap")
 	}
-	switch {
-	case o.CWD != "":
-		a = append(a, "--cwd="+o.CWD)
-	case o.Isolated:
-		a = append(a, "--cwd=/root")
-	case o.HostPWD != "":
-		a = append(a, "--cwd="+o.HostPWD)
+	if cwd := pickCWD(o); cwd != "" {
+		a = append(a, "--cwd="+cwd)
 	}
 	if o.FollowSymlinks {
 		a = append(a, "-L")
@@ -156,17 +190,26 @@ func BuildArgs(o Options) []string {
 	if o.AshmemMemfd {
 		a = append(a, "--ashmem-memfd")
 	}
-
-	// --- rootfs (must come immediately before the launcher) ------------------
-	a = append(a, "--rootfs="+o.RootFS)
-
-	// --- shell launcher -------------------------------------------------------
-	a = append(a, buildLauncher(o)...)
 	return a
 }
 
+// pickCWD resolves the working directory for the inner process. Explicit
+// CWD wins; Isolated forces /root; otherwise inherit the host PWD so the
+// user lands in the same directory they ran udroid from.
+func pickCWD(o Options) string {
+	switch {
+	case o.CWD != "":
+		return o.CWD
+	case o.Isolated:
+		return "/root"
+	default:
+		return o.HostPWD
+	}
+}
+
 // readableDir returns true when path is a directory and the caller can
-// actually enumerate it. Mirrors bash udroid's `ls -1U` probe.
+// actually enumerate it. Mirrors bash udroid's `ls -1U` probe — needed
+// because Android selinux often makes /storage stattable but unreadable.
 func readableDir(path string) bool {
 	f, err := os.Open(path)
 	if err != nil {
@@ -177,8 +220,8 @@ func readableDir(path string) bool {
 	return err == nil || errors.Is(err, io.EOF)
 }
 
-// hostProcReadable returns true when the kernel can satisfy a read of path.
-// Used to decide whether a fake /proc/<name> bind is needed.
+// hostProcReadable returns true when the kernel can satisfy a one-byte
+// read of path. Used to decide whether a fake /proc/<name> bind is needed.
 func hostProcReadable(path string) bool {
 	f, err := os.Open(path)
 	if err != nil {
@@ -190,12 +233,17 @@ func hostProcReadable(path string) bool {
 	return err == nil
 }
 
-// buildLauncher returns the trailing `/usr/bin/env -i HOME=... su -l user -c "..."`
-// piece. Split out so unit tests can exercise it without the bind stew above.
-//
-// Shell selection mirrors bash udroid: prefer /bin/su (with -l), fall back
-// to /bin/bash, then /bin/sh. The probe is done against the host-side
-// rootfs path so we never hand proot a launcher it can't exec.
+// fileExists is a one-arg os.Stat error check, used heavily by the bind
+// probes for paths that may legitimately be absent on some devices.
+func fileExists(path string) bool {
+	_, err := os.Stat(path)
+	return err == nil
+}
+
+// buildLauncher returns the trailing `/usr/bin/env -i ... /bin/su -l user`
+// piece. Shell selection mirrors bash udroid: prefer /bin/su, fall back
+// to /bin/bash, then /bin/sh — probed against the host-side rootfs path
+// before proot chroots so we never hand proot a launcher it can't exec.
 func buildLauncher(o Options) []string {
 	term := os.Getenv("TERM")
 	if term == "" {
@@ -206,27 +254,31 @@ func buildLauncher(o Options) []string {
 		user = "root"
 	}
 	env := []string{"/usr/bin/env", "-i", "HOME=/root", "LANG=C.UTF-8", "TERM=" + term}
-
 	shell, useSu := pickShell(o.RootFS)
+	cmd := launcherCommand(o)
 
+	switch {
+	case cmd != "" && useSu:
+		return append(env, shell, "-l", user, "-c", cmd)
+	case cmd != "":
+		return append(env, shell, "-l", "-c", cmd)
+	case useSu:
+		return append(env, shell, "-l", user)
+	default:
+		return append(env, shell, "-l")
+	}
+}
+
+// launcherCommand collapses RunScript and Command into the single `-c`
+// argument the shell will run. Empty means interactive login.
+func launcherCommand(o Options) string {
 	if o.RunScript != "" {
-		script := "/" + filepath.Base(o.RunScript)
-		if useSu {
-			return append(env, shell, "-l", user, "-c", script)
-		}
-		return append(env, shell, "-l", "-c", script)
+		return "/" + filepath.Base(o.RunScript)
 	}
 	if len(o.Command) > 0 {
-		joined := shellJoin(o.Command)
-		if useSu {
-			return append(env, shell, "-l", user, "-c", joined)
-		}
-		return append(env, shell, "-l", "-c", joined)
+		return shellJoin(o.Command)
 	}
-	if useSu {
-		return append(env, shell, "-l", user)
-	}
-	return append(env, shell, "-l")
+	return ""
 }
 
 // pickShell returns the launcher binary to exec and whether to invoke it
@@ -253,7 +305,7 @@ func fileExecutable(path string) bool {
 }
 
 // shellJoin quotes each token so the resulting string is safe to hand to
-// `su -c`. Conservative — wraps every token in single quotes and escapes
+// `sh -c`. Conservative — wraps every token in single quotes and escapes
 // embedded single quotes.
 func shellJoin(parts []string) string {
 	out := ""

@@ -13,12 +13,15 @@ import (
 	"github.com/RandomCoderOrg/fs-manager-udroid/go-udroid/internal/rootfs"
 )
 
+// listFlags is the small bag of toggles the `list` command exposes.
+type listFlags struct {
+	showSize      bool
+	showCustomFs  bool
+	installedOnly bool
+}
+
 func newListCmd(a *app) *cobra.Command {
-	var (
-		showSize       bool
-		showCustomFs   bool
-		installedOnly  bool
-	)
+	f := &listFlags{}
 	cmd := &cobra.Command{
 		Use:     "list",
 		Aliases: []string{"ls"},
@@ -28,22 +31,31 @@ func newListCmd(a *app) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			return runList(a, mf, showSize, showCustomFs, installedOnly)
+			return runList(a, mf, f)
 		},
 	}
-	cmd.Flags().BoolVar(&showSize, "size", false, "include installed size")
-	cmd.Flags().BoolVar(&showCustomFs, "custom", false, "also list custom-installed rootfs")
-	cmd.Flags().BoolVar(&installedOnly, "installed", false, "only show installed rootfs")
+	cmd.Flags().BoolVar(&f.showSize, "size", false, "include installed size")
+	cmd.Flags().BoolVar(&f.showCustomFs, "custom", false, "also list custom-installed rootfs")
+	cmd.Flags().BoolVar(&f.installedOnly, "installed", false, "only show installed rootfs")
 	return cmd
 }
 
-func runList(a *app, mf *manifest.Manifest, showSize, showCustomFs, installedOnly bool) error {
-	t := tablewriter.NewWriter(a.ui.Out())
-	hdr := []string{"suite:variant", "arch supported", "status"}
-	if showSize {
-		hdr = append(hdr, "size")
+// runList prints the variants table and (optionally) the custom-fs list.
+// The body reads as the two-section structure the user sees.
+func runList(a *app, mf *manifest.Manifest, f *listFlags) error {
+	renderVariantTable(a, mf, f)
+	if f.showCustomFs {
+		renderCustomFsList(a, f)
 	}
-	t.SetHeader(hdr)
+	return nil
+}
+
+// renderVariantTable builds the suite:variant / arch / status [/ size]
+// table. Iterates each suite-variant pair, drops the row when --installed
+// is on and the row isn't installed.
+func renderVariantTable(a *app, mf *manifest.Manifest, f *listFlags) {
+	t := tablewriter.NewWriter(a.ui.Out())
+	t.SetHeader(tableHeader(f.showSize))
 	t.SetAutoWrapText(false)
 
 	for _, suiteName := range mf.Suites {
@@ -52,53 +64,95 @@ func runList(a *app, mf *manifest.Manifest, showSize, showCustomFs, installedOnl
 			continue
 		}
 		for _, vName := range s.Variants {
-			v, err := mf.Variant(suiteName, vName, a.arch)
-			if err != nil {
+			row, ok := variantRow(a, suiteName, vName, mf, f)
+			if !ok {
 				continue
-			}
-			supported := "NO"
-			for _, arch := range v.SupportedArchs {
-				if arch == string(a.arch) {
-					supported = "YES"
-					break
-				}
-			}
-			installed := ""
-			path := filepath.Join(a.paths.InstalledFsDir, v.Name)
-			if _, err := os.Stat(path); err == nil {
-				installed = "[installed]"
-			}
-			if installedOnly && installed == "" {
-				continue
-			}
-			row := []string{suiteName + ":" + vName, supported, installed}
-			if showSize {
-				row = append(row, sizeOrBlank(path))
 			}
 			t.Append(row)
 		}
 	}
 	t.Render()
+}
 
-	if showCustomFs {
-		fmt.Fprintln(a.ui.Out(), "\ncustom rootfs:")
-		entries, _ := os.ReadDir(a.paths.InstalledFsDir)
-		for _, e := range entries {
-			if !e.IsDir() || !strings.HasPrefix(e.Name(), "custom-") {
-				continue
-			}
-			line := "  " + strings.TrimPrefix(e.Name(), "custom-")
-			if showSize {
-				line += "\t" + sizeOrBlank(filepath.Join(a.paths.InstalledFsDir, e.Name()))
-			}
-			fmt.Fprintln(a.ui.Out(), line)
+// tableHeader returns the column names; "size" is appended only when the
+// user asked for it.
+func tableHeader(includeSize bool) []string {
+	h := []string{"suite:variant", "arch supported", "status"}
+	if includeSize {
+		h = append(h, "size")
+	}
+	return h
+}
+
+// variantRow assembles one table row. Returns (_, false) when the user
+// passed --installed and this variant isn't installed, so the caller
+// knows to skip the append.
+func variantRow(a *app, suiteName, vName string, mf *manifest.Manifest, f *listFlags) ([]string, bool) {
+	v, err := mf.Variant(suiteName, vName, a.arch)
+	if err != nil {
+		return nil, false
+	}
+	installPath := filepath.Join(a.paths.InstalledFsDir, v.Name)
+	installed := pathExists(installPath)
+	if f.installedOnly && !installed {
+		return nil, false
+	}
+
+	row := []string{
+		suiteName + ":" + vName,
+		archSupportedLabel(v.SupportedArchs, string(a.arch)),
+		installedLabel(installed),
+	}
+	if f.showSize {
+		row = append(row, sizeOrBlank(installPath))
+	}
+	return row, true
+}
+
+// archSupportedLabel turns the list of arches a variant supports into a
+// simple YES/NO based on the running arch.
+func archSupportedLabel(supported []string, arch string) string {
+	for _, s := range supported {
+		if s == arch {
+			return "YES"
 		}
 	}
-	return nil
+	return "NO"
+}
+
+// installedLabel returns the visible "[installed]" marker when present.
+func installedLabel(installed bool) string {
+	if installed {
+		return "[installed]"
+	}
+	return ""
+}
+
+// renderCustomFsList walks the install dir for "custom-*" entries and
+// prints them as a separate section. These aren't in the manifest so they
+// don't fit the main table.
+func renderCustomFsList(a *app, f *listFlags) {
+	fmt.Fprintln(a.ui.Out(), "\ncustom rootfs:")
+	entries, _ := os.ReadDir(a.paths.InstalledFsDir)
+	for _, e := range entries {
+		if !e.IsDir() || !strings.HasPrefix(e.Name(), "custom-") {
+			continue
+		}
+		line := "  " + strings.TrimPrefix(e.Name(), "custom-")
+		if f.showSize {
+			line += "\t" + sizeOrBlank(filepath.Join(a.paths.InstalledFsDir, e.Name()))
+		}
+		fmt.Fprintln(a.ui.Out(), line)
+	}
+}
+
+func pathExists(p string) bool {
+	_, err := os.Stat(p)
+	return err == nil
 }
 
 func sizeOrBlank(path string) string {
-	if _, err := os.Stat(path); err != nil {
+	if !pathExists(path) {
 		return ""
 	}
 	n, err := rootfs.Size(path)
@@ -108,6 +162,7 @@ func sizeOrBlank(path string) string {
 	return humanBytes(n)
 }
 
+// humanBytes formats a byte count with binary-IEC suffixes (KiB/MiB/...).
 func humanBytes(n int64) string {
 	const u = 1024
 	if n < u {

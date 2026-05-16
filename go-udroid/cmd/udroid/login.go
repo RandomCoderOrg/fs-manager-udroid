@@ -16,162 +16,209 @@ import (
 	"github.com/RandomCoderOrg/fs-manager-udroid/go-udroid/internal/rootfs"
 )
 
+// loginFlags groups every CLI flag the `login` subcommand exposes. Pulling
+// them into one value keeps newLoginCmd a thin wire-up and lets the run
+// path read the whole user intent at a glance.
+type loginFlags struct {
+	profile        string
+	loginUser      string
+	binds          []string
+	customDistro   string
+	nameOverride   string
+	isolated       bool
+	fixLowPorts    bool
+	ashmemMemfd    bool
+	noSharedTmp    bool
+	noLink2Symlink bool
+	noSysVIPC      bool
+	noKillOnExit  bool
+	noFakeRootID   bool
+	noCapLastCap   bool
+	reinstallFixes bool
+	noPulseServer  bool
+	dryRun         bool
+	runScript      string
+}
+
 func newLoginCmd(a *app) *cobra.Command {
-	var (
-		profile         string
-		loginUser       string
-		bindList        []string
-		customDistro    string
-		nameOverride    string
-		isolated        bool
-		fixLowPorts     bool
-		ashmemMemfd     bool
-		noSharedTmp     bool
-		noLink2Symlink  bool
-		noSysVIPC       bool
-		noKillOnExit    bool
-		noFakeRootID    bool
-		noCapLastCap    bool
-		reinstallFixes  bool
-		noPulseServer   bool
-		dryRun          bool
-		runScript       string
-	)
+	f := &loginFlags{}
 	cmd := &cobra.Command{
 		Use:     "login [flags] <suite>:<variant> [-- cmd ...]",
 		Aliases: []string{"l"},
 		Short:   "log in to an installed rootfs",
 		Long:    "Spawn a proot session inside an installed rootfs. Pass '--' to run a one-shot command instead of dropping into a shell.",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			// args after `--` are the command to run inside the rootfs.
-			dashIdx := cmd.ArgsLenAtDash()
-			var passthrough []string
-			if dashIdx >= 0 {
-				passthrough = args[dashIdx:]
-				args = args[:dashIdx]
-			}
-
-			distroName, err := resolveLoginTarget(a, args, customDistro, nameOverride)
-			if err != nil {
-				return err
-			}
-			rootFS := filepath.Join(a.paths.InstalledFsDir, distroName)
-			if _, err := os.Stat(rootFS); err != nil {
-				return fmt.Errorf("rootfs %q not installed", distroName)
-			}
-			if reinstallFixes {
-				groups, _ := rootfs.HostAndroidGroups()
-				if err := rootfs.ApplyFixes(rootFS, rootfs.FixesOptions{
-					TermuxPrefix:  a.paths.Prefix,
-					AndroidGroups: groups,
-					LoginUser:     loginUser,
-				}); err != nil {
-					return err
-				}
-			}
-
-			opts := proot.DefaultOptions(rootFS)
-			opts.HostPrefix = a.paths.Prefix
-			opts.HostHome = a.paths.Home
-			opts.AndroidPackage = a.paths.Package
-
-			// merge profile from config
-			if profile != "" {
-				prof, ok := a.cfg.Profile(profile)
-				if !ok {
-					return fmt.Errorf("profile %q not found in config", profile)
-				}
-				applyProfile(&opts, prof)
-			} else if a.cfg != nil {
-				applyProfile(&opts, a.cfg.Defaults)
-			}
-
-			// CLI flags override profile
-			if loginUser != "" {
-				opts.LoginUser = loginUser
-			}
-			for _, b := range bindList {
-				opts.Binds = append(opts.Binds, parseBindFlag(b))
-			}
-			if isolated {
-				opts.Isolated = true
-			}
-			if fixLowPorts {
-				opts.FixLowPorts = true
-			}
-			if ashmemMemfd {
-				opts.AshmemMemfd = true
-			}
-			if noSharedTmp {
-				opts.SharedTmp = false
-			}
-			if noLink2Symlink {
-				opts.Link2Symlink = false
-			}
-			if noSysVIPC {
-				opts.SysVIPC = false
-			}
-			if noKillOnExit {
-				opts.KillOnExit = false
-			}
-			if noFakeRootID {
-				opts.FakeRootID = false
-			}
-			if noCapLastCap {
-				opts.CapLastCapFix = false
-			}
-			if noPulseServer {
-				opts.PulseServer = false
-			}
-			if runScript != "" {
-				opts.RunScript = runScript
-			}
-
-			// Pick CWD: explicit isolated => /root, otherwise host PWD.
-			if isolated {
-				opts.CWD = "/root"
-			}
-
-			// per-fs udroid_proot_mounts file
-			opts.Binds = append(opts.Binds, readPerFSMounts(rootFS)...)
-
-			if len(passthrough) > 0 {
-				opts.Command = passthrough
-			}
-
-			a.ui.Title("> LOGIN " + distroName)
-			if dryRun {
-				argv := append([]string{"proot"}, proot.BuildArgs(opts)...)
-				for _, s := range argv {
-					fmt.Fprintln(a.ui.Out(), s)
-				}
-				return nil
-			}
-			return proot.Login(opts)
+			return runLogin(a, f, cmd, args)
 		},
 	}
-	f := cmd.Flags()
-	f.StringVar(&profile, "profile", "", "named login profile from config.yaml")
-	f.StringVar(&loginUser, "user", "", "login user inside the rootfs (default root)")
-	f.StringArrayVarP(&bindList, "bind", "b", nil, "extra bind, e.g. /host:/guest")
-	f.StringVar(&customDistro, "custom", "", "log into a custom (locally-installed) rootfs by name")
-	f.StringVar(&nameOverride, "name", "", "explicit installed name (skip manifest lookup)")
-	f.BoolVar(&isolated, "isolated", false, "skip termux/storage mounts and cwd inheritance")
-	f.BoolVar(&fixLowPorts, "fix-low-ports", false, "allow binding to ports below 1024")
-	f.BoolVar(&ashmemMemfd, "ashmem-memfd", false, "experimental memfd via ashmem")
-	f.BoolVar(&noSharedTmp, "no-shared-tmp", false, "use rootfs /tmp instead of termux $PREFIX/tmp")
-	f.BoolVar(&noLink2Symlink, "no-link2symlink", false, "disable proot link2symlink")
-	f.BoolVar(&noSysVIPC, "no-sysvipc", false, "disable sysvipc emulation")
-	f.BoolVar(&noKillOnExit, "no-kill-on-exit", false, "disable kill-on-exit")
-	f.BoolVar(&noFakeRootID, "no-fake-root-id", false, "disable --root-id")
-	f.BoolVar(&noCapLastCap, "no-cap-last-cap", false, "disable cap_last_cap fix mount")
-	f.BoolVar(&reinstallFixes, "reinstall-fixes", false, "re-apply proot-fixes before login")
-	f.BoolVar(&noPulseServer, "no-pulseserver", false, "skip starting host pulseaudio")
-	f.BoolVar(&dryRun, "dry-run", false, "print the proot argv (one per line) and exit without executing")
-	f.StringVar(&runScript, "run-script", "", "host-side script to run inside the rootfs")
+	bindLoginFlags(cmd, f)
 	return cmd
 }
 
+// bindLoginFlags registers every flag against the shared struct. Lives
+// next to loginFlags so adding a flag is a single-place change.
+func bindLoginFlags(cmd *cobra.Command, f *loginFlags) {
+	pf := cmd.Flags()
+	pf.StringVar(&f.profile, "profile", "", "named login profile from config.yaml")
+	pf.StringVar(&f.loginUser, "user", "", "login user inside the rootfs (default root)")
+	pf.StringArrayVarP(&f.binds, "bind", "b", nil, "extra bind, e.g. /host:/guest")
+	pf.StringVar(&f.customDistro, "custom", "", "log into a custom (locally-installed) rootfs by name")
+	pf.StringVar(&f.nameOverride, "name", "", "explicit installed name (skip manifest lookup)")
+	pf.BoolVar(&f.isolated, "isolated", false, "skip termux/storage mounts and cwd inheritance")
+	pf.BoolVar(&f.fixLowPorts, "fix-low-ports", false, "allow binding to ports below 1024")
+	pf.BoolVar(&f.ashmemMemfd, "ashmem-memfd", false, "experimental memfd via ashmem")
+	pf.BoolVar(&f.noSharedTmp, "no-shared-tmp", false, "use rootfs /tmp instead of termux $PREFIX/tmp")
+	pf.BoolVar(&f.noLink2Symlink, "no-link2symlink", false, "disable proot link2symlink")
+	pf.BoolVar(&f.noSysVIPC, "no-sysvipc", false, "disable sysvipc emulation")
+	pf.BoolVar(&f.noKillOnExit, "no-kill-on-exit", false, "disable kill-on-exit")
+	pf.BoolVar(&f.noFakeRootID, "no-fake-root-id", false, "disable --root-id")
+	pf.BoolVar(&f.noCapLastCap, "no-cap-last-cap", false, "disable cap_last_cap fix mount")
+	pf.BoolVar(&f.reinstallFixes, "reinstall-fixes", false, "re-apply proot-fixes before login")
+	pf.BoolVar(&f.noPulseServer, "no-pulseserver", false, "skip starting host pulseaudio")
+	pf.BoolVar(&f.dryRun, "dry-run", false, "print the proot argv (one per line) and exit without executing")
+	pf.StringVar(&f.runScript, "run-script", "", "host-side script to run inside the rootfs")
+}
+
+// runLogin is the full login flow: resolve target rootfs, optionally
+// re-apply proot fixes, build proot.Options, then either dry-run-print or
+// exec proot. The function reads in three named stages.
+func runLogin(a *app, f *loginFlags, cmd *cobra.Command, args []string) error {
+	cmdArgs, passthrough := splitAtDash(cmd, args)
+
+	distroName, err := resolveLoginTarget(a, cmdArgs, f.customDistro, f.nameOverride)
+	if err != nil {
+		return err
+	}
+	rootFS := filepath.Join(a.paths.InstalledFsDir, distroName)
+	if _, err := os.Stat(rootFS); err != nil {
+		return fmt.Errorf("rootfs %q not installed", distroName)
+	}
+	if f.reinstallFixes {
+		if err := reapplyFixes(a, rootFS, f.loginUser); err != nil {
+			return err
+		}
+	}
+
+	opts, err := buildLoginOptions(a, f, rootFS, passthrough)
+	if err != nil {
+		return err
+	}
+
+	a.ui.Title("> LOGIN " + distroName)
+	if f.dryRun {
+		printArgv(a, opts)
+		return nil
+	}
+	return proot.Login(opts)
+}
+
+// splitAtDash splits cobra's positional args at `--` so anything after is
+// treated as the command to run inside the rootfs.
+func splitAtDash(cmd *cobra.Command, args []string) (head, tail []string) {
+	idx := cmd.ArgsLenAtDash()
+	if idx < 0 {
+		return args, nil
+	}
+	return args[:idx], args[idx:]
+}
+
+// reapplyFixes re-runs rootfs.ApplyFixes against an existing install —
+// the --reinstall-fixes escape hatch users hit when an upgrade leaves the
+// rootfs missing one of the fake /proc files or the profile snippet.
+func reapplyFixes(a *app, rootFS, loginUser string) error {
+	groups, _ := rootfs.HostAndroidGroups()
+	return rootfs.ApplyFixes(rootFS, rootfs.FixesOptions{
+		TermuxPrefix:  a.paths.Prefix,
+		AndroidGroups: groups,
+		LoginUser:     loginUser,
+	})
+}
+
+// buildLoginOptions composes the proot.Options the user actually wants by
+// layering: built-in defaults → config.defaults → named profile →
+// CLI flags → per-fs mounts file. Each later layer overrides the earlier.
+func buildLoginOptions(a *app, f *loginFlags, rootFS string, passthrough []string) (proot.Options, error) {
+	opts := proot.DefaultOptions(rootFS)
+	opts.HostPrefix = a.paths.Prefix
+	opts.HostHome = a.paths.Home
+	opts.AndroidPackage = a.paths.Package
+
+	if f.profile != "" {
+		prof, ok := a.cfg.Profile(f.profile)
+		if !ok {
+			return opts, fmt.Errorf("profile %q not found in config", f.profile)
+		}
+		applyProfile(&opts, prof)
+	} else if a.cfg != nil {
+		applyProfile(&opts, a.cfg.Defaults)
+	}
+
+	applyLoginFlags(&opts, f)
+	opts.Binds = append(opts.Binds, readPerFSMounts(rootFS)...)
+	if len(passthrough) > 0 {
+		opts.Command = passthrough
+	}
+	return opts, nil
+}
+
+// applyLoginFlags overlays the user's CLI choices on top of the profile-
+// merged Options. Boolean "no-FOO" flags flip features off; affirmative
+// flags flip them on.
+func applyLoginFlags(opts *proot.Options, f *loginFlags) {
+	if f.loginUser != "" {
+		opts.LoginUser = f.loginUser
+	}
+	for _, b := range f.binds {
+		opts.Binds = append(opts.Binds, parseBindFlag(b))
+	}
+	if f.isolated {
+		opts.Isolated = true
+		opts.CWD = "/root"
+	}
+	if f.fixLowPorts {
+		opts.FixLowPorts = true
+	}
+	if f.ashmemMemfd {
+		opts.AshmemMemfd = true
+	}
+	if f.noSharedTmp {
+		opts.SharedTmp = false
+	}
+	if f.noLink2Symlink {
+		opts.Link2Symlink = false
+	}
+	if f.noSysVIPC {
+		opts.SysVIPC = false
+	}
+	if f.noKillOnExit {
+		opts.KillOnExit = false
+	}
+	if f.noFakeRootID {
+		opts.FakeRootID = false
+	}
+	if f.noCapLastCap {
+		opts.CapLastCapFix = false
+	}
+	if f.noPulseServer {
+		opts.PulseServer = false
+	}
+	if f.runScript != "" {
+		opts.RunScript = f.runScript
+	}
+}
+
+// printArgv dumps the argv one entry per line. Useful for diagnosing what
+// proot will see without actually launching it.
+func printArgv(a *app, opts proot.Options) {
+	argv := append([]string{"proot"}, proot.BuildArgs(opts)...)
+	for _, s := range argv {
+		fmt.Fprintln(a.ui.Out(), s)
+	}
+}
+
+// resolveLoginTarget turns the user-supplied identifier into the on-disk
+// rootfs directory name. Honors --name (explicit), --custom (custom-fs
+// installs), or parses a normal "suite:variant" reference.
 func resolveLoginTarget(a *app, args []string, custom, nameOverride string) (string, error) {
 	if nameOverride != "" {
 		return nameOverride, nil
@@ -204,6 +251,7 @@ func resolveLoginTarget(a *app, args []string, custom, nameOverride string) (str
 	return v.Name, nil
 }
 
+// parseBindFlag accepts "src" or "src:dst" forms.
 func parseBindFlag(s string) proot.Bind {
 	parts := strings.SplitN(s, ":", 2)
 	if len(parts) == 1 {
@@ -212,6 +260,10 @@ func parseBindFlag(s string) proot.Bind {
 	return proot.Bind{Source: parts[0], Target: parts[1]}
 }
 
+// applyProfile merges a config-defined LoginProfile into Options. Bool
+// fields on the profile are pointers so we can tell "user explicitly set
+// false" from "user said nothing"; nil falls back to whatever was on
+// Options already.
 func applyProfile(o *proot.Options, p config.LoginProfile) {
 	if p.User != "" {
 		o.LoginUser = p.User
@@ -238,7 +290,8 @@ func applyProfile(o *proot.Options, p config.LoginProfile) {
 }
 
 // readPerFSMounts parses the optional <rootfs>/udroid_proot_mounts file —
-// blank lines and `#` comments are ignored.
+// blank lines and `#` comments are ignored. Lets users persist extra
+// binds per-install without editing the global config.
 func readPerFSMounts(rootFS string) []proot.Bind {
 	f, err := os.Open(filepath.Join(rootFS, "udroid_proot_mounts"))
 	if err != nil {

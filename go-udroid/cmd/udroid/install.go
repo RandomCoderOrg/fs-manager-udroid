@@ -15,10 +15,10 @@ import (
 
 func newInstallCmd(a *app) *cobra.Command {
 	var (
-		noVerify   bool
+		noVerify    bool
 		alwaysRetry bool
-		customFile string
-		customName string
+		customFile  string
+		customName  string
 	)
 	cmd := &cobra.Command{
 		Use:     "install <suite>:<variant>",
@@ -46,59 +46,101 @@ func newInstallCmd(a *app) *cobra.Command {
 	return cmd
 }
 
+// runInstall is the install pipeline reading top-to-bottom: resolve the
+// manifest entry, fetch+verify the tarball, extract under proot, apply
+// the fakes/profile fixes. Each step is a named helper.
 func runInstall(ctx context.Context, a *app, ref manifest.Ref, noVerify, alwaysRetry bool) error {
 	a.ui.Title("> INSTALL " + ref.String())
 	if alwaysRetry && noVerify {
 		return fmt.Errorf("--always-retry is incompatible with --no-verify-integrity")
 	}
 
-	mf, err := loadManifest(ctx, a, manifest.ModeOnline, false)
+	variant, err := resolveInstallVariant(ctx, a, ref)
 	if err != nil {
 		return err
+	}
+	destDir := filepath.Join(a.paths.InstalledFsDir, variant.Name)
+	if _, err := os.Stat(destDir); err == nil {
+		return fmt.Errorf("filesystem %q already installed at %s", variant.Name, destDir)
+	}
+
+	tarPath, err := fetchTarball(ctx, a, variant, noVerify, alwaysRetry)
+	if err != nil {
+		return err
+	}
+	if err := extractAndFix(ctx, a, tarPath, destDir); err != nil {
+		return err
+	}
+	a.ui.Info("✔ " + variant.Name + " installed")
+	return nil
+}
+
+// resolveInstallVariant fetches/refreshes the manifest, fills in any
+// missing suite/variant via prompts, and looks up the per-arch entry.
+func resolveInstallVariant(ctx context.Context, a *app, ref manifest.Ref) (*manifest.Variant, error) {
+	mf, err := loadManifest(ctx, a, manifest.ModeOnline, false)
+	if err != nil {
+		return nil, err
 	}
 	ref, err = resolveRef(a, mf, ref)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	v, err := mf.Variant(ref.Suite, ref.Variant, a.arch)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if v.URL == "" {
-		return fmt.Errorf("no download URL for %s on %s — variant not supported", ref, a.arch)
+		return nil, fmt.Errorf("no download URL for %s on %s — variant not supported", ref, a.arch)
 	}
-	destDir := filepath.Join(a.paths.InstalledFsDir, v.Name)
-	if _, err := os.Stat(destDir); err == nil {
-		return fmt.Errorf("filesystem %q already installed at %s", v.Name, destDir)
-	}
+	return v, nil
+}
 
+// fetchTarball downloads the variant tarball into the cache and verifies
+// its sha256. On a checksum mismatch it offers a single re-download with
+// a fresh verify; persistent failure aborts the install.
+func fetchTarball(ctx context.Context, a *app, v *manifest.Variant, noVerify, alwaysRetry bool) (string, error) {
 	ext := filepath.Ext(v.URL)
 	tarPath := filepath.Join(a.paths.DownloadCache, v.Name+".tar"+ext)
 
 	a.ui.Info(fmt.Sprintf("downloading %s ...", v.Name))
-	bar := a.ui.Progress("download " + v.Name)
-	if err := rootfs.Download(ctx, v.URL, tarPath, alwaysRetry, bar); err != nil {
+	if err := rootfs.Download(ctx, v.URL, tarPath, alwaysRetry, a.ui.Progress("download "+v.Name)); err != nil {
+		return "", err
+	}
+	if noVerify {
+		return tarPath, nil
+	}
+	if err := verifyOrRedownload(ctx, a, v, tarPath, alwaysRetry); err != nil {
+		return "", err
+	}
+	return tarPath, nil
+}
+
+// verifyOrRedownload runs the sha256 check and, on mismatch, prompts the
+// user to delete the cached tarball and try once more. A second failure
+// is fatal so we don't loop forever on a bad upstream.
+func verifyOrRedownload(ctx context.Context, a *app, v *manifest.Variant, tarPath string, alwaysRetry bool) error {
+	err := a.ui.Spinner("verifying sha256", func() error {
+		return rootfs.VerifySHA256(tarPath, v.SHASum)
+	})
+	if err == nil {
+		return nil
+	}
+	ok, _ := a.ui.Confirm("integrity check failed. re-download?", true)
+	if !ok {
 		return err
 	}
-
-	if !noVerify {
-		if err := a.ui.Spinner("verifying sha256", func() error {
-			return rootfs.VerifySHA256(tarPath, v.SHASum)
-		}); err != nil {
-			ok, _ := a.ui.Confirm("integrity check failed. re-download?", true)
-			if !ok {
-				return err
-			}
-			_ = os.Remove(tarPath)
-			if err := rootfs.Download(ctx, v.URL, tarPath, alwaysRetry, a.ui.Progress("re-download "+v.Name)); err != nil {
-				return err
-			}
-			if err := rootfs.VerifySHA256(tarPath, v.SHASum); err != nil {
-				return err
-			}
-		}
+	_ = os.Remove(tarPath)
+	if err := rootfs.Download(ctx, v.URL, tarPath, alwaysRetry, a.ui.Progress("re-download "+v.Name)); err != nil {
+		return err
 	}
+	return rootfs.VerifySHA256(tarPath, v.SHASum)
+}
 
+// extractAndFix creates the install dir, unpacks the tarball via proot,
+// then writes the fake /proc files, /etc/hosts, env profile, and android
+// aid_* groups so the rootfs is usable.
+func extractAndFix(ctx context.Context, a *app, tarPath, destDir string) error {
 	if err := os.MkdirAll(destDir, 0o755); err != nil {
 		return err
 	}
@@ -106,19 +148,17 @@ func runInstall(ctx context.Context, a *app, ref manifest.Ref, noVerify, alwaysR
 	if err := proot.ExtractTarball(ctx, tarPath, destDir); err != nil {
 		return err
 	}
-
 	a.ui.Info("applying proot fixes")
 	groups, _ := rootfs.HostAndroidGroups()
-	if err := rootfs.ApplyFixes(destDir, rootfs.FixesOptions{
+	return rootfs.ApplyFixes(destDir, rootfs.FixesOptions{
 		TermuxPrefix:  a.paths.Prefix,
 		AndroidGroups: groups,
-	}); err != nil {
-		return err
-	}
-	a.ui.Info("✔ " + v.Name + " installed")
-	return nil
+	})
 }
 
+// runCustomInstall installs an arbitrary local tarball as a "custom-"
+// prefixed rootfs. Skips the manifest lookup and integrity check — the
+// user is responsible for the source.
 func runCustomInstall(ctx context.Context, a *app, file, name string) error {
 	if file == "" || name == "" {
 		return fmt.Errorf("custom install requires both --file and --name")
@@ -130,19 +170,8 @@ func runCustomInstall(ctx context.Context, a *app, file, name string) error {
 	if _, err := os.Stat(dest); err == nil {
 		return fmt.Errorf("custom filesystem %q already installed", name)
 	}
-	if err := os.MkdirAll(dest, 0o755); err != nil {
-		return err
-	}
 	a.ui.Title("> INSTALL custom-" + name)
-	a.ui.Info("extracting " + file + " -> " + dest)
-	if err := proot.ExtractTarball(ctx, file, dest); err != nil {
-		return err
-	}
-	groups, _ := rootfs.HostAndroidGroups()
-	if err := rootfs.ApplyFixes(dest, rootfs.FixesOptions{
-		TermuxPrefix:  a.paths.Prefix,
-		AndroidGroups: groups,
-	}); err != nil {
+	if err := extractAndFix(ctx, a, file, dest); err != nil {
 		return err
 	}
 	a.ui.Info("✔ custom-" + name + " installed")
