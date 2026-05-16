@@ -9,6 +9,23 @@ business logic.
 
 ## Build
 
+Quickest path on Termux: run the install script. It checks for `go`,
+`proot`, and `tar`, offers to install whichever are missing, builds a
+static binary, and drops it as `udroid-go` so the bash `udroid` can stay
+in place.
+
+```bash
+cd go-udroid
+./install.sh                       # interactive; installs to $PREFIX/bin/udroid-go
+./install.sh -y                    # non-interactive
+./install.sh --no-install          # build-only, leaves ./udroid-go in cwd
+./install.sh --prefix=/opt/udroid  # install elsewhere
+./install.sh --bin-name=udroid     # override the binary name
+./install.sh --skip-deps           # caller already has deps on PATH
+```
+
+Manual build, if you'd rather not run a script:
+
 ```bash
 cd go-udroid
 go build -o udroid ./cmd/udroid
