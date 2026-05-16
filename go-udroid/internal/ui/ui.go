@@ -1,7 +1,7 @@
 // Package ui hides whether output goes to a plain terminal, a TUI, or a
 // log file. The CLI and core packages take a UI value and call methods
 // on it; swap implementations to change presentation without touching
-// business logic.
+// the callers.
 package ui
 
 import "io"

@@ -3,9 +3,9 @@
 A Go port of [fs-manager-udroid](../README.md) — a proot wrapper that installs
 Linux rootfs tarballs as containers on Termux/Android.
 
-This port is designed so the same core (`internal/proot`, `internal/manifest`,
-`internal/rootfs`) can later back a Bubble Tea TUI without touching the
-business logic.
+The core packages (`internal/proot`, `internal/manifest`, `internal/rootfs`)
+are independent of the CLI so a Bubble Tea TUI can reuse them later without
+changes.
 
 ## Build
 
